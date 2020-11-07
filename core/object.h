@@ -7,6 +7,7 @@ namespace CVM::RUNTIME
 {
     class Object
     {
+      public:
         Object()                       = default;
         virtual ~Object()              = default;
         virtual std::string toString() = 0;
