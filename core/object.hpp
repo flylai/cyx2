@@ -9,12 +9,9 @@ namespace CVM::RUNTIME
     class Object
     {
       public:
-        Object()          = default;
-        virtual ~Object() = default;
-        virtual std::string toString()
-        {
-            return "";
-        };
+        Object()                       = default;
+        virtual ~Object()              = default;
+        virtual std::string toString() = 0;
     };
 
 } // namespace CVM::RUNTIME
