@@ -27,10 +27,10 @@ namespace CVM::ASM
       public:
         CORE::Opcode opcode{ 0xff };
 
-        RUNTIME::Object operand1;
+        RUNTIME::Object *operand1{ nullptr };
         OperandTarget operand_target1{ OperandTarget::UNKNOWN };
 
-        RUNTIME::Object operand2;
+        RUNTIME::Object *operand2{ nullptr };
         OperandTarget operand_target2{ OperandTarget::UNKNOWN };
     };
 } // namespace CVM::ASM
