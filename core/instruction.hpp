@@ -8,11 +8,6 @@
 
 namespace CVM::ASM
 {
-    enum class OperandType
-    {
-        NUMBER
-    };
-
     enum class OperandTarget
     {
         REGISTER = 0x00,
@@ -27,10 +22,12 @@ namespace CVM::ASM
       public:
         CORE::Opcode opcode{ 0xff };
 
-        RUNTIME::Object *operand1{ nullptr };
+        int idx1{ -1 }; // if operand target are REGISTER/STACK/GLOBAL
+        std::shared_ptr<Type> operand1{ nullptr };
         OperandTarget operand_target1{ OperandTarget::UNKNOWN };
 
-        RUNTIME::Object *operand2{ nullptr };
+        int idx2{ -1 };
+        std::shared_ptr<Type> operand2{ nullptr };
         OperandTarget operand_target2{ OperandTarget::UNKNOWN };
     };
 } // namespace CVM::ASM

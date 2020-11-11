@@ -1,71 +1,46 @@
 #ifndef CORE_TYPE_HPP
 #define CORE_TYPE_HPP
 
-#include "object.hpp"
-
+#include <string>
 #include <utility>
 #include <variant>
 
 namespace CVM
 {
-    using byte  = std::int8_t;
-    using int8  = std::int8_t;
-    using int32 = std::int32_t;
-    using int64 = std::int64_t;
 
-    class Int : public Object
+    class Type
     {
       public:
-        explicit Int() = default;
-        explicit Int(int32 value) : value(value){};
-        Type type() override
+        Type() = delete;
+        //
+        template<typename T>
+        explicit Type(T value) : _value(value){};
+        //
+        template<typename T>
+        bool is()
         {
-            return Type::INT;
+            return std::holds_alternative<T>(_value);
         }
-        std::string toString() override
+        //
+        template<typename T>
+        T value()
         {
-            return std::to_string(value);
-        };
-
-      public:
-        int value{ 0 };
-    };
-    //
-    class Double : public Object
-    {
-      public:
-        explicit Double() = default;
-        explicit Double(double value) : value(value){};
-        Type type() override
-        {
-            return Type::DOUBLE;
+            return std::get<T>(_value);
         }
-        std::string toString() override
+        template<typename T>
+        T *valuePtr()
         {
-            return std::to_string(value);
-        };
-
-      public:
-        double value{ 0.0 };
-    };
-    //
-    class String : public Object
-    {
-      public:
-        explicit String() = default;
-        explicit String(std::string value) : value(std::move(value)){};
-        Type type() override
-        {
-            return Type::STRING;
+            return std::get_if<T>(&_value);
         }
-        std::string toString() override
+        bool isSameType(const Type &that)
         {
-            return value;
+            return _value.index() == that._value.index();
         }
 
-      public:
-        std::string value;
+      private:
+        std::variant<int, double, std::string> _value;
     };
+
 } // namespace CVM
 
 #endif
