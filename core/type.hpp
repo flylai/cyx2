@@ -4,6 +4,7 @@
 #include "object.hpp"
 
 #include <utility>
+#include <variant>
 
 namespace CVM
 {
@@ -12,11 +13,15 @@ namespace CVM
     using int32 = std::int32_t;
     using int64 = std::int64_t;
 
-    class Int : public RUNTIME::Object
+    class Int : public Object
     {
       public:
         explicit Int() = default;
         explicit Int(int32 value) : value(value){};
+        Type type() override
+        {
+            return Type::INT;
+        }
         std::string toString() override
         {
             return std::to_string(value);
@@ -26,11 +31,15 @@ namespace CVM
         int value{ 0 };
     };
     //
-    class Double : public RUNTIME::Object
+    class Double : public Object
     {
       public:
         explicit Double() = default;
         explicit Double(double value) : value(value){};
+        Type type() override
+        {
+            return Type::DOUBLE;
+        }
         std::string toString() override
         {
             return std::to_string(value);
@@ -40,11 +49,15 @@ namespace CVM
         double value{ 0.0 };
     };
     //
-    class String : public RUNTIME::Object
+    class String : public Object
     {
       public:
         explicit String() = default;
         explicit String(std::string value) : value(std::move(value)){};
+        Type type() override
+        {
+            return Type::STRING;
+        }
         std::string toString() override
         {
             return value;
