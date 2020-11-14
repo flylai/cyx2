@@ -17,12 +17,15 @@ namespace CVM::ASM
         void parse();
         void setRawCode(const std::string &code);
         const std::vector<Instruction> &instructions() const;
+        int entry();
 
       private:
         void initRawCode();
-        CORE::Opcode parseOpcode(int &start_pos);
+        void parseFunctions();
+        ASM::Opcode parseOpcode(int &start_pos);
         OperandTarget parseOperandTarget(int &start_pos);
-        int parseNumber(int &start_pos);
+        int parseInt(int &start_pos);
+        Type *parseNumber(int &start_pos);
         std::string parseString(int &start_pos);
         void skipBlank(int &start_pos);
 
