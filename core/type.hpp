@@ -41,19 +41,18 @@ namespace CVM
         T as()
         {
             if (is<T>()) return value<T>();
-            // WTF, compile error if not comment the following line
-            // if (std::is_same<T, std::string>::value) return asString();
-            if (std::is_same<T, int>::value) return asInt();
-            if (std::is_same<T, double>::value) return asDouble();
+            if constexpr (std::is_same<T, std::string>::value) return asString();
+            if constexpr (std::is_same<T, int>::value) return asInt();
+            if constexpr (std::is_same<T, double>::value) return asDouble();
         }
 
+      private:
         std::string asString()
         {
             if (is<int>()) return std::to_string(value<int>());
             if (is<double>()) return std::to_string(value<double>());
         }
 
-      private:
         int asInt()
         {
             if (is<double>()) return static_cast<int>(value<double>());
