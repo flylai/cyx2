@@ -10,6 +10,7 @@ namespace COMPILER
     enum Keyword : char
     {
         INVALID,  //
+        IDENTITY, // variable name => a
         IF,       // if
         ELSE,     // else
         FOR,      // for
@@ -88,6 +89,7 @@ namespace COMPILER
         {
             const char *keyword[] = {
                 STR(INVALID),  //
+                STR(IDENTITY), // variable name => a
                 STR(IF),       // if
                 STR(ELSE),     // else
                 STR(FOR),      // for
