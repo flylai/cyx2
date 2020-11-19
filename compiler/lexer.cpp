@@ -29,11 +29,14 @@ void COMPILER::Lexer::skipBlank()
 std::string COMPILER::Lexer::number()
 {
     std::string retval;
-    while (isdigit(current_char))
+    bool is_double = false;
+    while (isdigit(current_char) || (!is_double && current_char == '.'))
     {
+        if (current_char == '.') is_double = true;
         retval.push_back(current_char);
         advance();
     }
+
     return retval;
 }
 
