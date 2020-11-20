@@ -69,6 +69,8 @@ namespace COMPILER
         COLON,     // :
 
         INTEGER,
+        DOUBLE,
+        STRING,
     };
 
 #define STR(X) (#X)
@@ -78,8 +80,8 @@ namespace COMPILER
       public:
         Token() = default;
         Token(Keyword keyword, std::string value, int row, int column)
-            : tk(keyword), value(std::move(value)), row(row), column(column){};
-        Keyword tk{ 0 };
+            : keyword(keyword), value(std::move(value)), row(row), column(column){};
+        Keyword keyword{ 0 };
         std::string value;
         int row{ 0 };
         int column{ 0 };
@@ -87,7 +89,7 @@ namespace COMPILER
       public:
         std::string keywordName() const
         {
-            const char *keyword[] = {
+            const char *keywords[] = {
                 STR(INVALID),  //
                 STR(IDENTITY), // variable name => a
                 STR(IF),       // if
@@ -146,9 +148,12 @@ namespace COMPILER
                 STR(RBRACKET),  // ]
                 STR(SEMICOLON), // ;
                 STR(COLON),     // :
-                STR(INTEGER),
+
+                STR(INTEGER), //
+                STR(DOUBLE),  //
+                STR(STRING),  //
             };
-            return keyword[tk];
+            return keywords[keyword];
         };
     };
 } // namespace COMPILER
