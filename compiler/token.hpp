@@ -9,20 +9,20 @@ namespace COMPILER
 
     enum Keyword : char
     {
-        INVALID,  //
-        IDENTITY, // variable name => a
-        IF,       // if
-        ELSE,     // else
-        FOR,      // for
-        WHILE,    // while
-        SWITCH,   // switch
-        BREAK,    // break
-        CONTINUE, // continue
-        TRUE,     // true
-        FALSE,    // false
-        DEF,      // def
-        RETURN,   // return
-        IMPORT,   // import
+        INVALID,    //
+        IDENTIFIER, // variable name => a
+        IF,         // if
+        ELSE,       // else
+        FOR,        // for
+        WHILE,      // while
+        SWITCH,     // switch
+        BREAK,      // break
+        CONTINUE,   // continue
+        TRUE,       // true
+        FALSE,      // false
+        DEF,        // def
+        RETURN,     // return
+        IMPORT,     // import
 
         // Binary opcode
 
@@ -90,20 +90,20 @@ namespace COMPILER
         std::string keywordName() const
         {
             const char *keywords[] = {
-                STR(INVALID),  //
-                STR(IDENTITY), // variable name => a
-                STR(IF),       // if
-                STR(ELSE),     // else
-                STR(FOR),      // for
-                STR(WHILE),    // while
-                STR(SWITCH),   // switch
-                STR(BREAK),    // break
-                STR(CONTINUE), // continue
-                STR(TRUE),     // true
-                STR(FALSE),    // false
-                STR(DEF),      // def
-                STR(RETURN),   // return
-                STR(IMPORT),   // import
+                STR(INVALID),    //
+                STR(IDENTIFIER), // variable name => a
+                STR(IF),         // if
+                STR(ELSE),       // else
+                STR(FOR),        // for
+                STR(WHILE),      // while
+                STR(SWITCH),     // switch
+                STR(BREAK),      // break
+                STR(CONTINUE),   // continue
+                STR(TRUE),       // true
+                STR(FALSE),      // false
+                STR(DEF),        // def
+                STR(RETURN),     // return
+                STR(IMPORT),     // import
 
                 // Binary opcode
 
