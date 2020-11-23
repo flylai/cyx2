@@ -22,8 +22,9 @@ namespace COMPILER
         Token nextToken();
 
       public:
-        std::string number();
-        Token identity();
+        Token number();
+        Token identifier();
+        Token string();
 
       private:
         std::string raw_code;
