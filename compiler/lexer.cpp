@@ -199,6 +199,7 @@ COMPILER::Token COMPILER::Lexer::string()
         retval.push_back(current_char);
         advance();
     }
+    advance();
 
     return COMPILER::Token(Keyword::STRING, retval, row, column);
 }
