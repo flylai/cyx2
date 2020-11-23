@@ -7,6 +7,8 @@
 namespace COMPILER
 {
 
+#define STR(X) (#X)
+
     enum Keyword : char
     {
         INVALID,    //
@@ -70,13 +72,89 @@ namespace COMPILER
         RBRACKET,  // ]
         SEMICOLON, // ;
         COLON,     // :
+        SQUO,      // '
+        DQUO,      // "
 
         INTEGER,
         DOUBLE,
         STRING,
     };
+    struct Keywords
+    {
+        Keyword keyword;
+        std::string identifier;
+        std::string keyword_name;
+    };
 
-#define STR(X) (#X)
+    static const Keywords keyword_table[] = {
+        { INVALID, "__INVALID__", STR(INVALID) },          //
+        { IDENTIFIER, "__IDENTIFIER__", STR(IDENTIFIER) }, // variable name => a
+        { IF, "if", STR(IF) },                             // if
+        { ELSE, "else", STR(ELSE) },                       // else
+        { FOR, "for", STR(FOR) },                          // for
+        { WHILE, "while", STR(WHILE) },                    // while
+        { SWITCH, "switch", STR(SWITCH) },                 // switch
+        { BREAK, "break", STR(BREAK) },                    // break
+        { CONTINUE, "continue", STR(CONTINUE) },           // continue
+        { TRUE, "true", STR(TRUE) },                       // true
+        { FALSE, "false", STR(FALSE) },                    // false
+        { DEF, "def", STR(DEF) },                          // def
+        { RETURN, "return", STR(RETURN) },                 // return
+        { IMPORT, "import", STR(IMPORT) },                 // import
+
+        // Binary opcode
+
+        // Arithmetic
+        { ADD, "+", STR(ADD) },   // + => a + b
+        { SUB, "-", STR(SUB) },   // - => a - b
+        { MUL, "*", STR(MUL) },   // * => a * b
+        { DIV, "/", STR(DIV) },   // / => a / b
+        { MOD, "%", STR(MOD) },   // % => a % b
+        { BAND, "&", STR(BAND) }, // & => a & b
+        { BXOR, "^", STR(BXOR) }, // ^ => a ^ b
+        { BOR, "|", STR(BOR) },   // | => a | b
+        { EXP, "**", STR(EXP) },  // ** => a ** b
+        { SHL, "<<", STR(SHL) },  // << => a << b
+        { SHR, ">>", STR(SHR) },  // >> => a >> b
+
+        // Logic
+        { LAND, "&&", STR(LAND) }, // && => a && b
+        { LOR, "||", STR(LOR) },   // || => a || b
+
+        // Comparison
+        { EQ, "==", STR(EQ) }, // == => a == b
+        { NE, "!=", STR(NE) }, // != => a != b
+        { LE, "<=", STR(LE) }, // <= => a <= b
+        { LT, "<", STR(LT) },  // < => a < b
+        { GE, ">=", STR(GE) }, // >= => a >= b
+        { GT, ">", STR(GT) },  // > => a > b
+
+        // Other
+        { ASSIGN, "=", STR(ASSIGN) }, // = => a = b
+
+        // Unary opcode
+
+        { SELFADD, "++", STR(SELFADD) }, // ++ => a++ / ++a
+        { SELFSUB, "--", STR(SELFSUB) }, // -- => a-- / --a
+        { LNOT, "!", STR(LNOT) },        // ! => !a
+        { BNOT, "~", STR(BNOT) },        // ~ => ~a
+
+        // Other
+        { LPAREN, "(", STR(LPAREN) },       // (
+        { RPAREN, ")", STR(RPAREN) },       // )
+        { LBRACE, "{", STR(LBRACE) },       // {
+        { RBRACE, "}", STR(RBRACE) },       // }
+        { LBRACKET, "[", STR(LBRACKET) },   // [
+        { RBRACKET, "]", STR(RBRACKET) },   // ]
+        { SEMICOLON, ";", STR(SEMICOLON) }, // ;
+        { COLON, ":", STR(COLON) },         // :
+        { SQUO, "'", STR(SQUO) },
+        { DQUO, "\"", STR(SQUO) },
+
+        { INTEGER, "__INTEGER__", STR(INTEGER) },
+        { DOUBLE, "__DOUBLE__", STR(DOUBLE) },
+        { STRING, "__STRING__", STR(STRING) },
+    };
 
     class Token
     {
@@ -84,6 +162,8 @@ namespace COMPILER
         Token() = default;
         Token(Keyword keyword, std::string value, int row, int column)
             : keyword(keyword), value(std::move(value)), row(row), column(column){};
+        Token(Keyword keyword, int row, int column)
+            : keyword(keyword), value(keyword_table[keyword].identifier), row(row), column(column){};
         Keyword keyword{ 0 };
         std::string value;
         int row{ 0 };
@@ -92,74 +172,7 @@ namespace COMPILER
       public:
         std::string keywordName() const
         {
-            const char *keywords[] = {
-                STR(INVALID),    //
-                STR(IDENTIFIER), // variable name => a
-                STR(IF),         // if
-                STR(ELSE),       // else
-                STR(FOR),        // for
-                STR(WHILE),      // while
-                STR(SWITCH),     // switch
-                STR(BREAK),      // break
-                STR(CONTINUE),   // continue
-                STR(TRUE),       // true
-                STR(FALSE),      // false
-                STR(DEF),        // def
-                STR(RETURN),     // return
-                STR(IMPORT),     // import
-
-                // Binary opcode
-
-                // Arithmetic
-                STR(ADD),  // + => a + b
-                STR(SUB),  // - => a - b
-                STR(MUL),  // * => a * b
-                STR(DIV),  // / => a / b
-                STR(MOD),  // % => a % b
-                STR(BAND), // & => a & b
-                STR(BXOR), // ^ => a ^ b
-                STR(BOR),  // | => a | b
-                STR(EXP),  // ** => a ** b
-                STR(SHL),  // << => a << b
-                STR(SHR),  // >> => a >> b
-
-                // Logic
-                STR(LAND), // && => a && b
-                STR(LOR),  // || => a || b
-
-                // Comparison
-                STR(EQ), // == => a == b
-                STR(NE), // != => a != b
-                STR(LE), // <= => a <= b
-                STR(LT), // < => a < b
-                STR(GE), // >= => a >= b
-                STR(GT), // > => a > b
-
-                // Other
-                STR(ASSIGN), // = => a = b
-
-                // Unary opcode
-
-                STR(SELFADD), // ++ => a++ / ++a
-                STR(SELFSUB), // -- => a-- / --a
-                STR(LNOT),    // ! => !a
-                STR(BNOT),    // ~ => ~a
-
-                // Other
-                STR(LPAREN),    // (
-                STR(RPAREN),    // )
-                STR(LBRACE),    // {
-                STR(RBRACE),    // }
-                STR(LBRACKET),  // [
-                STR(RBRACKET),  // ]
-                STR(SEMICOLON), // ;
-                STR(COLON),     // :
-
-                STR(INTEGER), //
-                STR(DOUBLE),  //
-                STR(STRING),  //
-            };
-            return keywords[keyword];
+            return keyword_table[keyword].keyword_name;
         };
     };
 } // namespace COMPILER
