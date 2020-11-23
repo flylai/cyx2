@@ -35,6 +35,9 @@ namespace COMPILER
         BAND, // & => a & b
         BXOR, // ^ => a ^ b
         BOR,  // | => a | b
+        EXP,  // ** => a ** b
+        SHL,  // << => a << b
+        SHR,  // >> => a >> b
 
         // Logic
         LAND, // && => a && b
@@ -116,6 +119,9 @@ namespace COMPILER
                 STR(BAND), // & => a & b
                 STR(BXOR), // ^ => a ^ b
                 STR(BOR),  // | => a | b
+                STR(EXP),  // ** => a ** b
+                STR(SHL),  // << => a << b
+                STR(SHR),  // >> => a >> b
 
                 // Logic
                 STR(LAND), // && => a && b
