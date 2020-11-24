@@ -18,7 +18,6 @@ namespace COMPILER
         ~AST() = default;
 
         virtual void visit(ASTVisitor *visitor) = 0;
-        virtual std::string toString() const    = 0;
 
       public:
         int row{ 0 };
@@ -42,6 +41,16 @@ namespace COMPILER
     class IdentifierExpr;
 
     // Stmt
+    class Stmt;
+    class IfStmt;
+    class ForStmt;
+    class WhileStmt;
+    class SwitchStmt;
+    class FuncDeclStmt;
+    class BreakStmt;
+    class ContinueStmt;
+    class ReturnStmt;
+    class ImportStmt;
 
 } // namespace COMPILER
 
