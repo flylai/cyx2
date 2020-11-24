@@ -43,6 +43,7 @@ namespace COMPILER
     // Stmt
     class Stmt;
     class IfStmt;
+    class ElseStmt;
     class ForStmt;
     class WhileStmt;
     class SwitchStmt;
@@ -51,6 +52,7 @@ namespace COMPILER
     class ContinueStmt;
     class ReturnStmt;
     class ImportStmt;
+    class BlockStmt;
 
 } // namespace COMPILER
 

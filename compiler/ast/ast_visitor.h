@@ -19,6 +19,7 @@ namespace COMPILER
 
         // Stmt
         virtual void visitIfStmt(IfStmt *ptr)             = 0;
+        virtual void visitElseStmt(ElseStmt *ptr)         = 0;
         virtual void visitForStmt(ForStmt *ptr)           = 0;
         virtual void visitWhileStmt(WhileStmt *ptr)       = 0;
         virtual void visitSwitchStmt(SwitchStmt *ptr)     = 0;
@@ -27,6 +28,7 @@ namespace COMPILER
         virtual void visitContinueStmt(ContinueStmt *ptr) = 0;
         virtual void visitReturnStmt(ReturnStmt *ptr)     = 0;
         virtual void visitImportStmt(ImportStmt *ptr)     = 0;
+        virtual void visitBlockStmt(BlockStmt *ptr)       = 0;
     };
 
 } // namespace COMPILER
