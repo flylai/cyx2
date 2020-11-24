@@ -74,6 +74,7 @@ namespace COMPILER
         COLON,     // :
         SQUO,      // '
         DQUO,      // "
+        COMMA,     // ,
 
         INTEGER,
         DOUBLE,
@@ -148,8 +149,9 @@ namespace COMPILER
         { RBRACKET, "]", STR(RBRACKET) },   // ]
         { SEMICOLON, ";", STR(SEMICOLON) }, // ;
         { COLON, ":", STR(COLON) },         // :
-        { SQUO, "'", STR(SQUO) },
-        { DQUO, "\"", STR(SQUO) },
+        { SQUO, "'", STR(SQUO) },           // '
+        { DQUO, "\"", STR(SQUO) },          // "
+        { COMMA, ",", STR(COMMA) },         //,
 
         { INTEGER, "__INTEGER__", STR(INTEGER) },
         { DOUBLE, "__DOUBLE__", STR(DOUBLE) },
