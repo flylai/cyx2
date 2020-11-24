@@ -21,7 +21,6 @@ namespace COMPILER
         {
             visitor->visitIntExpr(this);
         };
-        std::string toString() const override{};
     };
 
     class DoubleExpr : public Expr
@@ -33,7 +32,6 @@ namespace COMPILER
         {
             visitor->visitDoubleExpr(this);
         };
-        std::string toString() const override{};
     };
 
     class IdentifierExpr : public Expr
@@ -45,7 +43,6 @@ namespace COMPILER
         {
             visitor->visitIdentifierExpr(this);
         };
-        std::string toString() const override{};
     };
 
     class StringExpr : public Expr
@@ -57,7 +54,6 @@ namespace COMPILER
         {
             visitor->visitStringExpr(this);
         };
-        std::string toString() const override{};
     };
 
     class BinaryExpr : public Expr
@@ -71,8 +67,8 @@ namespace COMPILER
         {
             visitor->visitBinaryExpr(this);
         };
-        std::string toString() const override{};
     };
+
     class UnaryExpr : public Expr
     {
       public:
@@ -83,7 +79,6 @@ namespace COMPILER
         {
             visitor->visitUnaryExpr(this);
         };
-        std::string toString() const override{};
     };
 
     class AssignExpr : public BinaryExpr
@@ -94,7 +89,6 @@ namespace COMPILER
         {
             visitor->visitAssignExpr(this);
         };
-        std::string toString() const override{};
     };
 } // namespace COMPILER
 
