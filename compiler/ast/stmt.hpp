@@ -54,6 +54,7 @@ namespace COMPILER
         Expr *init;
         Expr *cond;
         Expr *final;
+        BlockStmt *block;
     };
 
     class WhileStmt : public Stmt
@@ -94,7 +95,7 @@ namespace COMPILER
 
       public:
         Expr *func_name;
-        std::vector<Expr *> args;
+        std::vector<std::string> params;
         BlockStmt *block;
     };
 
