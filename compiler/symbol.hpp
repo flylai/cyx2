@@ -8,7 +8,7 @@
 
 namespace COMPILER
 {
-    enum SymbolType
+    enum class SymbolType
     {
         INVALID,
         INT,
@@ -50,16 +50,16 @@ namespace COMPILER
       public:
         SymbolTable()
         {
-            pre = nullptr;
+            _pre = nullptr;
         };
-        explicit SymbolTable(SymbolTable *pre) : pre(pre), depth(pre->depth + 1){};
+        explicit SymbolTable(SymbolTable *pre) : _pre(pre), depth(pre->depth + 1){};
 
         std::pair<int, std::optional<Symbol>> query(const std::string &key)
         {
             SymbolTable *tmp = this;
             while (tmp != nullptr && tmp->table.find(key) == tmp->table.end())
             {
-                tmp = tmp->pre;
+                tmp = tmp->_pre;
             }
             if (tmp->table.find(key) != tmp->table.end()) return { tmp->depth, table[key] };
             return { -1, {} };
@@ -70,10 +70,15 @@ namespace COMPILER
             table[key] = symbol;
         };
 
+        SymbolTable *pre() const
+        {
+            return _pre;
+        }
+
       private:
         int depth{ 0 };
         std::unordered_map<std::string, Symbol> table;
-        SymbolTable *pre{ nullptr };
+        SymbolTable *_pre{ nullptr };
     };
 } // namespace COMPILER
 
