@@ -42,6 +42,7 @@ namespace COMPILER
 
     // Stmt
     class Stmt;
+    class ExprStmt;
     class IfStmt;
     class ElseStmt;
     class ForStmt;

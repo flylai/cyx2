@@ -14,6 +14,19 @@ namespace COMPILER
         void visit(ASTVisitor *visitor) override{};
     };
 
+    class ExprStmt : public Stmt
+    {
+      public:
+        using Stmt::Stmt;
+        void visit(ASTVisitor *visitor) override
+        {
+            visitor->visitExprStmt(this);
+        };
+
+      public:
+        Expr *expr;
+    };
+
     class IfStmt : public Stmt
     {
       public:
@@ -94,7 +107,7 @@ namespace COMPILER
         };
 
       public:
-        Expr *func_name;
+        IdentifierExpr *func_name;
         std::vector<std::string> params;
         BlockStmt *block;
     };
@@ -161,7 +174,7 @@ namespace COMPILER
         };
 
       public:
-        std::vector<Expr *> stmts;
+        std::vector<AST *> stmts;
     };
 
 } // namespace COMPILER

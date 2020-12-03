@@ -18,6 +18,7 @@ namespace COMPILER
         virtual void visitIdentifierExpr(IdentifierExpr *ptr) = 0;
 
         // Stmt
+        virtual void visitExprStmt(ExprStmt *ptr)         = 0;
         virtual void visitIfStmt(IfStmt *ptr)             = 0;
         virtual void visitElseStmt(ElseStmt *ptr)         = 0;
         virtual void visitForStmt(ForStmt *ptr)           = 0;
