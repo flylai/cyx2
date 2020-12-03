@@ -82,11 +82,12 @@ COMPILER::Token COMPILER::Lexer::nextToken()
         CASE_TOKEN('!', Keyword::LNOT);
         CASE_TOKEN(';', Keyword::SEMICOLON);
         CASE_TOKEN(':', Keyword::COLON);
+        CASE_TOKEN(',', Keyword::COMMA);
         case '\'':
         case '"': return string();
         case '&':
             advance();
-            if (peekNextChar() == '&')
+            if (current_char == '&')
             {
                 advance();
                 return MK_TOKEN2(Keyword::LAND, "&&");
@@ -94,7 +95,7 @@ COMPILER::Token COMPILER::Lexer::nextToken()
             return MK_TOKEN2(Keyword::BAND, "&");
         case '|':
             advance();
-            if (peekNextChar() == '|')
+            if (current_char == '|')
             {
                 advance();
                 return MK_TOKEN2(Keyword::LOR, "||");
@@ -102,7 +103,7 @@ COMPILER::Token COMPILER::Lexer::nextToken()
             return MK_TOKEN2(Keyword::BOR, "|");
         case '*':
             advance();
-            if (peekNextChar() == '*')
+            if (current_char == '*')
             {
                 advance();
                 return MK_TOKEN2(Keyword::EXP, "**");
@@ -114,7 +115,7 @@ COMPILER::Token COMPILER::Lexer::nextToken()
         case '0' ... '9': return number();
         case '=':
             advance();
-            if (peekNextChar() == '=')
+            if (current_char == '=')
             {
                 advance();
                 return MK_TOKEN2(Keyword::EQ, "==");
@@ -122,12 +123,12 @@ COMPILER::Token COMPILER::Lexer::nextToken()
             return MK_TOKEN2(Keyword::ASSIGN, "=");
         case '<':
             advance();
-            if (peekNextChar() == '=')
+            if (current_char == '=')
             {
                 advance();
                 return MK_TOKEN2(Keyword::LE, "<=");
             }
-            else if (peekNextChar() == '<')
+            else if (current_char == '<')
             {
                 advance();
                 return MK_TOKEN2(Keyword::SHL, "<<");
@@ -135,12 +136,12 @@ COMPILER::Token COMPILER::Lexer::nextToken()
             return MK_TOKEN2(Keyword::LT, "<");
         case '>':
             advance();
-            if (peekNextChar() == '=')
+            if (current_char == '=')
             {
                 advance();
                 return MK_TOKEN2(Keyword::GE, ">=");
             }
-            else if (peekNextChar() == '>')
+            else if (current_char == '>')
             {
                 advance();
                 return MK_TOKEN2(Keyword::SHR, ">>");
