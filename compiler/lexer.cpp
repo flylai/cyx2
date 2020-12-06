@@ -75,8 +75,10 @@ COMPILER::Token COMPILER::Lexer::nextToken()
         CASE_TOKEN('%', Keyword::MOD);
         CASE_TOKEN('(', Keyword::LPAREN);
         CASE_TOKEN(')', Keyword::RPAREN);
-        CASE_TOKEN('{', Keyword::LBRACKET);
-        CASE_TOKEN('}', Keyword::RBRACKET);
+        CASE_TOKEN('{', Keyword::LBRACE);
+        CASE_TOKEN('}', Keyword::RBRACE);
+        CASE_TOKEN('[', Keyword::LBRACKET);
+        CASE_TOKEN(']', Keyword::RBRACKET);
         CASE_TOKEN('^', Keyword::BXOR);
         CASE_TOKEN('~', Keyword::BNOT);
         CASE_TOKEN('!', Keyword::LNOT);
