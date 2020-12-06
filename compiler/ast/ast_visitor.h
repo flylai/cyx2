@@ -20,7 +20,6 @@ namespace COMPILER
         // Stmt
         virtual void visitExprStmt(ExprStmt *ptr)         = 0;
         virtual void visitIfStmt(IfStmt *ptr)             = 0;
-        virtual void visitElseStmt(ElseStmt *ptr)         = 0;
         virtual void visitForStmt(ForStmt *ptr)           = 0;
         virtual void visitWhileStmt(WhileStmt *ptr)       = 0;
         virtual void visitSwitchStmt(SwitchStmt *ptr)     = 0;

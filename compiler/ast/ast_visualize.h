@@ -19,7 +19,6 @@ namespace COMPILER
         void visitIdentifierExpr(IdentifierExpr *ptr) override;
 
         void visitIfStmt(IfStmt *ptr) override;
-        void visitElseStmt(ElseStmt *ptr) override;
         void visitForStmt(ForStmt *ptr) override;
         void visitWhileStmt(WhileStmt *ptr) override;
         void visitSwitchStmt(SwitchStmt *ptr) override;

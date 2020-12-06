@@ -66,10 +66,6 @@ void COMPILER::ASTVisualize::visitIfStmt(COMPILER::IfStmt *ptr)
 {
 }
 
-void COMPILER::ASTVisualize::visitElseStmt(COMPILER::ElseStmt *ptr)
-{
-}
-
 void COMPILER::ASTVisualize::visitForStmt(COMPILER::ForStmt *ptr)
 {
 }

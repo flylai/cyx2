@@ -44,7 +44,6 @@ namespace COMPILER
     class Stmt;
     class ExprStmt;
     class IfStmt;
-    class ElseStmt;
     class ForStmt;
     class WhileStmt;
     class SwitchStmt;

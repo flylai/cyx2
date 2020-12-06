@@ -38,20 +38,8 @@ namespace COMPILER
 
       public:
         Expr *cond;
-        BlockStmt *block;
-    };
-
-    class ElseStmt : public Stmt
-    {
-      public:
-        using Stmt::Stmt;
-        void visit(ASTVisitor *visitor) override
-        {
-            visitor->visitElseStmt(this);
-        };
-
-      public:
-        BlockStmt *block;
+        BlockStmt *true_block;  // true condition
+        BlockStmt *false_block; // false condition, a.k.a else block
     };
 
     class ForStmt : public Stmt
@@ -174,7 +162,7 @@ namespace COMPILER
         };
 
       public:
-        std::vector<AST *> stmts;
+        std::vector<Stmt *> stmts;
     };
 
 } // namespace COMPILER
