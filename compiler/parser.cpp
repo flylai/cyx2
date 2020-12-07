@@ -24,16 +24,12 @@ void COMPILER::Parser::eat()
 
 void COMPILER::Parser::program()
 {
-    // import
-    // fundecl
-    // vardecl
-    //
-    auto *x = parseFuncDeclStmt();
-
-    //    Expr *x  = parseExpr();
-    auto *xx = new ASTVisualize;
-    x->visit(xx);
-    log(xx->graph);
+    auto *ast = new Tree();
+    while (cur_token.keyword != EOF)
+    {
+        ast->stmts.push_back(parseStmt());
+    }
+    // do something.
 }
 
 COMPILER::Expr *COMPILER::Parser::parsePrimaryExpr()
@@ -91,12 +87,13 @@ COMPILER::Expr *COMPILER::Parser::parseBinaryExpr(COMPILER::Expr *lhs, int prior
     while (inOr(cur_token.keyword, args...))
     {
         if (priority > opcodePriority(cur_token.keyword)) return lhs;
+        auto *binary_expr = cur_token.keyword == Keyword::ASSIGN ? new AssignExpr(pre_token.row, pre_token.column) :
+                                                                   new BinaryExpr(pre_token.row, pre_token.column);
         eat();
-        auto *binary_expr = new BinaryExpr(pre_token.row, pre_token.column);
-        binary_expr->lhs  = lhs;
-        binary_expr->op   = pre_token;
-        binary_expr->rhs  = parseExpr(opcodePriority(pre_token.keyword));
-        lhs               = binary_expr;
+        binary_expr->lhs = lhs;
+        binary_expr->op  = pre_token;
+        binary_expr->rhs = parseExpr(opcodePriority(pre_token.keyword));
+        lhs              = binary_expr;
     }
     return lhs;
 }
@@ -170,34 +167,60 @@ COMPILER::Stmt *COMPILER::Parser::parseStmt()
     switch (cur_token.keyword)
     {
         case Keyword::DEF: return parseFuncDeclStmt();
-        default: return nullptr;
+        case Keyword::IF: return parseIfStmt();
+        case Keyword::FOR: return parseForStmt();
+        case Keyword::WHILE: return parseWhileStmt();
+        case Keyword::IMPORT: return parseImportStmt();
+        case Keyword::RETURN: return parseReturnStmt();
+        case Keyword::SWITCH: return parseSwitchStmt();
+        default: return parseExprStmt();
     }
+}
+
+COMPILER::ExprStmt *COMPILER::Parser::parseExprStmt()
+{
+    auto *expr_stmt = new ExprStmt(cur_token.row, cur_token.column);
+    expr_stmt->expr = parseExpr();
+    return expr_stmt;
 }
 
 COMPILER::IfStmt *COMPILER::Parser::parseIfStmt()
 {
-    return nullptr;
+    auto *if_stmt = new IfStmt(cur_token.row, cur_token.column);
+    eat(Keyword::IF);
+    eat(Keyword::LPAREN);
+    if_stmt->cond = parseExpr();
+    eat(Keyword::RPAREN);
+    if_stmt->true_block = parseBlockStmt();
+    if (cur_token.keyword == Keyword::ELSE)
+    {
+        if_stmt->false_block = parseElseStmt();
+    }
+
+    return if_stmt;
 }
 
-COMPILER::Stmt *COMPILER::Parser::parseElseStmt()
+COMPILER::BlockStmt *COMPILER::Parser::parseElseStmt()
 {
-    return nullptr;
+    eat(Keyword::ELSE);
+    auto *else_stmt = parseBlockStmt();
+    return else_stmt;
 }
 
 COMPILER::BlockStmt *COMPILER::Parser::parseBlockStmt()
 {
     auto *block = new BlockStmt(cur_token.row, cur_token.column);
-    eat(Keyword::LBRACKET);
-    std::vector<Expr *> stmts;
+    eat(Keyword::LBRACE);
+    std::vector<Stmt *> stmts;
 
-    while (cur_token.keyword != Keyword::RBRACKET)
+    while (cur_token.keyword != Keyword::RBRACE)
     {
-        stmts.push_back(parseExpr());
+        stmts.push_back(parseStmt());
     }
 
     block->stmts = std::move(stmts);
 
-    eat(Keyword::RBRACKET);
+    eat(Keyword::RBRACE);
     return block;
 }
 
@@ -206,7 +229,7 @@ COMPILER::Stmt *COMPILER::Parser::parseFuncDeclStmt()
     auto *func = new FuncDeclStmt(cur_token.row, cur_token.column);
     eat(Keyword::DEF);
 
-    func->func_name = parsePrimaryExpr();
+    func->func_name = dynamic_cast<IdentifierExpr *>(parsePrimaryExpr());
     func->params    = parseParamListStmt();
     func->block     = parseBlockStmt();
 
@@ -231,15 +254,90 @@ std::vector<std::string> COMPILER::Parser::parseParamListStmt()
 
 COMPILER::Stmt *COMPILER::Parser::parseForStmt()
 {
+    auto *for_stmt = new ForStmt(cur_token.row, cur_token.column);
+    eat(Keyword::FOR);
+    eat(Keyword::LPAREN);
+
+    for_stmt->init = parseExpr();
+    eat(Keyword::SEMICOLON);
+    for_stmt->cond = parseExpr();
+    eat(Keyword::SEMICOLON);
+    for_stmt->final = parseExpr();
+
+    eat(Keyword::RPAREN);
+    // TODO: optional `{` `}`
+    for_stmt->block = parseBlockStmt();
+    return for_stmt;
+}
+
+COMPILER::Stmt *COMPILER::Parser::parseSwitchStmt()
+{
+    /*  switch()
+     *  {
+     *      () => {},
+     *      () => {},
+     *      () => {},
+     *  }
+     *
+     */
+    auto *switch_stmt = new SwitchStmt(cur_token.row, cur_token.column);
+    eat(Keyword::SWITCH);
+    eat(Keyword::LPAREN);
+    switch_stmt->cond = parsePrimaryExpr();
+    eat(Keyword::RPAREN);
+
+    eat(Keyword::LBRACE);
+
+    std::vector<MatchStmt *> matches;
+
+    while (cur_token.keyword != Keyword::RBRACE)
+    {
+        auto *match_stmt = new MatchStmt(cur_token.row, cur_token.column);
+        // (expr)
+        eat(Keyword::LPAREN);
+        match_stmt->cond = parsePrimaryExpr();
+        eat(Keyword::RPAREN);
+        // =>
+        eat(Keyword::ASSIGN);
+        eat(Keyword::GT);
+        // { stmts }
+        match_stmt->block = parseBlockStmt();
+        matches.push_back(match_stmt);
+
+        if (cur_token.keyword != Keyword::COMMA)
+            break;
+        else
+            eat(Keyword::COMMA);
+    }
+
+    eat(Keyword::RBRACE);
+
     return nullptr;
 }
 
 COMPILER::Stmt *COMPILER::Parser::parseWhileStmt()
 {
-    return nullptr;
+    auto *while_stmt = new WhileStmt(cur_token.row, cur_token.column);
+    eat(Keyword::WHILE);
+    eat(Keyword::LPAREN);
+    while_stmt->cond = parseExpr();
+    eat(Keyword::RPAREN);
+    while_stmt->block = parseBlockStmt();
+    return while_stmt;
 }
 
 COMPILER::Stmt *COMPILER::Parser::parseReturnStmt()
 {
-    return nullptr;
+    eat(Keyword::RETURN);
+    auto *return_stmt   = new ReturnStmt(cur_token.row, cur_token.column);
+    return_stmt->retval = parseExprStmt();
+    return return_stmt;
+}
+
+COMPILER::Stmt *COMPILER::Parser::parseImportStmt()
+{
+    eat(Keyword::IMPORT);
+    auto *import_stmt = new ImportStmt(cur_token.row, cur_token.column);
+    import_stmt->path = dynamic_cast<StringExpr *>(parsePrimaryExpr())->value;
+    return import_stmt;
 }

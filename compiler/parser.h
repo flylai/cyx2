@@ -1,11 +1,14 @@
 #ifndef CVM_PARSER_H
 #define CVM_PARSER_H
 
+#include "../utility/utility.hpp"
 #include "ast/ast_visualize.h"
 #include "ast/expr.hpp"
 #include "ast/stmt.hpp"
+#include "ir/ir_generator.h"
 #include "lexer.h"
 
+#include <exception>
 #include <unordered_map>
 #include <utility>
 
@@ -35,27 +38,19 @@ namespace COMPILER
         //
 
         COMPILER::Stmt *parseStmt();
-        IfStmt *parseIfStmt();
-        COMPILER::Stmt *parseElseStmt();
+        COMPILER::ExprStmt *parseExprStmt();
+        COMPILER::IfStmt *parseIfStmt();
+        BlockStmt *parseElseStmt();
         BlockStmt *parseBlockStmt();
         COMPILER::Stmt *parseFuncDeclStmt();
         std::vector<std::string> parseParamListStmt();
         COMPILER::Stmt *parseForStmt();
         COMPILER::Stmt *parseWhileStmt();
         COMPILER::Stmt *parseReturnStmt();
+        COMPILER::Stmt *parseImportStmt();
+        COMPILER::Stmt *parseSwitchStmt();
 
       private:
-        template<typename T, typename... U>
-        bool inOr(T lhs, U... args)
-        {
-            return ((lhs == args) || ...);
-        }
-
-        template<typename T, typename... U>
-        bool inAnd(T lhs, U... args)
-        {
-            return ((lhs == args) && ...);
-        }
         inline constexpr int opcodePriority(Keyword keyword);
 
       private:
