@@ -18,6 +18,8 @@ namespace COMPILER
         void visitAssignExpr(AssignExpr *ptr) override;
         void visitIdentifierExpr(IdentifierExpr *ptr) override;
 
+        void visitExprStmt(ExprStmt *ptr) override;
+        void visitTree(Tree *ptr) override;
         void visitIfStmt(IfStmt *ptr) override;
         void visitForStmt(ForStmt *ptr) override;
         void visitWhileStmt(WhileStmt *ptr) override;

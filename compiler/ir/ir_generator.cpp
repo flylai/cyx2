@@ -35,10 +35,6 @@ void COMPILER::IRGenerator::visitIfStmt(COMPILER::IfStmt *ptr)
 {
 }
 
-void COMPILER::IRGenerator::visitElseStmt(COMPILER::ElseStmt *ptr)
-{
-}
-
 void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
 {
 }
@@ -48,6 +44,10 @@ void COMPILER::IRGenerator::visitWhileStmt(COMPILER::WhileStmt *ptr)
 }
 
 void COMPILER::IRGenerator::visitSwitchStmt(COMPILER::SwitchStmt *ptr)
+{
+}
+
+void COMPILER::IRGenerator::visitMatchStmt(COMPILER::MatchStmt *ptr)
 {
 }
 
@@ -307,4 +307,8 @@ std::string COMPILER::IRGenerator::irCodeString()
         ir_code += x.toString() + "\n";
     }
     return ir_code;
+}
+
+void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
+{
 }

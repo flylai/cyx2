@@ -115,3 +115,11 @@ void COMPILER::ASTVisualize::visitBlockStmt(COMPILER::BlockStmt *ptr)
         x->visit(this);
     }
 }
+
+void COMPILER::ASTVisualize::visitExprStmt(COMPILER::ExprStmt *ptr)
+{
+}
+
+void COMPILER::ASTVisualize::visitTree(COMPILER::Tree *ptr)
+{
+}

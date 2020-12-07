@@ -55,6 +55,8 @@ namespace COMPILER
     class ImportStmt;
     class BlockStmt;
 
+    class Tree;
+
 } // namespace COMPILER
 
 #endif // CVM_AST_HPP

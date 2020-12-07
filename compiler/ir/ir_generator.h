@@ -22,11 +22,12 @@ namespace COMPILER
         void visitAssignExpr(AssignExpr *ptr) override;
         void visitIdentifierExpr(IdentifierExpr *ptr) override;
         //
+        void visitTree(Tree *ptr) override;
         void visitExprStmt(ExprStmt *ptr) override;
         void visitIfStmt(IfStmt *ptr) override;
-        void visitElseStmt(ElseStmt *ptr) override;
         void visitForStmt(ForStmt *ptr) override;
         void visitWhileStmt(WhileStmt *ptr) override;
+        void visitMatchStmt(MatchStmt *ptr) override;
         void visitSwitchStmt(SwitchStmt *ptr) override;
         void visitFuncDeclStmt(FuncDeclStmt *ptr) override;
         void visitBreakStmt(BreakStmt *ptr) override;

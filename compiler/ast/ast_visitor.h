@@ -30,6 +30,8 @@ namespace COMPILER
         virtual void visitReturnStmt(ReturnStmt *ptr)     = 0;
         virtual void visitImportStmt(ImportStmt *ptr)     = 0;
         virtual void visitBlockStmt(BlockStmt *ptr)       = 0;
+
+        virtual void visitTree(Tree *ptr) = 0;
     };
 
 } // namespace COMPILER

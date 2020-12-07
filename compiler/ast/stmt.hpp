@@ -7,6 +7,17 @@
 
 namespace COMPILER
 {
+    class Tree : public AST
+    {
+      public:
+        using AST::AST;
+        void visit(ASTVisitor *visitor) override
+        {
+            visitor->visitTree(this);
+        };
+        std::vector<Stmt *> stmts;
+    };
+
     class Stmt : public AST
     {
       public:
