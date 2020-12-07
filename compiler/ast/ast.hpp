@@ -47,6 +47,7 @@ namespace COMPILER
     class ForStmt;
     class WhileStmt;
     class SwitchStmt;
+    class MatchStmt;
     class FuncDeclStmt;
     class BreakStmt;
     class ContinueStmt;

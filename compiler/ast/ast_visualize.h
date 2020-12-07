@@ -22,6 +22,7 @@ namespace COMPILER
         void visitForStmt(ForStmt *ptr) override;
         void visitWhileStmt(WhileStmt *ptr) override;
         void visitSwitchStmt(SwitchStmt *ptr) override;
+        void visitMatchStmt(MatchStmt *ptr) override;
         void visitFuncDeclStmt(FuncDeclStmt *ptr) override;
         void visitBreakStmt(BreakStmt *ptr) override;
         void visitContinueStmt(ContinueStmt *ptr) override;

@@ -78,6 +78,10 @@ void COMPILER::ASTVisualize::visitSwitchStmt(COMPILER::SwitchStmt *ptr)
 {
 }
 
+void COMPILER::ASTVisualize::visitMatchStmt(COMPILER::MatchStmt *ptr)
+{
+}
+
 void COMPILER::ASTVisualize::visitFuncDeclStmt(COMPILER::FuncDeclStmt *ptr)
 {
     graph += NODE(ptr) + "[label=\"FuncDeclStmt#" + "\"]\n";

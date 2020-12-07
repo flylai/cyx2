@@ -82,7 +82,22 @@ namespace COMPILER
         };
 
       public:
-        // TODO
+        Expr *cond;
+        std::vector<MatchStmt *> matches;
+    };
+
+    class MatchStmt : public Stmt
+    {
+      public:
+        using Stmt::Stmt;
+        void visit(ASTVisitor *visitor) override
+        {
+            visitor->visitMatchStmt(this);
+        };
+
+      public:
+        Expr *cond;
+        BlockStmt *block;
     };
 
     class FuncDeclStmt : public Stmt
@@ -136,7 +151,7 @@ namespace COMPILER
         };
 
       public:
-        // TODO
+        ExprStmt *retval;
     };
 
     class ImportStmt : public Stmt
@@ -149,7 +164,7 @@ namespace COMPILER
         };
 
       public:
-        // TODO
+        std::string path;
     };
 
     class BlockStmt : public Stmt

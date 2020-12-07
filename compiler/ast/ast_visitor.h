@@ -23,6 +23,7 @@ namespace COMPILER
         virtual void visitForStmt(ForStmt *ptr)           = 0;
         virtual void visitWhileStmt(WhileStmt *ptr)       = 0;
         virtual void visitSwitchStmt(SwitchStmt *ptr)     = 0;
+        virtual void visitMatchStmt(MatchStmt *ptr)       = 0;
         virtual void visitFuncDeclStmt(FuncDeclStmt *ptr) = 0;
         virtual void visitBreakStmt(BreakStmt *ptr)       = 0;
         virtual void visitContinueStmt(ContinueStmt *ptr) = 0;
