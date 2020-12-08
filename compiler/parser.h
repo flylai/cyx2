@@ -48,7 +48,7 @@ namespace COMPILER
         COMPILER::Stmt *parseWhileStmt();
         COMPILER::Stmt *parseReturnStmt();
         COMPILER::Stmt *parseImportStmt();
-        COMPILER::Stmt *parseSwitchStmt();
+        SwitchStmt *parseSwitchStmt();
 
       private:
         inline constexpr int opcodePriority(Keyword keyword);

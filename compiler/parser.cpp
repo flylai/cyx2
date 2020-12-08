@@ -25,7 +25,7 @@ void COMPILER::Parser::eat()
 void COMPILER::Parser::program()
 {
     auto *ast = new Tree();
-    while (cur_token.keyword != EOF)
+    while (cur_token.keyword != Keyword::INVALID)
     {
         ast->stmts.push_back(parseStmt());
     }
@@ -270,7 +270,7 @@ COMPILER::Stmt *COMPILER::Parser::parseForStmt()
     return for_stmt;
 }
 
-COMPILER::Stmt *COMPILER::Parser::parseSwitchStmt()
+COMPILER::SwitchStmt *COMPILER::Parser::parseSwitchStmt()
 {
     /*  switch()
      *  {
@@ -312,7 +312,8 @@ COMPILER::Stmt *COMPILER::Parser::parseSwitchStmt()
 
     eat(Keyword::RBRACE);
 
-    return nullptr;
+    switch_stmt->matches = std::move(matches);
+    return switch_stmt;
 }
 
 COMPILER::Stmt *COMPILER::Parser::parseWhileStmt()
