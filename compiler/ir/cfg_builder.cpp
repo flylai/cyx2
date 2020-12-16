@@ -62,12 +62,12 @@ void COMPILER::CFGBuilder::visitIfStmt(COMPILER::IfStmt *ptr)
     //             +------------+
 
     auto *cond_block = newBasicBlock("if_cond", true);
-    LINK(cur_bb, cond_block);
+    LINK(cur_bb, cond_block)
     cur_bb = cond_block;
     ptr->cond->visit(this);
 
     auto *true_block = newBasicBlock("if_block", true);
-    LINK(cond_block, true_block);
+    LINK(cond_block, true_block)
     cur_bb = true_block;
     ptr->true_block->visit(this);
 
@@ -75,14 +75,14 @@ void COMPILER::CFGBuilder::visitIfStmt(COMPILER::IfStmt *ptr)
     if (ptr->false_block != nullptr)
     {
         false_block = newBasicBlock("else_block", true);
-        LINK(cond_block, false_block);
+        LINK(cond_block, false_block)
         cur_bb = false_block;
         ptr->false_block->visit(this);
     }
 
     cur_bb = newBasicBlock("", true);
-    LINK(false_block, cur_bb);
-    LINK(true_block, cur_bb);
+    LINK(false_block, cur_bb)
+    LINK(true_block, cur_bb)
 }
 
 void COMPILER::CFGBuilder::visitForStmt(COMPILER::ForStmt *ptr)
@@ -100,20 +100,20 @@ void COMPILER::CFGBuilder::visitForStmt(COMPILER::ForStmt *ptr)
     //                +----------+
 
     auto *for_decl = newBasicBlock("for_decl");
-    LINK(cur_bb, for_decl);
+    LINK(cur_bb, for_decl)
     cur_bb = for_decl;
     cur_bb->addInst(ptr->init, ptr->cond, ptr->final);
 
     auto *block = newBasicBlock("block");
 
-    LINK(for_decl, block);
-    LINK(block, for_decl);
+    LINK(for_decl, block)
+    LINK(block, for_decl)
 
     cur_bb = block;
     ptr->block->visit(this);
 
     cur_bb = newBasicBlock();
-    LINK(for_decl, cur_bb);
+    LINK(for_decl, cur_bb)
 }
 
 void COMPILER::CFGBuilder::visitWhileStmt(COMPILER::WhileStmt *ptr)
@@ -121,19 +121,19 @@ void COMPILER::CFGBuilder::visitWhileStmt(COMPILER::WhileStmt *ptr)
     // similar to `for`
 
     auto *cond = newBasicBlock("while_cond");
-    LINK(cur_bb, cond);
+    LINK(cur_bb, cond)
     cur_bb = cond;
     ptr->cond->visit(this);
     cur_bb->addInst(ptr->cond);
 
     auto *block = newBasicBlock("while_block");
-    LINK(cond, block);
-    LINK(block, cond);
+    LINK(cond, block)
+    LINK(block, cond)
     cur_bb = block;
     ptr->block->visit(this);
 
     cur_bb = newBasicBlock();
-    LINK(cond, cur_bb);
+    LINK(cond, cur_bb)
 }
 
 void COMPILER::CFGBuilder::visitSwitchStmt(COMPILER::SwitchStmt *ptr)
@@ -164,27 +164,27 @@ void COMPILER::CFGBuilder::visitSwitchStmt(COMPILER::SwitchStmt *ptr)
     //    +------------------------------------------------+
 
     auto *cond = newBasicBlock("switch_cond");
-    LINK(cur_bb, cond);
+    LINK(cur_bb, cond)
     cur_bb = cond;
     ptr->cond->visit(this);
 
     // the basicblock after switch stmt
     auto *exit_block = newBasicBlock("switch_exit"); // aka `bb2`
-    LINK(cond, exit_block);
+    LINK(cond, exit_block)
 
     int target_count = 0;
     for (auto x : ptr->matches)
     {
         auto *target = newBasicBlock("target" + std::to_string(target_count));
         cur_bb       = target;
-        LINK(cond, target);
+        LINK(cond, target)
         x->cond->visit(this);
 
         auto *block = newBasicBlock("block" + std::to_string(target_count++), true);
-        LINK(target, block);
+        LINK(target, block)
         cur_bb = block;
         x->block->visit(this);
-        LINK(cur_bb, exit_block);
+        LINK(cur_bb, exit_block)
 
         cur_bb = cond;
     }
@@ -198,7 +198,7 @@ void COMPILER::CFGBuilder::visitMatchStmt(COMPILER::MatchStmt *ptr)
 void COMPILER::CFGBuilder::visitFuncDeclStmt(COMPILER::FuncDeclStmt *ptr)
 {
     auto *func_decl = newBasicBlock("func_decl" + ptr->func_name->value, true);
-    LINK(cur_bb, func_decl);
+    LINK(cur_bb, func_decl)
     cur_bb = func_decl;
     ptr->block->visit(this);
 }
@@ -232,7 +232,7 @@ void COMPILER::CFGBuilder::visitTree(COMPILER::Tree *ptr)
     // ENTRY!
     entry  = newBasicBlock("Entry");
     cur_bb = newBasicBlock("", true);
-    LINK(entry, cur_bb);
+    LINK(entry, cur_bb)
 
     for (auto x : ptr->stmts)
     {
@@ -246,7 +246,7 @@ void COMPILER::CFGBuilder::visitTree(COMPILER::Tree *ptr)
             continue;
         }
         auto next_bb = newBasicBlock();
-        LINK(cur_bb, next_bb);
+        LINK(cur_bb, next_bb)
         cur_bb = next_bb;
         x->visit(this);
     }
