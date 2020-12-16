@@ -29,6 +29,10 @@ void COMPILER::Parser::program()
     {
         ast->stmts.push_back(parseStmt());
     }
+
+    auto cfg_builder = new CFGBuilder;
+    cfg_builder->visitTree(ast);
+    log(cfg_builder->graph);
     // do something.
 }
 
@@ -36,9 +40,16 @@ COMPILER::Expr *COMPILER::Parser::parsePrimaryExpr()
 {
     if (cur_token.keyword == Keyword::IDENTIFIER)
     {
-        auto *identity_expr  = new IdentifierExpr(cur_token.row, cur_token.column);
-        identity_expr->value = cur_token.value;
         eat(Keyword::IDENTIFIER);
+        if (cur_token.keyword == Keyword::LPAREN)
+        {
+            auto func_call_expr       = new FuncCallExpr(pre_token.row, pre_token.column);
+            func_call_expr->func_name = pre_token.value;
+            func_call_expr->args      = std::move(parseArgListStmt());
+            return func_call_expr;
+        }
+        auto *identity_expr  = new IdentifierExpr(pre_token.row, pre_token.column);
+        identity_expr->value = pre_token.value;
         return identity_expr;
     }
     else if (cur_token.keyword == Keyword::INTEGER)
@@ -250,6 +261,21 @@ std::vector<std::string> COMPILER::Parser::parseParamListStmt()
 
     eat(Keyword::RPAREN);
     return params;
+}
+
+std::vector<COMPILER::Stmt *> COMPILER::Parser::parseArgListStmt()
+{
+    std::vector<Stmt *> args;
+    eat(Keyword::LPAREN);
+    while (inOr(cur_token.keyword, Keyword::COMMA, Keyword::IDENTIFIER))
+    {
+        if (cur_token.keyword == Keyword::IDENTIFIER)
+            args.push_back(parseExprStmt());
+        else
+            eat();
+    }
+    eat(Keyword::RPAREN);
+    return args;
 }
 
 COMPILER::Stmt *COMPILER::Parser::parseForStmt()

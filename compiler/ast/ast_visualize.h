@@ -18,6 +18,7 @@ namespace COMPILER
         void visitStringExpr(StringExpr *ptr) override;
         void visitAssignExpr(AssignExpr *ptr) override;
         void visitIdentifierExpr(IdentifierExpr *ptr) override;
+        void visitFuncCallExpr(FuncCallExpr *ptr) override;
 
         void visitExprStmt(ExprStmt *ptr) override;
         void visitTree(Tree *ptr) override;

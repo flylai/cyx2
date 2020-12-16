@@ -177,3 +177,7 @@ void COMPILER::ASTVisualize::visitTree(COMPILER::Tree *ptr)
         VISIT(x);
     }
 }
+
+void COMPILER::ASTVisualize::visitFuncCallExpr(COMPILER::FuncCallExpr *ptr)
+{
+}

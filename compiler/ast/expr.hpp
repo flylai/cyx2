@@ -90,6 +90,18 @@ namespace COMPILER
             visitor->visitAssignExpr(this);
         };
     };
+
+    class FuncCallExpr : public Expr
+    {
+      public:
+        using Expr::Expr;
+        std::string func_name;
+        std::vector<Stmt *> args;
+        void visit(ASTVisitor *visitor) override
+        {
+            visitor->visitFuncCallExpr(this);
+        };
+    };
 } // namespace COMPILER
 
 #endif // CVM_EXPR_HPP

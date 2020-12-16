@@ -39,6 +39,7 @@ namespace COMPILER
     class StringExpr;
     class AssignExpr;
     class IdentifierExpr;
+    class FuncCallExpr;
 
     // Stmt
     class Stmt;

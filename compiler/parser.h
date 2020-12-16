@@ -5,6 +5,7 @@
 #include "ast/ast_visualize.h"
 #include "ast/expr.hpp"
 #include "ast/stmt.hpp"
+#include "ir/cfg_builder.h"
 #include "ir/ir_generator.h"
 #include "lexer.h"
 
@@ -44,6 +45,7 @@ namespace COMPILER
         BlockStmt *parseBlockStmt();
         COMPILER::Stmt *parseFuncDeclStmt();
         std::vector<std::string> parseParamListStmt();
+        std::vector<COMPILER::Stmt *> parseArgListStmt();
         COMPILER::Stmt *parseForStmt();
         COMPILER::Stmt *parseWhileStmt();
         COMPILER::Stmt *parseReturnStmt();
