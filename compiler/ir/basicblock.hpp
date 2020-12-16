@@ -9,19 +9,20 @@
 
 namespace COMPILER
 {
+    static int BASICBLOCK_COUNT = 0;
     class BasicBlock
     {
       public:
-        explicit BasicBlock() = default;
-        explicit BasicBlock(std::string name) : name(std::move(name)){};
+        explicit BasicBlock() : name("block"), block_index(BASICBLOCK_COUNT++){};
+        explicit BasicBlock(std::string name) : name(std::move(name)), block_index(BASICBLOCK_COUNT++){};
 
         template<typename... T>
-        void addInst(Stmt *first, T *...others)
+        void addInst(Expr *first, T *...others)
         {
             addInst(first);
             addInst(others...);
         }
-        void addInst(Stmt *instruction)
+        void addInst(Expr *instruction)
         {
             _insts.push_back(instruction);
         }
@@ -47,14 +48,26 @@ namespace COMPILER
         {
             _succs.push_back(block);
         }
+        //
         const std::vector<BasicBlock *> &succs() const
         {
             return _succs;
         }
+        const std::vector<BasicBlock *> &pres() const
+        {
+            return _pres;
+        }
+        const std::vector<Expr *> &insts() const
+        {
+            return _insts;
+        }
 
       public:
         std::string name;
-        std::vector<Stmt *> _insts;
+        int block_index;
+
+      private:
+        std::vector<Expr *> _insts;
         std::vector<BasicBlock *> _pres;
         std::vector<BasicBlock *> _succs;
     };
