@@ -40,8 +40,10 @@ COMPILER::Expr *COMPILER::Parser::parsePrimaryExpr()
 {
     if (cur_token.keyword == Keyword::IDENTIFIER)
     {
+        auto is_func_decl = false;
+        if (pre_token.keyword == Keyword::DEF) is_func_decl = true;
         eat(Keyword::IDENTIFIER);
-        if (cur_token.keyword == Keyword::LPAREN)
+        if (!is_func_decl && cur_token.keyword == Keyword::LPAREN)
         {
             auto func_call_expr       = new FuncCallExpr(pre_token.row, pre_token.column);
             func_call_expr->func_name = pre_token.value;
