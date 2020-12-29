@@ -1,18 +1,19 @@
 #ifndef CORE_VM_HPP
 #define CORE_VM_HPP
 
+#include "../common/value.hpp"
 #include "instruction.hpp"
 #include "opcode.hpp"
 #include "stack.h"
-#include "type.hpp"
 #include "vm_config.h"
 
 #include <array>
 #include <dbg.h>
 #include <memory>
 #include <string>
+#include <vector>
 
-namespace CVM::ASM
+namespace CYX::ASM
 {
     class VM
     {
@@ -34,7 +35,7 @@ namespace CVM::ASM
         void comparison(const ASM::Instruction &instruction);
 
       private:
-        std::array<Type *, CONFIG::REGISTER_SIZE> reg;
+        std::array<Value *, CONFIG::REGISTER_SIZE> reg;
         CORE::Stack stack;
         //
         int pc    = 0;
@@ -45,6 +46,6 @@ namespace CVM::ASM
         void setCode(const std::vector<ASM::Instruction> &insts);
         void setEntry(int i);
     };
-} // namespace CVM::ASM
+} // namespace CYX::ASM
 
 #endif

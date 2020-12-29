@@ -1,15 +1,15 @@
 #ifndef CVM_ASM_PARSER_H
 #define CVM_ASM_PARSER_H
 
+#include "../common/value.hpp"
 #include "instruction.hpp"
 #include "opcode.hpp"
-#include "type.hpp"
 
 #include <memory>
 #include <unordered_map>
 #include <vector>
 
-namespace CVM::ASM
+namespace CYX::ASM
 {
     class Parser
     {
@@ -25,7 +25,7 @@ namespace CVM::ASM
         ASM::Opcode parseOpcode(int &start_pos);
         OperandTarget parseOperandTarget(int &start_pos);
         int parseInt(int &start_pos);
-        Type *parseNumber(int &start_pos);
+        Value *parseNumber(int &start_pos);
         std::string parseString(int &start_pos);
         void skipBlank(int &start_pos);
 
@@ -39,6 +39,6 @@ namespace CVM::ASM
         int parse_index{ 0 };
         std::string raw_inst;
     };
-} // namespace CVM::ASM
+} // namespace CYX::ASM
 
 #endif // CVM_ASM_PARSER_H

@@ -5,16 +5,16 @@
 #include <utility>
 #include <variant>
 
-namespace CVM
+namespace CYX
 {
 
-    class Type
+    class Value
     {
       public:
-        Type() = delete;
+        Value() = delete;
         //
         template<typename T>
-        explicit Type(T value) : _value(value){};
+        explicit Value(T value) : _value(value){};
         //
         template<typename T>
         bool is()
@@ -32,7 +32,7 @@ namespace CVM
         {
             return std::get_if<T>(&_value);
         }
-        bool isSameType(const Type &that)
+        bool isSameType(const Value &that)
         {
             return _value.index() == that._value.index();
         }
@@ -68,6 +68,6 @@ namespace CVM
         std::variant<int, double, std::string> _value;
     };
 
-} // namespace CVM
+} // namespace CYX
 
 #endif

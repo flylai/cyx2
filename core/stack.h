@@ -1,22 +1,22 @@
 #ifndef CORE_STACK_H
 #define CORE_STACK_H
 
-#include "type.hpp"
+#include "../common/value.hpp"
 #include "vm_config.h"
 
 #include <stdexcept>
 
-namespace CVM::CORE
+namespace CYX::CORE
 {
     class Stack
     {
       public:
         Stack() = default;
-        Type *top();
-        Type *pop();
+        Value *top();
+        Value *pop();
         void pop(int n);
-        void push(Type *elem);
-        Type *&operator[](int n);
+        void push(Value *elem);
+        Value *&operator[](int n);
         //
         int pos() const;
         Stack *preStack();
@@ -25,8 +25,8 @@ namespace CVM::CORE
       private:
         int position     = 0;
         Stack *pre_stack = nullptr;
-        Type *stack[CVM::CONFIG::STACK_SIZE]{};
+        Value *stack[CYX::CONFIG::STACK_SIZE]{};
     };
-} // namespace CVM::CORE
+} // namespace CYX::CORE
 
 #endif

@@ -1,12 +1,10 @@
 #include "vm.hpp"
 
-#include <utility>
-
-void CVM::ASM::VM::run()
+void CYX::ASM::VM::run()
 {
     while (pc < 28)
     {
-        CVM::ASM::Instruction inst = code[pc];
+        CYX::ASM::Instruction inst = code[pc];
 
         switch (inst.opcode)
         {
@@ -40,12 +38,12 @@ void CVM::ASM::VM::run()
     dbg(reg[1]->value<int>());
 }
 
-void CVM::ASM::VM::setCode(const std::vector<ASM::Instruction> &insts)
+void CYX::ASM::VM::setCode(const std::vector<ASM::Instruction> &insts)
 {
     VM::code = insts;
 }
 
-void CVM::ASM::VM::mov(const CVM::ASM::Instruction &instruction)
+void CYX::ASM::VM::mov(const CYX::ASM::Instruction &instruction)
 {
 
     if (instruction.operand_target1 == ASM::OperandTarget::REGISTER)
@@ -54,59 +52,59 @@ void CVM::ASM::VM::mov(const CVM::ASM::Instruction &instruction)
         if (instruction.operand_target2 == ASM::OperandTarget::RAW)
         {
             delete reg[dest_reg_idx];
-            reg[dest_reg_idx] = new Type(instruction.operand2->value<int>());
+            reg[dest_reg_idx] = new Value(instruction.operand2->value<int>());
         }
         else if (instruction.operand_target2 == ASM::OperandTarget::REGISTER)
         {
             int src_reg_idx   = instruction.idx2;
-            reg[dest_reg_idx] = new Type(reg[src_reg_idx]->value<int>());
+            reg[dest_reg_idx] = new Value(reg[src_reg_idx]->value<int>());
         }
     }
 }
 
-void CVM::ASM::VM::jmp(const CVM::ASM::Instruction &instruction)
+void CYX::ASM::VM::jmp(const CYX::ASM::Instruction &instruction)
 {
     pc = instruction.idx1;
 }
 
-void CVM::ASM::VM::jif(const CVM::ASM::Instruction &instruction)
+void CYX::ASM::VM::jif(const CYX::ASM::Instruction &instruction)
 {
     if (state == 1) jmp(instruction);
     state = 0;
 }
 
-void CVM::ASM::VM::call(const CVM::ASM::Instruction &instruction)
+void CYX::ASM::VM::call(const CYX::ASM::Instruction &instruction)
 {
-    stack.push(new Type(pc));
+    stack.push(new Value(pc));
     pc = instruction.idx1;
 }
 
-void CVM::ASM::VM::ret(const CVM::ASM::Instruction &instruction)
+void CYX::ASM::VM::ret(const CYX::ASM::Instruction &instruction)
 {
     auto *pc_ptr = stack.pop();
     pc           = pc_ptr->value<int>();
     delete pc_ptr;
 }
 
-void CVM::ASM::VM::push(const CVM::ASM::Instruction &instruction)
+void CYX::ASM::VM::push(const CYX::ASM::Instruction &instruction)
 {
     if (instruction.operand_target1 == ASM::OperandTarget::REGISTER) stack.push(reg[instruction.idx1]);
     if (instruction.operand_target1 == ASM::OperandTarget::STACK) stack.push(stack[instruction.idx1]);
     if (instruction.operand_target1 == ASM::OperandTarget::RAW)
-        stack.push(new Type(instruction.operand1->value<int>()));
+        stack.push(new Value(instruction.operand1->value<int>()));
 }
 
-void CVM::ASM::VM::pop(const CVM::ASM::Instruction &instruction)
+void CYX::ASM::VM::pop(const CYX::ASM::Instruction &instruction)
 {
     if (instruction.operand_target1 == ASM::OperandTarget::REGISTER) reg[instruction.idx1] = stack.pop();
     if (instruction.operand_target1 == ASM::OperandTarget::STACK) stack[instruction.idx1] = stack.pop();
     if (instruction.operand_target1 == ASM::OperandTarget::RAW) stack.pop(instruction.idx1);
 }
 
-template<CVM::ASM::Opcode Op>
-void CVM::ASM::VM::arithmetic(const CVM::ASM::Instruction &instruction)
+template<CYX::ASM::Opcode Op>
+void CYX::ASM::VM::arithmetic(const CYX::ASM::Instruction &instruction)
 {
-    Type *obj1 = nullptr, *obj2 = nullptr, *result = nullptr;
+    Value *obj1 = nullptr, *obj2 = nullptr, *result = nullptr;
     if (instruction.operand_target1 == ASM::OperandTarget::REGISTER) obj1 = reg[instruction.idx1];
     if (instruction.operand_target2 == ASM::OperandTarget::REGISTER)
         obj2 = reg[instruction.idx2];
@@ -118,35 +116,35 @@ void CVM::ASM::VM::arithmetic(const CVM::ASM::Instruction &instruction)
         case Opcode::ADD:
             if (obj1->is<std::string>() || obj2->is<std::string>())
             {
-                result = new Type(obj1->as<std::string>() + obj2->as<std::string>());
+                result = new Value(obj1->as<std::string>() + obj2->as<std::string>());
             }
             if (obj1->is<double>() || obj2->is<double>())
             {
-                result = new Type(obj1->as<double>() + obj2->as<double>());
+                result = new Value(obj1->as<double>() + obj2->as<double>());
             }
             if (obj1->is<int>() && obj2->is<int>())
             {
-                result = new Type(obj1->as<int>() + obj2->as<int>());
+                result = new Value(obj1->as<int>() + obj2->as<int>());
             }
             break;
         case Opcode::SUB:
             if (obj1->is<double>() || obj2->is<double>())
             {
-                result = new Type(obj1->as<double>() - obj2->as<double>());
+                result = new Value(obj1->as<double>() - obj2->as<double>());
             }
             if (obj1->is<int>() && obj2->is<int>())
             {
-                result = new Type(obj1->as<int>() - obj2->as<int>());
+                result = new Value(obj1->as<int>() - obj2->as<int>());
             }
             break;
         case Opcode::MUL:
             if (obj1->is<double>() || obj2->is<double>())
             {
-                result = new Type(obj1->as<double>() * obj2->as<double>());
+                result = new Value(obj1->as<double>() * obj2->as<double>());
             }
             if (obj1->is<int>() && obj2->is<int>())
             {
-                result = new Type(obj1->as<int>() * obj2->as<int>());
+                result = new Value(obj1->as<int>() * obj2->as<int>());
             }
             if (obj1->is<std::string>() && !obj2->is<std::string>() || //
                 obj2->is<std::string>() && !obj1->is<std::string>())
@@ -167,17 +165,17 @@ void CVM::ASM::VM::arithmetic(const CVM::ASM::Instruction &instruction)
                 {
                     tmp += origin_str;
                 }
-                result = new Type(tmp);
+                result = new Value(tmp);
             }
             break;
         case Opcode::DIV:
             if (obj1->is<double>() || obj2->is<double>())
             {
-                result = new Type(obj1->as<double>() / obj2->as<double>());
+                result = new Value(obj1->as<double>() / obj2->as<double>());
             }
             if (obj1->is<int>() && obj2->is<int>())
             {
-                result = new Type(obj1->as<int>() / obj2->as<int>());
+                result = new Value(obj1->as<int>() / obj2->as<int>());
             }
             break;
     }
@@ -186,12 +184,12 @@ void CVM::ASM::VM::arithmetic(const CVM::ASM::Instruction &instruction)
     reg[instruction.idx1] = result;
 }
 
-template<CVM::ASM::Opcode Op>
-void CVM::ASM::VM::comparison(const CVM::ASM::Instruction &instruction)
+template<CYX::ASM::Opcode Op>
+void CYX::ASM::VM::comparison(const CYX::ASM::Instruction &instruction)
 {
     state = 0; // initialize
 
-    Type *obj1 = nullptr, *obj2 = nullptr;
+    Value *obj1 = nullptr, *obj2 = nullptr;
     if (instruction.operand_target1 == ASM::OperandTarget::REGISTER)
         obj1 = reg[instruction.idx1];
     else if (instruction.operand_target1 == ASM::OperandTarget::RAW)
@@ -267,7 +265,7 @@ void CVM::ASM::VM::comparison(const CVM::ASM::Instruction &instruction)
     }
 }
 
-void CVM::ASM::VM::setEntry(int i)
+void CYX::ASM::VM::setEntry(int i)
 {
     pc = i;
 }

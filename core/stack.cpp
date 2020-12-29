@@ -1,12 +1,12 @@
 
 #include "stack.h"
 
-void CVM::CORE::Stack::push(Type *elem)
+void CYX::CORE::Stack::push(Value *elem)
 {
     stack[position++] = elem;
 }
 
-CVM::Type *CVM::CORE::Stack::top()
+CYX::Value *CYX::CORE::Stack::top()
 {
     if (position == 0)
         return nullptr;
@@ -14,14 +14,14 @@ CVM::Type *CVM::CORE::Stack::top()
         return stack[position - 1];
 }
 
-CVM::Type *CVM::CORE::Stack::pop()
+CYX::Value *CYX::CORE::Stack::pop()
 {
     if (position == 0) throw std::out_of_range("Stack out of range! stack pos is 0!");
-    Type *retval = stack[--position];
+    Value *retval = stack[--position];
     return retval;
 }
 
-void CVM::CORE::Stack::pop(int n)
+void CYX::CORE::Stack::pop(int n)
 {
     if (n > position)
         throw std::invalid_argument("Stack out of range! stack pos is " + std::to_string(position) +
@@ -30,7 +30,7 @@ void CVM::CORE::Stack::pop(int n)
         position -= n;
 }
 
-CVM::Type *&CVM::CORE::Stack::operator[](int n)
+CYX::Value *&CYX::CORE::Stack::operator[](int n)
 {
     if (n > position)
         throw std::out_of_range("Stack out of range! stack pos is " + std::to_string(position) + "!");
@@ -38,17 +38,17 @@ CVM::Type *&CVM::CORE::Stack::operator[](int n)
         return stack[n];
 }
 
-CVM::CORE::Stack *CVM::CORE::Stack::preStack()
+CYX::CORE::Stack *CYX::CORE::Stack::preStack()
 {
     return pre_stack;
 }
 
-void CVM::CORE::Stack::setPreStack(CVM::CORE::Stack *preStack)
+void CYX::CORE::Stack::setPreStack(CYX::CORE::Stack *preStack)
 {
     pre_stack = preStack;
 }
 
-int CVM::CORE::Stack::pos() const
+int CYX::CORE::Stack::pos() const
 {
     return position;
 }
