@@ -11,7 +11,7 @@ namespace CYX
     class Value
     {
       public:
-        Value() = delete;
+        Value() = default;
         //
         template<typename T>
         explicit Value(T value) : _value(value){};
@@ -45,6 +45,10 @@ namespace CYX
             if constexpr (std::is_same<T, int>::value) return asInt();
             if constexpr (std::is_same<T, double>::value) return asDouble();
         }
+        bool hasValue()
+        {
+            return _value.index() != 0;
+        }
 
       private:
         std::string asString()
@@ -65,7 +69,7 @@ namespace CYX
         }
 
       private:
-        std::variant<int, double, std::string> _value;
+        std::variant<std::monostate, int, double, std::string> _value;
     };
 
 } // namespace CYX
