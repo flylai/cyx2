@@ -49,6 +49,10 @@ namespace CYX
         {
             return _value.index() != 0;
         }
+        void reset()
+        {
+            _value = std::monostate();
+        }
 
       private:
         std::string asString()
