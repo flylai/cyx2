@@ -84,8 +84,8 @@ COMPILER::Expr *COMPILER::Parser::parseUnaryExpr()
     {
         auto *unary_expr = new UnaryExpr(cur_token.row, cur_token.column);
         unary_expr->op   = cur_token;
-        unary_expr->rhs  = parseUnaryExpr();
         eat();
+        unary_expr->rhs = parseUnaryExpr();
         return unary_expr;
     }
     else if (inOr(cur_token.keyword, Keyword::IDENTIFIER, Keyword::INTEGER, Keyword::DOUBLE, Keyword::STRING))
