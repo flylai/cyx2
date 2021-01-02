@@ -1,6 +1,8 @@
 #ifndef CVM_IR_INSTRUCTION_HPP
 #define CVM_IR_INSTRUCTION_HPP
 
+#include "../common/value.hpp"
+
 #include <any>
 #include <string>
 
@@ -40,6 +42,7 @@ namespace COMPILER
 
         IR_GOTO,
         IR_LABEL,
+        IR_IMPORT,
         IR_INVALID,
     };
 
@@ -60,7 +63,7 @@ namespace COMPILER
         std::string opcode_str;
     };
 
-    const static IROpcodeStr opcode_str[26] = {
+    const static IROpcodeStr opcode_str[27] = {
         { IROpcode::IR_IF, "if" },     { IROpcode::IR_ADD, "+" },       { IROpcode::IR_SUB, "-" },
         { IROpcode::IR_MUL, "*" },     { IROpcode::IR_DIV, "/" },       { IROpcode::IR_MOD, "%" },
         { IROpcode::IR_BAND, "&" },    { IROpcode::IR_BXOR, "^" },      { IROpcode::IR_BOR, "|" },
@@ -75,7 +78,8 @@ namespace COMPILER
 
         { IROpcode::IR_LNOT, "!" },    { IROpcode::IR_BNOT, "!" },
 
-        { IROpcode::IR_GOTO, "goto" }, { IROpcode::IR_LABEL, "label" }, { IROpcode::IR_INVALID, "" },
+        { IROpcode::IR_GOTO, "goto" }, { IROpcode::IR_LABEL, "label" }, { IROpcode::IR_IMPORT, "import" },
+        { IROpcode::IR_INVALID, "" },
 
     };
 
@@ -85,45 +89,41 @@ namespace COMPILER
         IROperandType operand1_type{ IROperandType::INVALID };
         IROperandType operand2_type{ IROperandType::INVALID };
         IROpcode opcode{ IR_INVALID };
-        std::any operand1;
-        std::any operand2;
+        CYX::Value operand1;
+        CYX::Value operand2;
         std::string dest;
+        std::string comment;
 
         std::string toString()
         {
             std::string retval;
-            if (!dest.empty() && ((operand1.has_value() && operand2.has_value()) || opcode == IROpcode::IR_ASSIGN))
-                retval += dest + "=";
+            if (!dest.empty() || opcode == IROpcode::IR_ASSIGN) retval += dest + "=";
             if (opcode == IROpcode::IR_IF || opcode == IROpcode::IR_GOTO) retval += opcode_str[opcode].opcode_str + " ";
-            if (operand1.has_value())
+            if (operand1.hasValue())
             {
-                if (operand1_type == IROperandType::VARIABLE || operand1_type == IROperandType::STRING ||
-                    operand1_type == IROperandType::LABEL)
-                    retval += std::any_cast<std::string>(operand1);
-                else if (operand1_type == IROperandType::INTEGER)
-                    retval += std::to_string(std::any_cast<int>(operand1));
-                else if (operand1_type == IROperandType::DOUBLE)
-                    retval += std::to_string(std::any_cast<double>(operand1));
-                else if (operand1_type == IROperandType::PARAMS)
+                if (operand1_type == IROperandType::PARAMS)
                 {
-                    retval += "PARAMS ";
-                    auto params = std::any_cast<std::vector<std::string>>(operand1);
-                    for (const auto &param : params)
-                    {
-                        retval += param + " ";
-                    }
+                    //    retval += "PARAMS ";
+                    //    auto params = std::any_cast<std::vector<std::string>>(operand1);
+                    //    for (const auto &param : params)
+                    //    {
+                    //        retval += param + " ";
+                    //    }
+                }
+                else
+                {
+                    retval += operand1.as<std::string>();
+                }
+                if (!comment.empty())
+                {
+                    retval += "    ;" + comment;
                 }
             }
 
-            if (operand2.has_value())
+            if (operand2.hasValue())
             {
                 retval += opcode_str[opcode].opcode_str;
-                if (operand2_type == IROperandType::VARIABLE || operand2_type == IROperandType::STRING)
-                    retval += std::any_cast<std::string>(operand2);
-                else if (operand2_type == IROperandType::INTEGER)
-                    retval += std::to_string(std::any_cast<int>(operand2));
-                else if (operand2_type == IROperandType::DOUBLE)
-                    retval += std::to_string(std::any_cast<double>(operand2));
+                retval += operand2.as<std::string>();
             }
             return retval;
         }
@@ -158,6 +158,7 @@ namespace COMPILER
 
                 case Keyword::LNOT: return IROpcode::IR_LNOT;
                 case Keyword::BNOT: return IROpcode::IR_BNOT;
+                default: return IROpcode::IR_INVALID;
             }
         }
     };
