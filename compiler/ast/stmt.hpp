@@ -35,7 +35,7 @@ namespace COMPILER
         };
 
       public:
-        Expr *expr;
+        Expr *expr{ nullptr };
     };
 
     class IfStmt : public Stmt
@@ -48,9 +48,9 @@ namespace COMPILER
         };
 
       public:
-        Expr *cond;
-        BlockStmt *true_block;  // true condition
-        BlockStmt *false_block; // false condition, a.k.a else block
+        Expr *cond{ nullptr };
+        BlockStmt *true_block{ nullptr };  // true condition
+        BlockStmt *false_block{ nullptr }; // false condition, a.k.a else block
     };
 
     class ForStmt : public Stmt
@@ -63,10 +63,10 @@ namespace COMPILER
         };
 
       public:
-        Expr *init;
-        Expr *cond;
-        Expr *final;
-        BlockStmt *block;
+        Expr *init{ nullptr };
+        Expr *cond{ nullptr };
+        Expr *final{ nullptr };
+        BlockStmt *block{ nullptr };
     };
 
     class WhileStmt : public Stmt
@@ -79,8 +79,8 @@ namespace COMPILER
         };
 
       public:
-        Expr *cond;
-        BlockStmt *block;
+        Expr *cond{ nullptr };
+        BlockStmt *block{ nullptr };
     };
 
     class SwitchStmt : public Stmt
@@ -93,7 +93,7 @@ namespace COMPILER
         };
 
       public:
-        Expr *cond;
+        Expr *cond{ nullptr };
         std::vector<MatchStmt *> matches;
     };
 
@@ -107,8 +107,8 @@ namespace COMPILER
         };
 
       public:
-        Expr *cond;
-        BlockStmt *block;
+        Expr *cond{ nullptr };
+        BlockStmt *block{ nullptr };
     };
 
     class FuncDeclStmt : public Stmt
@@ -121,9 +121,9 @@ namespace COMPILER
         };
 
       public:
-        IdentifierExpr *func_name;
+        IdentifierExpr *func_name{ nullptr };
         std::vector<std::string> params;
-        BlockStmt *block;
+        BlockStmt *block{ nullptr };
     };
 
     class BreakStmt : public Stmt
@@ -162,7 +162,7 @@ namespace COMPILER
         };
 
       public:
-        ExprStmt *retval;
+        ExprStmt *retval{ nullptr };
     };
 
     class ImportStmt : public Stmt

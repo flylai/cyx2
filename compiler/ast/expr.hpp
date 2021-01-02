@@ -60,9 +60,9 @@ namespace COMPILER
     {
       public:
         using Expr::Expr;
-        Expr *lhs;
+        Expr *lhs{ nullptr };
         Token op;
-        Expr *rhs;
+        Expr *rhs{ nullptr };
         void visit(ASTVisitor *visitor) override
         {
             visitor->visitBinaryExpr(this);
@@ -74,7 +74,7 @@ namespace COMPILER
       public:
         using Expr::Expr;
         Token op;
-        Expr *rhs;
+        Expr *rhs{ nullptr };
         void visit(ASTVisitor *visitor) override
         {
             visitor->visitUnaryExpr(this);
