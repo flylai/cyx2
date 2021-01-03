@@ -7,12 +7,18 @@
 #include "../symbol.hpp"
 #include "ir_instruction.hpp"
 
+#include <stack>
+
 namespace COMPILER
 {
     class IRGenerator : public ASTVisitor
     {
       public:
         IRGenerator();
+        void visitTree(Tree *ptr) override;
+        std::string irCodeString();
+
+      private:
         //
         void visitUnaryExpr(UnaryExpr *ptr) override;
         void visitBinaryExpr(BinaryExpr *ptr) override;
@@ -21,8 +27,8 @@ namespace COMPILER
         void visitStringExpr(StringExpr *ptr) override;
         void visitAssignExpr(AssignExpr *ptr) override;
         void visitIdentifierExpr(IdentifierExpr *ptr) override;
+        void visitFuncCallExpr(FuncCallExpr *ptr) override;
         //
-        void visitTree(Tree *ptr) override;
         void visitExprStmt(ExprStmt *ptr) override;
         void visitIfStmt(IfStmt *ptr) override;
         void visitForStmt(ForStmt *ptr) override;
@@ -36,25 +42,25 @@ namespace COMPILER
         void visitImportStmt(ImportStmt *ptr) override;
         void visitBlockStmt(BlockStmt *ptr) override;
         //
-
-        void genExpr(COMPILER::Expr *ptr, const std::string &var_name);
-        void genStmt(COMPILER::Stmt *ptr);
-        void genCond(COMPILER::Expr *ptr, const std::string &true_cond, const std::string &false_cond);
-
-        //
         void enterNewScope();
         void exitScope();
         //
         std::string newVariable();
         std::string newLabel();
-        //
-        std::string irCodeString();
+        std::string newLabel(const std::string &label);
+        std::string consumeVariable();
+        std::string consumeLabel();
 
       public:
         int var_cnt{ 0 };
         int label_cnt{ 0 };
         SymbolTable *current_symbol{ nullptr };
         std::vector<IRInstruction> instructions;
+        //
+        std::stack<std::string> tmp_vars;
+        std::stack<std::string> tmp_labels;
+        //
+        CYX::Value cur_value;
     };
 
 } // namespace COMPILER
