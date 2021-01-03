@@ -50,6 +50,10 @@ namespace COMPILER
         std::string newLabel(const std::string &label);
         std::string consumeVariable();
         std::string consumeLabel();
+        //
+        IRInstruction genGoto(const std::string &dest);
+        IRInstruction genLabel(const std::string &label);
+        IRInstruction genIf();
 
       public:
         int var_cnt{ 0 };

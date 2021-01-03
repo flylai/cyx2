@@ -101,60 +101,30 @@ void COMPILER::IRGenerator::visitExprStmt(COMPILER::ExprStmt *ptr)
 
 void COMPILER::IRGenerator::visitIfStmt(COMPILER::IfStmt *ptr)
 {
-    IRInstruction inst_cond;
-    IRInstruction inst_goto_true_label;
-    IRInstruction inst_goto_false_label;
-    IRInstruction inst_goto_out_label;
-    IRInstruction inst_true_label;
-    IRInstruction inst_false_label;
-    IRInstruction inst_out_label;
-
     auto label_true  = newLabel();
     auto label_false = newLabel();
     auto label_out   = newLabel();
     //
     // JMP code
     //
-    inst_cond.opcode = IROpcode::IR_IF;
     ptr->cond->visit(this);
-    inst_cond.operand1      = consumeVariable();
-    inst_cond.operand1_type = IROperandType::STRING;
-    instructions.push_back(inst_cond);
+    instructions.push_back(genIf());
     //
-    inst_goto_true_label.opcode        = IROpcode::IR_GOTO;
-    inst_goto_true_label.operand1      = label_true;
-    inst_goto_true_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_goto_true_label);
+    instructions.push_back(genGoto(label_true));
     //
-    inst_goto_false_label.opcode        = IROpcode::IR_GOTO;
-    inst_goto_false_label.operand1      = label_false;
-    inst_goto_false_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_goto_false_label);
+    instructions.push_back(genGoto(label_false));
     //
     // visit true/false block
     //
-    // true block
-    inst_true_label.opcode        = IROpcode::IR_LABEL;
-    inst_true_label.operand1      = label_true;
-    inst_true_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_true_label);
+    instructions.push_back(genLabel(label_true));
     ptr->true_block->visit(this);
     // end of true block, goto end of if
-    inst_goto_out_label.opcode        = IROpcode::IR_GOTO;
-    inst_goto_out_label.operand1      = label_out;
-    inst_goto_out_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_goto_out_label);
+    instructions.push_back(genGoto(label_out));
     // false block
-    inst_false_label.opcode        = IROpcode::IR_LABEL;
-    inst_false_label.operand1      = label_false;
-    inst_false_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_false_label);
+    instructions.push_back(genLabel(label_false));
     if (ptr->false_block != nullptr) ptr->false_block->visit(this);
     // end of if, exit.
-    inst_out_label.opcode        = IROpcode::IR_LABEL;
-    inst_out_label.operand1      = label_out;
-    inst_out_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_out_label);
+    instructions.push_back(genLabel(label_out));
 }
 
 void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
@@ -178,16 +148,6 @@ void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
     @out
      ....
     */
-    IRInstruction inst_init_label;
-    IRInstruction inst_cond_label;
-    IRInstruction inst_final_label;
-    IRInstruction inst_body_label;
-    IRInstruction inst_out_label;
-    IRInstruction inst_if;
-    IRInstruction inst_goto_cond;
-    IRInstruction inst_goto_final;
-    IRInstruction inst_goto_body;
-    IRInstruction inst_goto_out;
 
     auto label_init  = newLabel();
     auto label_cond  = newLabel();
@@ -195,113 +155,54 @@ void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
     auto label_body  = newLabel();
     auto label_out   = newLabel();
     // init
-    inst_init_label.opcode        = IROpcode::IR_LABEL;
-    inst_init_label.operand1      = label_init;
-    inst_init_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_init_label);
+    instructions.push_back(genLabel(label_init));
     ptr->init->visit(this);
     // cond
-    inst_cond_label.opcode        = IROpcode::IR_LABEL;
-    inst_cond_label.operand1      = label_cond;
-    inst_cond_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_cond_label);
+    instructions.push_back(genLabel(label_cond));
     ptr->cond->visit(this);
     // if
-    inst_if.opcode        = IROpcode::IR_IF;
-    inst_if.operand1      = consumeVariable();
-    inst_if.operand1_type = IROperandType::STRING;
-    instructions.push_back(inst_if);
+    instructions.push_back(genIf());
     // if true
-    inst_goto_body.opcode        = IROpcode::IR_GOTO;
-    inst_goto_body.operand1      = label_body;
-    inst_goto_body.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_goto_body);
+    instructions.push_back(genGoto(label_body));
     // if false
-    inst_goto_out.opcode        = IROpcode::IR_GOTO;
-    inst_goto_out.operand1      = label_out;
-    inst_goto_out.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_goto_out);
+    instructions.push_back(genGoto(label_out));
     // final
-    inst_final_label.opcode        = IROpcode::IR_LABEL;
-    inst_final_label.operand1      = label_final;
-    inst_final_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_final_label);
+    instructions.push_back(genLabel(label_final));
     ptr->final->visit(this);
 
-    inst_goto_cond.opcode        = IROpcode::IR_GOTO;
-    inst_goto_cond.operand1      = label_cond;
-    inst_goto_cond.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_goto_cond);
+    instructions.push_back(genGoto(label_cond));
     // body
-    inst_body_label.opcode        = IROpcode::IR_LABEL;
-    inst_body_label.operand1      = label_body;
-    inst_body_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_body_label);
+    instructions.push_back(genLabel(label_body));
     ptr->block->visit(this);
 
-    inst_goto_final.opcode        = IROpcode::IR_GOTO;
-    inst_goto_final.operand1      = label_final;
-    inst_goto_final.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_goto_final);
+    instructions.push_back(genGoto(label_final));
     // out
-    inst_out_label.opcode        = IROpcode::IR_LABEL;
-    inst_out_label.operand1      = label_out;
-    inst_out_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_out_label);
+    instructions.push_back(genLabel(label_out));
 }
 
 void COMPILER::IRGenerator::visitWhileStmt(COMPILER::WhileStmt *ptr)
 {
-    IRInstruction inst_cond_label;
-    IRInstruction inst_body_label;
-    IRInstruction inst_out_label;
-    IRInstruction inst_if;
-    IRInstruction inst_goto_body;
-    IRInstruction inst_goto_cond;
-    IRInstruction inst_goto_out;
-
     auto label_cond = newLabel();
     auto label_body = newLabel();
     auto label_out  = newLabel();
 
-    inst_cond_label.opcode        = IROpcode::IR_LABEL;
-    inst_cond_label.operand1      = label_cond;
-    inst_cond_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_cond_label);
+    instructions.push_back(genLabel(label_cond));
     ptr->cond->visit(this);
 
     // if
-    inst_if.opcode        = IROpcode::IR_IF;
-    inst_if.operand1      = consumeVariable();
-    inst_if.operand1_type = IROperandType::STRING;
-    instructions.push_back(inst_if);
+    instructions.push_back(genIf());
     // if true
-    inst_goto_body.opcode        = IROpcode::IR_GOTO;
-    inst_goto_body.operand1      = label_body;
-    inst_goto_body.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_goto_body);
+    instructions.push_back(genGoto(label_body));
     // if false
-    inst_goto_out.opcode        = IROpcode::IR_GOTO;
-    inst_goto_out.operand1      = label_out;
-    inst_goto_out.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_goto_out);
+    instructions.push_back(genGoto(label_out));
 
     // body
-    inst_body_label.opcode        = IROpcode::IR_LABEL;
-    inst_body_label.operand1      = label_body;
-    inst_body_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_body_label);
+    instructions.push_back(genLabel(label_body));
     ptr->block->visit(this);
 
-    inst_goto_cond.opcode        = IROpcode::IR_GOTO;
-    inst_goto_cond.operand1      = label_cond;
-    inst_goto_cond.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_goto_cond);
+    instructions.push_back(genGoto(label_cond));
     // out
-    inst_out_label.opcode        = IROpcode::IR_LABEL;
-    inst_out_label.operand1      = label_out;
-    inst_out_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_out_label);
+    instructions.push_back(genLabel(label_out));
 }
 
 void COMPILER::IRGenerator::visitSwitchStmt(COMPILER::SwitchStmt *ptr)
@@ -316,10 +217,9 @@ void COMPILER::IRGenerator::visitFuncDeclStmt(COMPILER::FuncDeclStmt *ptr)
 {
     IRInstruction inst_func_name_label;
 
-    inst_func_name_label.opcode        = IROpcode::IR_LABEL;
-    inst_func_name_label.operand1      = newLabel("@" + ptr->func_name->value);
-    inst_func_name_label.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_func_name_label);
+    auto func_name = newLabel(ptr->func_name->value);
+
+    instructions.push_back(genLabel(func_name));
 
     // TODO: params
 
@@ -425,4 +325,31 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
     {
         x->visit(this);
     }
+}
+
+COMPILER::IRInstruction COMPILER::IRGenerator::genGoto(const std::string &dest)
+{
+    IRInstruction inst;
+    inst.opcode        = IROpcode::IR_GOTO;
+    inst.operand1      = dest;
+    inst.operand1_type = IROperandType::LABEL;
+    return inst;
+}
+
+COMPILER::IRInstruction COMPILER::IRGenerator::genLabel(const std::string &label)
+{
+    IRInstruction inst;
+    inst.opcode        = IROpcode::IR_LABEL;
+    inst.operand1      = label;
+    inst.operand1_type = IROperandType::LABEL;
+    return inst;
+}
+
+COMPILER::IRInstruction COMPILER::IRGenerator::genIf()
+{
+    IRInstruction inst;
+    inst.opcode        = IROpcode::IR_IF;
+    inst.operand1      = consumeVariable();
+    inst.operand1_type = IROperandType::STRING;
+    return inst;
 }
