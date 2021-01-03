@@ -108,23 +108,23 @@ void COMPILER::IRGenerator::visitIfStmt(COMPILER::IfStmt *ptr)
     // JMP code
     //
     ptr->cond->visit(this);
-    instructions.push_back(genIf());
+    instructions.push_back(genIf("if expr"));
     //
-    instructions.push_back(genGoto(label_true));
+    instructions.push_back(genGoto(label_true, "if true"));
     //
-    instructions.push_back(genGoto(label_false));
+    instructions.push_back(genGoto(label_false, "if false"));
     //
     // visit true/false block
     //
-    instructions.push_back(genLabel(label_true));
+    instructions.push_back(genLabel(label_true, "true label"));
     ptr->true_block->visit(this);
     // end of true block, goto end of if
-    instructions.push_back(genGoto(label_out));
+    instructions.push_back(genGoto(label_out, "if goto out"));
     // false block
-    instructions.push_back(genLabel(label_false));
+    instructions.push_back(genLabel(label_false, "false"));
     if (ptr->false_block != nullptr) ptr->false_block->visit(this);
     // end of if, exit.
-    instructions.push_back(genLabel(label_out));
+    instructions.push_back(genLabel(label_out, "if out"));
 }
 
 void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
@@ -155,29 +155,29 @@ void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
     auto label_body  = newLabel();
     auto label_out   = newLabel();
     // init
-    instructions.push_back(genLabel(label_init));
+    instructions.push_back(genLabel(label_init, "for loop init"));
     ptr->init->visit(this);
     // cond
-    instructions.push_back(genLabel(label_cond));
+    instructions.push_back(genLabel(label_cond, "for loop cond"));
     ptr->cond->visit(this);
     // if
-    instructions.push_back(genIf());
+    instructions.push_back(genIf("for loop if(check cond true/false)"));
     // if true
-    instructions.push_back(genGoto(label_body));
+    instructions.push_back(genGoto(label_body, "for loop goto body"));
     // if false
-    instructions.push_back(genGoto(label_out));
+    instructions.push_back(genGoto(label_out, "for loop goto out"));
     // final
-    instructions.push_back(genLabel(label_final));
+    instructions.push_back(genLabel(label_final, "for loop final"));
     ptr->final->visit(this);
 
-    instructions.push_back(genGoto(label_cond));
+    instructions.push_back(genGoto(label_cond, "for loop goto cond"));
     // body
-    instructions.push_back(genLabel(label_body));
+    instructions.push_back(genLabel(label_body, "for loop body"));
     ptr->block->visit(this);
 
-    instructions.push_back(genGoto(label_final));
+    instructions.push_back(genGoto(label_final, "for loop goto final"));
     // out
-    instructions.push_back(genLabel(label_out));
+    instructions.push_back(genLabel(label_out, "for loop out"));
 }
 
 void COMPILER::IRGenerator::visitWhileStmt(COMPILER::WhileStmt *ptr)
@@ -186,23 +186,23 @@ void COMPILER::IRGenerator::visitWhileStmt(COMPILER::WhileStmt *ptr)
     auto label_body = newLabel();
     auto label_out  = newLabel();
 
-    instructions.push_back(genLabel(label_cond));
+    instructions.push_back(genLabel(label_cond, "while loop cond"));
     ptr->cond->visit(this);
 
     // if
-    instructions.push_back(genIf());
+    instructions.push_back(genIf("while loop if(check cond true/false)"));
     // if true
-    instructions.push_back(genGoto(label_body));
+    instructions.push_back(genGoto(label_body, "while loop goto body"));
     // if false
-    instructions.push_back(genGoto(label_out));
+    instructions.push_back(genGoto(label_out, "while loop goto out"));
 
     // body
-    instructions.push_back(genLabel(label_body));
+    instructions.push_back(genLabel(label_body, "while loop body"));
     ptr->block->visit(this);
 
-    instructions.push_back(genGoto(label_cond));
+    instructions.push_back(genGoto(label_cond, "while loop goto cond"));
     // out
-    instructions.push_back(genLabel(label_out));
+    instructions.push_back(genLabel(label_out, "while loop out"));
 }
 
 void COMPILER::IRGenerator::visitSwitchStmt(COMPILER::SwitchStmt *ptr)
@@ -219,7 +219,7 @@ void COMPILER::IRGenerator::visitFuncDeclStmt(COMPILER::FuncDeclStmt *ptr)
 
     auto func_name = newLabel(ptr->func_name->value);
 
-    instructions.push_back(genLabel(func_name));
+    instructions.push_back(genLabel(func_name, "function declare"));
 
     // TODO: params
 
@@ -327,29 +327,32 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
     }
 }
 
-COMPILER::IRInstruction COMPILER::IRGenerator::genGoto(const std::string &dest)
+COMPILER::IRInstruction COMPILER::IRGenerator::genGoto(const std::string &dest, const std::string &comment)
 {
     IRInstruction inst;
     inst.opcode        = IROpcode::IR_GOTO;
     inst.operand1      = dest;
     inst.operand1_type = IROperandType::LABEL;
+    inst.comment       = comment;
     return inst;
 }
 
-COMPILER::IRInstruction COMPILER::IRGenerator::genLabel(const std::string &label)
+COMPILER::IRInstruction COMPILER::IRGenerator::genLabel(const std::string &label, const std::string &comment)
 {
     IRInstruction inst;
     inst.opcode        = IROpcode::IR_LABEL;
     inst.operand1      = label;
     inst.operand1_type = IROperandType::LABEL;
+    inst.comment       = comment;
     return inst;
 }
 
-COMPILER::IRInstruction COMPILER::IRGenerator::genIf()
+COMPILER::IRInstruction COMPILER::IRGenerator::genIf(const std::string &comment)
 {
     IRInstruction inst;
     inst.opcode        = IROpcode::IR_IF;
     inst.operand1      = consumeVariable();
     inst.operand1_type = IROperandType::STRING;
+    inst.comment       = comment;
     return inst;
 }

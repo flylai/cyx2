@@ -51,9 +51,9 @@ namespace COMPILER
         std::string consumeVariable();
         std::string consumeLabel();
         //
-        IRInstruction genGoto(const std::string &dest);
-        IRInstruction genLabel(const std::string &label);
-        IRInstruction genIf();
+        IRInstruction genGoto(const std::string &dest, const std::string &comment = "");
+        IRInstruction genLabel(const std::string &label, const std::string &comment = "");
+        IRInstruction genIf(const std::string &comment);
 
       public:
         int var_cnt{ 0 };
