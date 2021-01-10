@@ -6,49 +6,32 @@
 #include "../ast/expr.hpp"
 #include "../ast/stmt.hpp"
 #include "basicblock.hpp"
+#include "cfg.hpp"
+#include "ir_instruction.hpp"
 
 #include <unordered_map>
 
 namespace COMPILER
 {
-    class CFGBuilder : public ASTVisitor
+    class CFGBuilder
     {
       public:
-        void visitUnaryExpr(UnaryExpr *ptr) override;
-        void visitBinaryExpr(BinaryExpr *ptr) override;
-        void visitIntExpr(IntExpr *ptr) override;
-        void visitDoubleExpr(DoubleExpr *ptr) override;
-        void visitStringExpr(StringExpr *ptr) override;
-        void visitAssignExpr(AssignExpr *ptr) override;
-        void visitIdentifierExpr(IdentifierExpr *ptr) override;
-        void visitFuncCallExpr(FuncCallExpr *ptr) override;
-        void visitExprStmt(ExprStmt *ptr) override;
-        void visitIfStmt(IfStmt *ptr) override;
-        void visitForStmt(ForStmt *ptr) override;
-        void visitWhileStmt(WhileStmt *ptr) override;
-        void visitSwitchStmt(SwitchStmt *ptr) override;
-        void visitMatchStmt(MatchStmt *ptr) override;
-        void visitFuncDeclStmt(FuncDeclStmt *ptr) override;
-        void visitBreakStmt(BreakStmt *ptr) override;
-        void visitContinueStmt(ContinueStmt *ptr) override;
-        void visitReturnStmt(ReturnStmt *ptr) override;
-        void visitImportStmt(ImportStmt *ptr) override;
-        void visitBlockStmt(BlockStmt *ptr) override;
-        void visitTree(Tree *ptr) override;
-
-        //
-        void dfs(BasicBlock *block);
+        void setInsts(const std::vector<IRInstruction *> &inst);
+        void buildCFG();
+        void cfg2Graph();
 
       public:
         std::string graph;
 
       private:
-        BasicBlock *newBasicBlock(const std::string &name = "", bool force = false);
+        BasicBlock *getBasicBlock(const std::string &name = "");
 
       private:
         BasicBlock *cur_bb{ nullptr };
         BasicBlock *entry{ nullptr };
         std::unordered_map<BasicBlock *, bool> vis;
+        std::unordered_map<std::string, BasicBlock *> basic_blocks;
+        std::vector<IRInstruction *> insts;
     };
 } // namespace COMPILER
 
