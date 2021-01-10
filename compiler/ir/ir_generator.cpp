@@ -1,42 +1,42 @@
 #include "ir_generator.h"
 void COMPILER::IRGenerator::visitUnaryExpr(COMPILER::UnaryExpr *ptr)
 {
-    IRInstruction inst;
+    auto *inst = new IRInstruction;
     ptr->rhs->visit(this);
     if (cur_value.hasValue())
     {
-        inst.operand1 = cur_value;
+        inst->operand1 = cur_value;
         cur_value.reset();
     }
     else
-        inst.operand1 = consumeVariable();
-    inst.operand1_type = IROperandType::VARIABLE;
-    inst.opcode        = COMPILER::IRInstruction::token2IROp(ptr->op.keyword);
+        inst->operand1 = consumeVariable();
+    inst->operand1_type = IROperandType::VARIABLE;
+    inst->opcode        = COMPILER::IRInstruction::token2IROp(ptr->op.keyword);
 
-    inst.dest = newVariable();
+    inst->dest = newVariable();
     instructions.push_back(inst);
 }
 
 void COMPILER::IRGenerator::visitBinaryExpr(COMPILER::BinaryExpr *ptr)
 {
-    IRInstruction inst;
-    inst.opcode = COMPILER::IRInstruction::token2IROp(ptr->op.keyword);
+    auto *inst   = new IRInstruction;
+    inst->opcode = COMPILER::IRInstruction::token2IROp(ptr->op.keyword);
 
     ptr->lhs->visit(this);
     if (cur_value.hasValue())
-        inst.operand1 = cur_value, cur_value.reset();
+        inst->operand1 = cur_value, cur_value.reset();
     else
-        inst.operand1 = consumeVariable();
-    inst.operand1_type = IROperandType::VARIABLE;
+        inst->operand1 = consumeVariable();
+    inst->operand1_type = IROperandType::VARIABLE;
 
     ptr->rhs->visit(this);
     if (cur_value.hasValue())
-        inst.operand2 = cur_value, cur_value.reset();
+        inst->operand2 = cur_value, cur_value.reset();
     else
-        inst.operand2 = consumeVariable();
-    inst.operand2_type = IROperandType::VARIABLE;
+        inst->operand2 = consumeVariable();
+    inst->operand2_type = IROperandType::VARIABLE;
 
-    inst.dest = newVariable();
+    inst->dest = newVariable();
     instructions.push_back(inst);
 }
 
@@ -57,22 +57,22 @@ void COMPILER::IRGenerator::visitStringExpr(COMPILER::StringExpr *ptr)
 
 void COMPILER::IRGenerator::visitAssignExpr(COMPILER::AssignExpr *ptr)
 {
-    IRInstruction inst;
-    inst.opcode = IROpcode::IR_ASSIGN;
+    auto *inst   = new IRInstruction;
+    inst->opcode = IROpcode::IR_ASSIGN;
 
     ptr->lhs->visit(this);
-    inst.dest = cur_value.as<std::string>();
+    inst->dest = cur_value.as<std::string>();
     cur_value.reset();
 
     ptr->rhs->visit(this);
     if (cur_value.hasValue())
     {
-        inst.operand1 = cur_value;
+        inst->operand1 = cur_value;
         cur_value.reset();
     }
     else
-        inst.operand1 = consumeVariable();
-    inst.operand1_type = IROperandType::VARIABLE;
+        inst->operand1 = consumeVariable();
+    inst->operand1_type = IROperandType::VARIABLE;
     instructions.push_back(inst);
 }
 
@@ -83,15 +83,15 @@ void COMPILER::IRGenerator::visitIdentifierExpr(COMPILER::IdentifierExpr *ptr)
 
 void COMPILER::IRGenerator::visitFuncCallExpr(COMPILER::FuncCallExpr *ptr)
 {
-    IRInstruction inst_var;
+    auto *inst = new IRInstruction;
 
     auto var_tmp = newVariable();
 
-    inst_var.dest          = var_tmp;
-    inst_var.opcode        = IROpcode::IR_ASSIGN;
-    inst_var.operand1      = ptr->func_name;
-    inst_var.operand1_type = IROperandType::LABEL;
-    instructions.push_back(inst_var);
+    inst->dest          = var_tmp;
+    inst->opcode        = IROpcode::IR_ASSIGN;
+    inst->operand1      = ptr->func_name;
+    inst->operand1_type = IROperandType::LABEL;
+    instructions.push_back(inst);
 }
 
 void COMPILER::IRGenerator::visitExprStmt(COMPILER::ExprStmt *ptr)
@@ -157,6 +157,7 @@ void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
     // init
     instructions.push_back(genLabel(label_init, "for loop init"));
     ptr->init->visit(this);
+    instructions.push_back(genGoto(label_cond));
     // cond
     instructions.push_back(genLabel(label_cond, "for loop cond"));
     ptr->cond->visit(this);
@@ -240,10 +241,10 @@ void COMPILER::IRGenerator::visitReturnStmt(COMPILER::ReturnStmt *ptr)
 
 void COMPILER::IRGenerator::visitImportStmt(COMPILER::ImportStmt *ptr)
 {
-    IRInstruction inst;
-    inst.opcode        = IROpcode::IR_IMPORT;
-    inst.operand1      = ptr->path;
-    inst.operand1_type = IROperandType::STRING;
+    auto *inst          = new IRInstruction;
+    inst->opcode        = IROpcode::IR_IMPORT;
+    inst->operand1      = ptr->path;
+    inst->operand1_type = IROperandType::STRING;
     instructions.push_back(inst);
 }
 
@@ -279,13 +280,13 @@ std::string COMPILER::IRGenerator::newVariable()
 
 std::string COMPILER::IRGenerator::newLabel()
 {
-    tmp_labels.push("@l" + std::to_string(label_cnt++));
+    tmp_labels.push("l" + std::to_string(label_cnt++));
     return tmp_labels.top();
 }
 
 std::string COMPILER::IRGenerator::newLabel(const std::string &label)
 {
-    std::string tmp = "@" + label;
+    std::string tmp = "" + label;
     tmp_labels.push(tmp);
     return tmp;
 }
@@ -311,10 +312,10 @@ COMPILER::IRGenerator::IRGenerator()
 
 std::string COMPILER::IRGenerator::irCodeString()
 {
-    std::string ir_code;
-    for (auto x : instructions)
+    std::string ir_code = "\n";
+    for (auto *x : instructions)
     {
-        ir_code += x.toString() + "\n";
+        ir_code += x->toString() + "\n";
     }
     return ir_code;
 }
@@ -327,32 +328,42 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
     }
 }
 
-COMPILER::IRInstruction COMPILER::IRGenerator::genGoto(const std::string &dest, const std::string &comment)
+COMPILER::IRInstruction *COMPILER::IRGenerator::genGoto(const std::string &dest, const std::string &comment)
 {
-    IRInstruction inst;
-    inst.opcode        = IROpcode::IR_GOTO;
-    inst.operand1      = dest;
-    inst.operand1_type = IROperandType::LABEL;
-    inst.comment       = comment;
+    auto *inst          = new IRInstruction;
+    inst->opcode        = IROpcode::IR_GOTO;
+    inst->operand1      = dest;
+    inst->operand1_type = IROperandType::LABEL;
+    inst->comment       = comment;
     return inst;
 }
 
-COMPILER::IRInstruction COMPILER::IRGenerator::genLabel(const std::string &label, const std::string &comment)
+COMPILER::IRInstruction *COMPILER::IRGenerator::genLabel(const std::string &label, const std::string &comment)
 {
-    IRInstruction inst;
-    inst.opcode        = IROpcode::IR_LABEL;
-    inst.operand1      = label;
-    inst.operand1_type = IROperandType::LABEL;
-    inst.comment       = comment;
+    auto *inst          = new IRInstruction;
+    inst->opcode        = IROpcode::IR_LABEL;
+    inst->operand1      = label;
+    inst->operand1_type = IROperandType::LABEL;
+    inst->comment       = comment;
     return inst;
 }
 
-COMPILER::IRInstruction COMPILER::IRGenerator::genIf(const std::string &comment)
+COMPILER::IRInstruction *COMPILER::IRGenerator::genIf(const std::string &comment)
 {
-    IRInstruction inst;
-    inst.opcode        = IROpcode::IR_IF;
-    inst.operand1      = consumeVariable();
-    inst.operand1_type = IROperandType::STRING;
-    inst.comment       = comment;
+    auto *inst          = new IRInstruction;
+    inst->opcode        = IROpcode::IR_IF;
+    inst->operand1      = consumeVariable();
+    inst->operand1_type = IROperandType::STRING;
+    inst->comment       = comment;
     return inst;
+}
+
+const std::vector<COMPILER::IRInstruction *> &COMPILER::IRGenerator::insts() const
+{
+    return instructions;
+}
+
+COMPILER::IRGenerator::~IRGenerator()
+{
+    // TODO
 }

@@ -15,7 +15,9 @@ namespace COMPILER
     {
       public:
         IRGenerator();
+        ~IRGenerator();
         void visitTree(Tree *ptr) override;
+        const std::vector<IRInstruction *> &insts() const;
         std::string irCodeString();
 
       private:
@@ -51,15 +53,15 @@ namespace COMPILER
         std::string consumeVariable();
         std::string consumeLabel();
         //
-        IRInstruction genGoto(const std::string &dest, const std::string &comment = "");
-        IRInstruction genLabel(const std::string &label, const std::string &comment = "");
-        IRInstruction genIf(const std::string &comment);
+        IRInstruction *genGoto(const std::string &dest, const std::string &comment = "");
+        IRInstruction *genLabel(const std::string &label, const std::string &comment = "");
+        IRInstruction *genIf(const std::string &comment);
 
       public:
         int var_cnt{ 0 };
         int label_cnt{ 0 };
         SymbolTable *current_symbol{ nullptr };
-        std::vector<IRInstruction> instructions;
+        std::vector<IRInstruction *> instructions;
         //
         std::stack<std::string> tmp_vars;
         std::stack<std::string> tmp_labels;
