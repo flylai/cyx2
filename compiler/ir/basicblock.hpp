@@ -4,60 +4,54 @@
 #include "../ast/ast.hpp"
 #include "ir_instruction.hpp"
 
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 namespace COMPILER
 {
-    static int BASICBLOCK_COUNT = 0;
+    static int BASIC_BLOCK_COUNT = 0;
     class BasicBlock
     {
       public:
-        explicit BasicBlock() : name("block"), block_index(BASICBLOCK_COUNT++){};
-        explicit BasicBlock(std::string name) : name(std::move(name)), block_index(BASICBLOCK_COUNT++){};
-
-        template<typename... T>
-        void addInst(Expr *first, T *...others)
+        explicit BasicBlock() : name("cfg_auto_gen_"), block_index(BASIC_BLOCK_COUNT++){};
+        explicit BasicBlock(const std::string &name)
         {
-            addInst(first);
-            addInst(others...);
-        }
-        void addInst(Expr *instruction)
+            if (name.empty())
+            {
+                BasicBlock();
+            }
+            else
+            {
+                this->name  = name;
+                block_index = BASIC_BLOCK_COUNT++;
+            }
+        };
+        //
+        void addInst(IRInstruction *instruction)
         {
             _insts.push_back(instruction);
         }
         //
-        template<typename... T>
-        void addPre(BasicBlock *first, T *...others)
-        {
-            addPre(first);
-            addPre(others...);
-        }
         void addPre(BasicBlock *block)
         {
-            _pres.push_back(block);
+            _pres.insert(block);
         }
         //
-        template<typename... T>
-        void addSucc(BasicBlock *first, T *...others)
-        {
-            addSucc(first);
-            addSucc(others...);
-        }
         void addSucc(BasicBlock *block)
         {
-            _succs.push_back(block);
+            _succs.insert(block);
         }
         //
-        const std::vector<BasicBlock *> &succs() const
+        const std::unordered_set<BasicBlock *> &succs() const
         {
             return _succs;
         }
-        const std::vector<BasicBlock *> &pres() const
+        const std::unordered_set<BasicBlock *> &pres() const
         {
             return _pres;
         }
-        const std::vector<Expr *> &insts() const
+        const std::vector<IRInstruction *> &insts() const
         {
             return _insts;
         }
@@ -67,9 +61,9 @@ namespace COMPILER
         int block_index;
 
       private:
-        std::vector<Expr *> _insts;
-        std::vector<BasicBlock *> _pres;
-        std::vector<BasicBlock *> _succs;
+        std::vector<IRInstruction *> _insts;
+        std::unordered_set<BasicBlock *> _pres;
+        std::unordered_set<BasicBlock *> _succs;
     };
 } // namespace COMPILER
 
