@@ -3,7 +3,6 @@
 
 #include "../common/value.hpp"
 
-#include <any>
 #include <string>
 
 // part of `../token.hpp`
@@ -94,7 +93,7 @@ namespace COMPILER
         std::string dest;
         std::string comment;
 
-        std::string toString()
+        std::string toString(bool display_comment = true)
         {
             std::string retval;
             if (!dest.empty() || opcode == IROpcode::IR_ASSIGN) retval += dest + "=";
@@ -114,16 +113,20 @@ namespace COMPILER
                 {
                     retval += operand1.as<std::string>();
                 }
-                if (!comment.empty())
-                {
-                    retval += "    ;" + comment;
-                }
             }
 
             if (operand2.hasValue())
             {
                 retval += opcode_str[opcode].opcode_str;
                 retval += operand2.as<std::string>();
+            }
+            if (display_comment && !comment.empty())
+            {
+                while (retval.size() < 20)
+                {
+                    retval += " ";
+                }
+                retval += ";" + comment;
             }
             return retval;
         }
