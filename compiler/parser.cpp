@@ -164,7 +164,7 @@ COMPILER::Expr *COMPILER::Parser::parseExpr(int priority)
                            Keyword::EQ, Keyword::NE, Keyword::LE, Keyword::LT, Keyword::GE, Keyword::GT,
 
                            Keyword::ASSIGN, Keyword::ADD_ASSIGN, Keyword::SUB_ASSIGN, Keyword::MUL_ASSIGN,
-                           Keyword::SUB_ASSIGN, Keyword::MOD_ASSIGN
+                           Keyword::SUB_ASSIGN, Keyword::MOD_ASSIGN, Keyword::DIV_ASSIGN
 
     );
 }
