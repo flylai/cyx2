@@ -69,10 +69,6 @@ COMPILER::Token COMPILER::Lexer::nextToken()
 
     switch (current_char)
     {
-        CASE_TOKEN('+', Keyword::ADD);
-        CASE_TOKEN('-', Keyword::SUB);
-        CASE_TOKEN('/', Keyword::DIV);
-        CASE_TOKEN('%', Keyword::MOD);
         CASE_TOKEN('(', Keyword::LPAREN);
         CASE_TOKEN(')', Keyword::RPAREN);
         CASE_TOKEN('{', Keyword::LBRACE);
@@ -81,12 +77,19 @@ COMPILER::Token COMPILER::Lexer::nextToken()
         CASE_TOKEN(']', Keyword::RBRACKET);
         CASE_TOKEN('^', Keyword::BXOR);
         CASE_TOKEN('~', Keyword::BNOT);
-        CASE_TOKEN('!', Keyword::LNOT);
         CASE_TOKEN(';', Keyword::SEMICOLON);
         CASE_TOKEN(':', Keyword::COLON);
         CASE_TOKEN(',', Keyword::COMMA);
         case '\'':
         case '"': return string();
+        case '!':
+            advance();
+            if (current_char == '=')
+            {
+                advance();
+                return MK_TOKEN2(Keyword::NE, "!=");
+            }
+            return MK_TOKEN2(Keyword::LNOT, "!");
         case '&':
             advance();
             if (current_char == '&')
@@ -103,6 +106,33 @@ COMPILER::Token COMPILER::Lexer::nextToken()
                 return MK_TOKEN2(Keyword::LOR, "||");
             }
             return MK_TOKEN2(Keyword::BOR, "|");
+
+        case '+':
+            advance();
+            if (current_char == '+')
+            {
+                advance();
+                return MK_TOKEN2(Keyword::SELFADD, "++");
+            }
+            else if (current_char == '=')
+            {
+                advance();
+                return MK_TOKEN2(Keyword::ADD_ASSIGN, "+=");
+            }
+            return MK_TOKEN2(Keyword::ADD, "+");
+        case '-':
+            advance();
+            if (current_char == '-')
+            {
+                advance();
+                return MK_TOKEN2(Keyword::SELFSUB, "--");
+            }
+            else if (current_char == '=')
+            {
+                advance();
+                return MK_TOKEN2(Keyword::SUB_ASSIGN, "-=");
+            }
+            return MK_TOKEN2(Keyword::SUB, "-");
         case '*':
             advance();
             if (current_char == '*')
@@ -110,7 +140,28 @@ COMPILER::Token COMPILER::Lexer::nextToken()
                 advance();
                 return MK_TOKEN2(Keyword::EXP, "**");
             }
+            else if (current_char == '=')
+            {
+                advance();
+                return MK_TOKEN2(Keyword::MUL_ASSIGN, "*=");
+            }
             return MK_TOKEN2(Keyword::MUL, "*");
+        case '/':
+            advance();
+            if (current_char == '=')
+            {
+                advance();
+                return MK_TOKEN2(Keyword::DIV_ASSIGN, "/=");
+            }
+            return MK_TOKEN2(Keyword::SUB, "/");
+        case '%':
+            advance();
+            if (current_char == '=')
+            {
+                advance();
+                return MK_TOKEN2(Keyword::MOD_ASSIGN, "%=");
+            }
+            return MK_TOKEN2(Keyword::MOD, "%");
         case 'a' ... 'z':
         case 'A' ... 'Z':
         case '_': return identifier();
@@ -121,6 +172,11 @@ COMPILER::Token COMPILER::Lexer::nextToken()
             {
                 advance();
                 return MK_TOKEN2(Keyword::EQ, "==");
+            }
+            else if (current_char == '>')
+            {
+                advance();
+                return MK_TOKEN2(Keyword::POINT_TO, "=>");
             }
             return MK_TOKEN2(Keyword::ASSIGN, "=");
         case '<':

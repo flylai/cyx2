@@ -30,9 +30,21 @@ void COMPILER::Parser::program()
         ast->stmts.push_back(parseStmt());
     }
 
-    auto cfg_builder = new CFGBuilder;
-    cfg_builder->visitTree(ast);
+    auto *ir_generator = new IRGenerator;
+    ir_generator->visitTree(ast);
+    log(ir_generator->irCodeString());
+
+    auto *cfg_builder = new CFGBuilder();
+    cfg_builder->setInsts(ir_generator->insts());
+    cfg_builder->buildCFG();
+    cfg_builder->cfg2Graph();
     log(cfg_builder->graph);
+
+    CFG cfg;
+    cfg.basic_blocks = cfg_builder->basicBlock();
+    cfg.entry        = cfg_builder->entry;
+    cfg.buildDominateTree();
+    cfg.showIDom();
     // do something.
 }
 
@@ -50,9 +62,22 @@ COMPILER::Expr *COMPILER::Parser::parsePrimaryExpr()
             func_call_expr->args      = std::move(parseArgListStmt());
             return func_call_expr;
         }
-        auto *identity_expr  = new IdentifierExpr(pre_token.row, pre_token.column);
-        identity_expr->value = pre_token.value;
-        return identity_expr;
+        else if (inOr(cur_token.keyword, Keyword::SELFADD, Keyword::SELFSUB))
+        {
+            // suffix unary expr
+            // a++, b--
+            auto unary_expr = new UnaryExpr(pre_token.row, pre_token.column);
+            Keyword keyword = cur_token.keyword == Keyword::SELFSUB ? Keyword::SELFSUB_SUFFIX : Keyword::SELFADD_SUFFIX;
+            auto identifier_expr   = new IdentifierExpr(pre_token.row, pre_token.column);
+            identifier_expr->value = pre_token.value;
+            unary_expr->op         = Token(keyword, pre_token.row, pre_token.column);
+            unary_expr->rhs        = identifier_expr;
+            eat();
+            return unary_expr;
+        }
+        auto *identifier_expr  = new IdentifierExpr(pre_token.row, pre_token.column);
+        identifier_expr->value = pre_token.value;
+        return identifier_expr;
     }
     else if (cur_token.keyword == Keyword::INTEGER)
     {
@@ -80,10 +105,19 @@ COMPILER::Expr *COMPILER::Parser::parsePrimaryExpr()
 
 COMPILER::Expr *COMPILER::Parser::parseUnaryExpr()
 {
-    if (inOr(cur_token.keyword, Keyword::SUB, Keyword::LNOT, Keyword::BNOT))
+    if (inOr(cur_token.keyword, Keyword::SUB, Keyword::LNOT, Keyword::BNOT, //
+             Keyword::SELFADD, Keyword::SELFSUB))
     {
         auto *unary_expr = new UnaryExpr(cur_token.row, cur_token.column);
-        unary_expr->op   = cur_token;
+        if (inOr(cur_token.keyword, Keyword::SELFADD, Keyword::SELFSUB))
+        {
+            Keyword keyword = cur_token.keyword == Keyword::SELFSUB ? Keyword::SELFSUB_PREFIX : Keyword::SELFADD_PREFIX;
+            unary_expr->op  = Token(keyword, cur_token.row, cur_token.column);
+        }
+        else
+        {
+            unary_expr->op = cur_token;
+        }
         eat();
         unary_expr->rhs = parseUnaryExpr();
         return unary_expr;
@@ -129,7 +163,8 @@ COMPILER::Expr *COMPILER::Parser::parseExpr(int priority)
 
                            Keyword::EQ, Keyword::NE, Keyword::LE, Keyword::LT, Keyword::GE, Keyword::GT,
 
-                           Keyword::ASSIGN
+                           Keyword::ASSIGN, Keyword::ADD_ASSIGN, Keyword::SUB_ASSIGN, Keyword::MUL_ASSIGN,
+                           Keyword::SUB_ASSIGN, Keyword::MOD_ASSIGN
 
     );
 }
@@ -326,8 +361,7 @@ COMPILER::SwitchStmt *COMPILER::Parser::parseSwitchStmt()
         match_stmt->cond = parsePrimaryExpr();
         eat(Keyword::RPAREN);
         // =>
-        eat(Keyword::ASSIGN);
-        eat(Keyword::GT);
+        eat(Keyword::POINT_TO);
         // { stmts }
         match_stmt->block = parseBlockStmt();
         matches.push_back(match_stmt);

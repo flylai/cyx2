@@ -54,14 +54,23 @@ namespace COMPILER
         GT, // > => a > b
 
         // Other
-        ASSIGN, // = => a = b
+        ASSIGN,     // = => a = b
+        ADD_ASSIGN, // += => a += b
+        SUB_ASSIGN, // -= => a -= b
+        MUL_ASSIGN, // *= a *= b
+        DIV_ASSIGN, // /= a /= b
+        MOD_ASSIGN, // %= a %= b
 
         // Unary opcode
 
-        SELFADD, // ++ => a++ / ++a
-        SELFSUB, // -- => a-- / --a
-        LNOT,    // ! => !a
-        BNOT,    // ~ => ~a
+        SELFADD,        // ++
+        SELFSUB,        // --
+        SELFADD_PREFIX, // ++ => ++a
+        SELFSUB_PREFIX, // -- => --a
+        SELFADD_SUFFIX, // ++ => a++
+        SELFSUB_SUFFIX, // -- => a--
+        LNOT,           // ! => !a
+        BNOT,           // ~ => ~a
 
         // Other
         LPAREN,    // (
@@ -75,6 +84,7 @@ namespace COMPILER
         SQUO,      // '
         DQUO,      // "
         COMMA,     // ,
+        POINT_TO,  // =>
 
         INTEGER,
         DOUBLE,
@@ -131,14 +141,22 @@ namespace COMPILER
         { GT, ">", STR(GT) },  // > => a > b
 
         // Other
-        { ASSIGN, "=", STR(ASSIGN) }, // = => a = b
+        { ASSIGN, "=", STR(ASSIGN) },          // = => a = b
+        { ADD_ASSIGN, "+=", STR(ADD_ASSIGN) }, // += => a += b
+        { SUB_ASSIGN, "-=", STR(SUB_ASSIGN) }, // -= => a -= b
+        { MUL_ASSIGN, "*=", STR(MUL_ASSIGN) }, // *= a *= b
+        { DIV_ASSIGN, "/=", STR(DIV_ASSIGN) }, // /= a /= b
+        { MOD_ASSIGN, "%=", STR(MOD_ASSIGN) }, // %= a %= b
 
         // Unary opcode
-
-        { SELFADD, "++", STR(SELFADD) }, // ++ => a++ / ++a
-        { SELFSUB, "--", STR(SELFSUB) }, // -- => a-- / --a
-        { LNOT, "!", STR(LNOT) },        // ! => !a
-        { BNOT, "~", STR(BNOT) },        // ~ => ~a
+        { SELFADD, "++", STR(SELFADD_PREFIX) },        // ++ => ++a / a--
+        { SELFSUB, "--", STR(SELFSUB_PREFIX) },        // -- => --a / a--
+        { SELFADD_PREFIX, "++", STR(SELFADD_PREFIX) }, // ++ => ++a
+        { SELFSUB_PREFIX, "--", STR(SELFSUB_PREFIX) }, // -- => --a
+        { SELFADD_SUFFIX, "++", STR(SELFADD_SUFFIX) }, // ++ => a++
+        { SELFSUB_SUFFIX, "--", STR(SELFSUB_SUFFIX) }, // -- => a--
+        { LNOT, "!", STR(LNOT) },                      // ! => !a
+        { BNOT, "~", STR(BNOT) },                      // ~ => ~a
 
         // Other
         { LPAREN, "(", STR(LPAREN) },       // (
@@ -151,7 +169,8 @@ namespace COMPILER
         { COLON, ":", STR(COLON) },         // :
         { SQUO, "'", STR(SQUO) },           // '
         { DQUO, "\"", STR(SQUO) },          // "
-        { COMMA, ",", STR(COMMA) },         //,
+        { COMMA, ",", STR(COMMA) },         // ,
+        { POINT_TO, "=>", STR(POINT_TO) },  // =>
 
         { INTEGER, "__INTEGER__", STR(INTEGER) },
         { DOUBLE, "__DOUBLE__", STR(DOUBLE) },
