@@ -6,10 +6,11 @@
 #include "../ast/expr.hpp"
 #include "../ast/stmt.hpp"
 #include "basicblock.hpp"
-#include "cfg.hpp"
+#include "cfg.h"
 #include "ir_instruction.hpp"
 
 #include <unordered_map>
+#include <vector>
 
 namespace COMPILER
 {
@@ -22,14 +23,14 @@ namespace COMPILER
 
       public:
         std::string graph;
+        std::vector<BasicBlock *> basicBlock();
+        BasicBlock *entry{ new BasicBlock("CFG ENTRY") };
 
       private:
         BasicBlock *getBasicBlock(const std::string &name = "");
 
       private:
-        BasicBlock *cur_bb{ nullptr };
-        BasicBlock *entry{ nullptr };
-        std::unordered_map<BasicBlock *, bool> vis;
+        BasicBlock *cur_basic_block{ nullptr };
         std::unordered_map<std::string, BasicBlock *> basic_blocks;
         std::vector<IRInstruction *> insts;
     };

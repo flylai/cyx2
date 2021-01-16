@@ -1,12 +1,5 @@
 #include "cfg_builder.h"
 
-#define LINK(PRE, SUCC)                                                                                                \
-    if (PRE != nullptr && SUCC != nullptr && PRE != SUCC)                                                              \
-    {                                                                                                                  \
-        PRE->addSucc(SUCC);                                                                                            \
-        SUCC->addPre(PRE);                                                                                             \
-    }
-
 COMPILER::BasicBlock *COMPILER::CFGBuilder::getBasicBlock(const std::string &name)
 {
     if (basic_blocks.find(name) == basic_blocks.end())
@@ -28,23 +21,32 @@ void COMPILER::CFGBuilder::buildCFG()
         if (x->opcode == IROpcode::IR_LABEL)
         {
             auto *next_bb = getBasicBlock(x->operand1.as<std::string>());
-            if (cur_bb != nullptr)
+            if (cur_basic_block != nullptr)
             {
-                if (cur_bb->insts().empty()) cur_bb->addSucc(next_bb);
-                next_bb->addPre(cur_bb);
+                if (cur_basic_block->insts().empty() ||
+                    (!cur_basic_block->insts().empty() && cur_basic_block->insts().back()->opcode != IROpcode::IR_GOTO))
+                {
+                    cur_basic_block->addSucc(next_bb);
+                    next_bb->addPre(cur_basic_block);
+                }
             }
-            cur_bb = next_bb;
+            else
+            {
+                // entry block.
+                entry->addSucc(next_bb);
+            }
+            cur_basic_block = next_bb;
         }
         else if (x->opcode == IROpcode::IR_GOTO)
         {
             auto *basic_block = getBasicBlock(x->operand1.as<std::string>());
-            cur_bb->addInst(x);
-            cur_bb->addSucc(basic_block);
-            basic_block->addPre(cur_bb);
+            cur_basic_block->addInst(x);
+            cur_basic_block->addSucc(basic_block);
+            basic_block->addPre(cur_basic_block);
         }
         else
         {
-            cur_bb->addInst(x);
+            cur_basic_block->addInst(x);
         }
     }
 }
@@ -52,7 +54,7 @@ void COMPILER::CFGBuilder::cfg2Graph()
 {
     for (const auto &block : basic_blocks)
     {
-        graph += block.first + " [shape=record, label=\"{" + block.second->name + "|";
+        graph += block.first + " [shape=record, label=\"{@" + block.second->name + "|";
         for (int i = 0; i < block.second->insts().size(); i++)
         {
             graph += block.second->insts()[i]->toString(false);
@@ -66,6 +68,12 @@ void COMPILER::CFGBuilder::cfg2Graph()
     }
 }
 
-#define NODE(PTR) PTR->name + std::to_string(PTR->block_index)
-// digit2HexStr(static_cast<void *>(PTR))
-#define EDGE(FROM, TO) ((FROM) != nullptr && (TO) != nullptr) ? NODE(FROM) + "->" + NODE(TO) + "\n" : ""
+std::vector<COMPILER::BasicBlock *> COMPILER::CFGBuilder::basicBlock()
+{
+    std::vector<BasicBlock *> vct;
+    for (auto &basic_block : basic_blocks)
+    {
+        vct.push_back(basic_block.second);
+    }
+    return vct;
+}
