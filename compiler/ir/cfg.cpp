@@ -76,9 +76,10 @@ void COMPILER::CFG::buildDominateTree()
     init();
     dfs(entry);
     tarjan();
+    calcDominanceFrontier();
 }
 
-void COMPILER::CFG::showIDom()
+std::string COMPILER::CFG::iDomDetailStr()
 {
     std::string str;
     for (const auto &x : idom)
@@ -86,5 +87,24 @@ void COMPILER::CFG::showIDom()
         str += (x.first != nullptr ? x.first->name : "null") + " dominated by " +
                (x.second != nullptr ? x.second->name : "null") + "\n";
     }
-    log(str);
+    return str;
+}
+
+void COMPILER::CFG::calcDominanceFrontier()
+{
+    for (auto *block : basic_blocks)
+    {
+        if (block->pres().size() >= 2)
+        {
+            for (auto *pre : block->pres())
+            {
+                auto *runner = pre;
+                while (runner != idom[block])
+                {
+                    dominance_frontier[runner].insert(block);
+                    runner = idom[runner];
+                }
+            }
+        }
+    }
 }

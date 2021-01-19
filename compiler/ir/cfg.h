@@ -13,7 +13,7 @@ namespace COMPILER
 
       public:
         void buildDominateTree();
-        void showIDom();
+        std::string iDomDetailStr();
 
       public:
         std::vector<BasicBlock *> basic_blocks;
@@ -23,6 +23,8 @@ namespace COMPILER
         void init();
         void dfs(BasicBlock *cur_basic_block);
         void tarjan();
+        void calcDominanceFrontier();
+        // disjoint set
         COMPILER::BasicBlock *find(COMPILER::BasicBlock *block);
 
       private:
@@ -30,10 +32,11 @@ namespace COMPILER
         std::unordered_map<BasicBlock *, int> dfn_map;
         std::unordered_map<BasicBlock *, BasicBlock *> father;
         //
-        std::unordered_map<BasicBlock *, BasicBlock *> sdom;
+        std::unordered_map<BasicBlock *, BasicBlock *> sdom; // a.k.a semi, not strict.
         std::unordered_map<BasicBlock *, BasicBlock *> idom; // the closest point of dominated point
         std::unordered_map<BasicBlock *, std::unordered_set<BasicBlock *>> tree;
-
+        std::unordered_map<BasicBlock *, std::unordered_set<BasicBlock *>> dominance_frontier;
+        //
         std::unordered_map<BasicBlock *, BasicBlock *> disjoint_set;
         std::unordered_map<BasicBlock *, BasicBlock *> disjoint_set_val;
         //
