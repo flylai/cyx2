@@ -27,4 +27,12 @@ static inline std::string digit2HexStr(T value)
     return retval;
 }
 
+static constexpr void addSpace(std::string &str, int n)
+{
+    for (int i = 0; i < n; i++)
+    {
+        str += " ";
+    }
+}
+
 #endif // CVM_UTILITY_HPP
