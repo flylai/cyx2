@@ -2,7 +2,6 @@
 #define CVM_BASICBLOCK_HPP
 
 #include "../ast/ast.hpp"
-#include "ir_instruction.hpp"
 
 #include <unordered_set>
 #include <utility>
@@ -10,6 +9,7 @@
 
 namespace COMPILER
 {
+    class IRInst;
     static int BASIC_BLOCK_COUNT = 0;
     class BasicBlock
     {
@@ -28,7 +28,7 @@ namespace COMPILER
             }
         };
         //
-        void addInst(IRInstruction *instruction)
+        void addInst(IRInst *instruction)
         {
             _insts.push_back(instruction);
         }
@@ -51,7 +51,7 @@ namespace COMPILER
         {
             return _pres;
         }
-        const std::vector<IRInstruction *> &insts() const
+        std::vector<IRInst *> &insts()
         {
             return _insts;
         }
@@ -61,7 +61,7 @@ namespace COMPILER
         int block_index;
 
       private:
-        std::vector<IRInstruction *> _insts;
+        std::vector<IRInst *> _insts;
         std::unordered_set<BasicBlock *> _pres;
         std::unordered_set<BasicBlock *> _succs;
     };

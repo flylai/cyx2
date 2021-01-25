@@ -1,6 +1,7 @@
 #ifndef CVM_IR_GENERATOR_H
 #define CVM_IR_GENERATOR_H
 
+#include "../../utility/utility.hpp"
 #include "../ast/ast_visitor.h"
 #include "../ast/expr.hpp"
 #include "../ast/stmt.hpp"
@@ -17,7 +18,6 @@ namespace COMPILER
         IRGenerator();
         ~IRGenerator();
         void visitTree(Tree *ptr) override;
-        const std::vector<IRInstruction *> &insts() const;
         std::string irCodeString();
 
       private:
@@ -47,26 +47,47 @@ namespace COMPILER
         void enterNewScope();
         void exitScope();
         //
-        std::string newVariable();
+        IRVar *newVariable();
         std::string newLabel();
-        std::string newLabel(const std::string &label);
-        std::string consumeVariable();
-        std::string consumeLabel();
+        COMPILER::IRVar *consumeVariable(bool force_IRVar = true);
+        BasicBlock *newBasicBlock(const std::string &name = "");
         //
-        IRInstruction *genGoto(const std::string &dest, const std::string &comment = "");
-        IRInstruction *genLabel(const std::string &label, const std::string &comment = "");
-        IRInstruction *genIf(const std::string &comment);
 
       public:
         int var_cnt{ 0 };
         int label_cnt{ 0 };
-        SymbolTable *current_symbol{ nullptr };
-        std::vector<IRInstruction *> instructions;
+        SymbolTable global_table;
         //
-        std::stack<std::string> tmp_vars;
-        std::stack<std::string> tmp_labels;
+        bool check_var_exist{ false };
+        std::stack<IRVar *> tmp_vars;
         //
         CYX::Value cur_value;
+        IRFunction *cur_func{ nullptr };
+        BasicBlock *cur_basic_block{ nullptr };
+        SymbolTable *cur_symbol{ nullptr };
+        //
+        std::vector<IRFunction *> funcs;
+        BasicBlock *global_var_decl{ nullptr };
+
+      private:
+        // AST first scan.
+        class HIRFunction
+        {
+          public:
+            std::string name;
+            std::vector<IRVarDef *> params;
+            BlockStmt *block{ nullptr }; // ast body
+        };
+
+        class HIRVar
+        {
+          public:
+            std::string name;
+            Expr *rhs{ nullptr };
+        };
+        int step = 1;
+        std::unordered_map<std::string, HIRFunction *> first_scan_funcs;
+        std::unordered_map<std::string, HIRVar *> first_scan_vars;
     };
 
 } // namespace COMPILER

@@ -92,6 +92,10 @@ namespace COMPILER
 
             case Keyword::LAND: return IROpcode::IR_LAND;
             case Keyword::LOR: return IROpcode::IR_LOR;
+            case Keyword::SELFADD_PREFIX:
+            case Keyword::SELFADD_SUFFIX: return IROpcode::IR_ADD;
+            case Keyword::SELFSUB_PREFIX:
+            case Keyword::SELFSUB_SUFFIX: return IROpcode::IR_SUB;
 
             case Keyword::EQ: return IROpcode::IR_EQ;
             case Keyword::NE: return IROpcode::IR_NE;
@@ -242,9 +246,9 @@ namespace COMPILER
         std::string toString() override
         {
             std::string retval = "if ";
-            if (cond) retval += cond->toString() + "\n";
-            if (true_block != nullptr) retval += "then goto " + true_block->name + "\n";
-            if (false_block != nullptr) retval += "else goto " + false_block->name + "\n";
+            if (cond) retval += cond->toString() + " ";
+            if (true_block != nullptr) retval += "then goto " + true_block->name + " ";
+            if (false_block != nullptr) retval += "else goto " + false_block->name + " ";
             return retval + "(IRBranch)";
         }
     };
