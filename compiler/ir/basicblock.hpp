@@ -3,6 +3,7 @@
 
 #include "../ast/ast.hpp"
 
+#include <list>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -51,7 +52,7 @@ namespace COMPILER
         {
             return _pres;
         }
-        std::vector<IRInst *> &insts()
+        std::list<IRInst *> &insts()
         {
             return _insts;
         }
@@ -61,7 +62,7 @@ namespace COMPILER
         int block_index;
 
       private:
-        std::vector<IRInst *> _insts;
+        std::list<IRInst *> _insts;
         std::unordered_set<BasicBlock *> _pres;
         std::unordered_set<BasicBlock *> _succs;
     };
