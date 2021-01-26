@@ -299,12 +299,12 @@ void COMPILER::IRGenerator::visitWhileStmt(COMPILER::WhileStmt *ptr)
 
     auto *body_block = newBasicBlock();
     LINK(cond_block, body_block);
-    LINK(body_block, cond_block);
     cur_basic_block = body_block;
     ptr->block->visit(this);
     auto *jmp   = new IRJump;
     jmp->target = cond_block;
     cur_basic_block->addInst(jmp);
+    LINK(cur_basic_block, cond_block);
 
     auto *out_block = newBasicBlock();
     LINK(cond_block, out_block);
