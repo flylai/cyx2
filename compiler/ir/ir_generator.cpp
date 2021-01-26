@@ -290,30 +290,29 @@ void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
 void COMPILER::IRGenerator::visitWhileStmt(COMPILER::WhileStmt *ptr)
 {
     auto *cond_block = newBasicBlock();
-    auto *body_block = newBasicBlock();
-    auto *out_block  = newBasicBlock();
-    //
-    // CFG LINK
     LINK(cur_basic_block, cond_block);
-    LINK(cond_block, body_block);
-    LINK(body_block, cond_block);
-    LINK(cond_block, out_block);
-    //
     cur_basic_block = cond_block;
     ptr->cond->visit(this);
-    auto *branch        = new IRBranch;
-    branch->block       = cur_basic_block;
-    branch->cond        = consumeVariable();
-    branch->true_block  = body_block;
-    branch->false_block = out_block;
-    cur_basic_block->addInst(branch);
-    //
+    auto *branch  = new IRBranch;
+    branch->block = cur_basic_block;
+    branch->cond  = consumeVariable();
+
+    auto *body_block = newBasicBlock();
+    LINK(cond_block, body_block);
+    LINK(body_block, cond_block);
     cur_basic_block = body_block;
     ptr->block->visit(this);
     auto *jmp   = new IRJump;
     jmp->target = cond_block;
     cur_basic_block->addInst(jmp);
-    //
+
+    auto *out_block = newBasicBlock();
+    LINK(cond_block, out_block);
+
+    branch->true_block  = body_block;
+    branch->false_block = out_block;
+    cond_block->addInst(branch);
+
     cur_basic_block = out_block;
 }
 
