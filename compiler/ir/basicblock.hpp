@@ -31,40 +31,26 @@ namespace COMPILER
         //
         void addInst(IRInst *instruction)
         {
-            _insts.push_back(instruction);
+            insts.push_back(instruction);
         }
         //
         void addPre(BasicBlock *block)
         {
-            _pres.insert(block);
+            pres.insert(block);
         }
         //
         void addSucc(BasicBlock *block)
         {
-            _succs.insert(block);
-        }
-        //
-        const std::unordered_set<BasicBlock *> &succs() const
-        {
-            return _succs;
-        }
-        const std::unordered_set<BasicBlock *> &pres() const
-        {
-            return _pres;
-        }
-        std::list<IRInst *> &insts()
-        {
-            return _insts;
+            succs.insert(block);
         }
 
       public:
         std::string name;
         int block_index;
-
-      private:
-        std::list<IRInst *> _insts;
-        std::unordered_set<BasicBlock *> _pres;
-        std::unordered_set<BasicBlock *> _succs;
+        //
+        std::list<IRInst *> insts;
+        std::unordered_set<BasicBlock *> pres;
+        std::unordered_set<BasicBlock *> succs;
     };
 } // namespace COMPILER
 

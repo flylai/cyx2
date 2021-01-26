@@ -443,8 +443,8 @@ COMPILER::IRGenerator::IRGenerator()
 
 std::string COMPILER::IRGenerator::irCodeString()
 {
-    std::string ir_code = "There are " + std::to_string(global_var_decl->insts().size()) + " variable(s) declared!\n";
-    for (auto *var : global_var_decl->insts())
+    std::string ir_code = "There are " + std::to_string(global_var_decl->insts.size()) + " variable(s) declared!\n";
+    for (auto *var : global_var_decl->insts)
     {
         addSpace(ir_code, 2);
         ir_code += var->toString() + "\n";
@@ -465,8 +465,8 @@ std::string COMPILER::IRGenerator::irCodeString()
         {
             addSpace(ir_code, 2);
             ir_code += "@" + block->name;
-            ir_code += " " + std::to_string(block->insts().size()) + " inst(s)\n";
-            for (auto *inst : block->insts())
+            ir_code += " " + std::to_string(block->insts.size()) + " inst(s)\n";
+            for (auto *inst : block->insts)
             {
                 addSpace(ir_code, 4);
                 ir_code += inst->toString() + "\n";
