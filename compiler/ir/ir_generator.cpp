@@ -197,34 +197,32 @@ void COMPILER::IRGenerator::visitExprStmt(COMPILER::ExprStmt *ptr)
 
 void COMPILER::IRGenerator::visitIfStmt(COMPILER::IfStmt *ptr)
 {
-    auto *branch = new IRBranch;
-    //
-    auto *cond_block  = newBasicBlock();
-    auto *true_block  = newBasicBlock();
-    auto *false_block = newBasicBlock();
-    auto *out_block   = newBasicBlock();
-    //
+    auto *out_block  = newBasicBlock();
+    auto *cond_block = newBasicBlock();
     LINK(cur_basic_block, cond_block);
-    LINK(cond_block, true_block);
-    LINK(cond_block, false_block);
-    LINK(true_block, out_block);
-    LINK(false_block, out_block);
-    //
     cur_basic_block = cond_block;
     ptr->cond->visit(this);
+    //
+    auto *true_block = newBasicBlock();
+    LINK(cond_block, true_block);
+    cur_basic_block = true_block;
+    ptr->true_block->visit(this);
+    LINK(cur_basic_block, out_block);
+    //
+    auto *false_block = newBasicBlock();
+    LINK(cond_block, false_block);
+    cur_basic_block = false_block;
+    if (ptr->false_block != nullptr) ptr->false_block->visit(this);
+    LINK(cur_basic_block, out_block);
+    //
+    cur_basic_block = out_block;
+    //
+    auto *branch        = new IRBranch;
     branch->true_block  = true_block;
     branch->false_block = false_block;
     branch->block       = cond_block;
     branch->cond        = consumeVariable();
     cond_block->addInst(branch);
-    //
-    cur_basic_block = true_block;
-    ptr->true_block->visit(this);
-    //
-    cur_basic_block = false_block;
-    ptr->false_block->visit(this);
-    //
-    cur_basic_block = out_block;
 }
 
 void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
@@ -479,6 +477,7 @@ std::string COMPILER::IRGenerator::irCodeString()
 
 void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
 {
+    if (cur_basic_block == nullptr) cur_basic_block = newBasicBlock();
     for (auto *x : ptr->stmts)
     {
         x->visit(this);
