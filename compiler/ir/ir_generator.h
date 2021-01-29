@@ -19,6 +19,8 @@ namespace COMPILER
         ~IRGenerator();
         void visitTree(Tree *ptr) override;
         std::string irCodeString();
+        //
+        void simplifyIR();
 
       private:
         //

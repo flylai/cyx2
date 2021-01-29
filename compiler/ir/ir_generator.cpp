@@ -197,7 +197,6 @@ void COMPILER::IRGenerator::visitExprStmt(COMPILER::ExprStmt *ptr)
 
 void COMPILER::IRGenerator::visitIfStmt(COMPILER::IfStmt *ptr)
 {
-    auto *out_block  = newBasicBlock();
     auto *cond_block = newBasicBlock();
     LINK(cur_basic_block, cond_block);
     cur_basic_block = cond_block;
@@ -207,13 +206,16 @@ void COMPILER::IRGenerator::visitIfStmt(COMPILER::IfStmt *ptr)
     LINK(cond_block, true_block);
     cur_basic_block = true_block;
     ptr->true_block->visit(this);
-    LINK(cur_basic_block, out_block);
+    auto *out_of_true = cur_basic_block;
     //
     auto *false_block = newBasicBlock();
     LINK(cond_block, false_block);
     cur_basic_block = false_block;
     if (ptr->false_block != nullptr) ptr->false_block->visit(this);
-    LINK(cur_basic_block, out_block);
+    auto *out_of_false = cur_basic_block;
+    auto *out_block    = newBasicBlock();
+    LINK(out_of_true, out_block);
+    LINK(out_of_false, out_block);
     //
     cur_basic_block = out_block;
     //
@@ -299,6 +301,7 @@ void COMPILER::IRGenerator::visitWhileStmt(COMPILER::WhileStmt *ptr)
     LINK(cond_block, body_block);
     cur_basic_block = body_block;
     ptr->block->visit(this);
+    //
     auto *jmp   = new IRJump;
     jmp->target = cond_block;
     cur_basic_block->addInst(jmp);
@@ -390,9 +393,10 @@ COMPILER::IRVar *COMPILER::IRGenerator::newVariable()
     Symbol symbol;
     symbol.type = Symbol::Type::VAR;
 
-    auto *ir_var  = new IRVarDef;
-    ir_var->name  = "t" + std::to_string(var_cnt++);
-    ir_var->block = cur_basic_block;
+    auto *ir_var      = new IRVarDef;
+    ir_var->name      = "t" + std::to_string(var_cnt++);
+    ir_var->block     = cur_basic_block;
+    ir_var->is_ir_gen = true;
 
     symbol.var = ir_var;
 
@@ -463,6 +467,13 @@ std::string COMPILER::IRGenerator::irCodeString()
         {
             addSpace(ir_code, 2);
             ir_code += "@" + block->name;
+
+            for (auto *phi : block->phis)
+            {
+                addSpace(ir_code, 4);
+                ir_code += phi->toString() + "\n";
+            }
+
             ir_code += " " + std::to_string(block->insts.size()) + " inst(s)\n";
             for (auto *inst : block->insts)
             {
@@ -555,6 +566,45 @@ COMPILER::BasicBlock *COMPILER::IRGenerator::newBasicBlock(const std::string &na
         cur_func->blocks.push_back(bb);
     }
     return bb;
+}
+
+void COMPILER::IRGenerator::simplifyIR()
+{
+    /* remove redundant ir like
+     * t0 = 1 + 2
+     * t1 = t0
+     */
+    for (auto *func : funcs)
+    {
+        for (auto *block : func->blocks)
+        {
+            if (block->insts.size() >= 2)
+            {
+                for (auto it = block->insts.begin(); it != block->insts.end();)
+                {
+                    auto *tmp_cur  = *it;
+                    auto *tmp_next = ++it != block->insts.end() ? *it : nullptr; // next inst iterator
+                    if (tmp_next == nullptr) break;
+                    // two insts must be IRAssign
+                    // MAGIC
+                    if (tmp_cur->tag == IRValue::Tag::ASSIGN && tmp_next->tag == IRValue::Tag::ASSIGN)
+                    {
+                        auto *cur  = static_cast<IRAssign *>(tmp_cur);
+                        auto *next = static_cast<IRAssign *>(tmp_next);
+                        if (next->src->tag == IRValue::Tag::VAR && cur->dest->tag == IRValue::Tag::VARDEF)
+                        {
+                            auto *var = static_cast<IRVar *>(next->src);
+                            if (static_cast<IRVarDef *>(cur->dest)->is_ir_gen && var->name == cur->dest->name)
+                            {
+                                next->src = cur->src;
+                                it        = block->insts.erase(--it); // it is pointing to `next` before --it.
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 #undef LINK
