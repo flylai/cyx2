@@ -321,7 +321,7 @@ namespace COMPILER
       public:
         std::string name;
         std::vector<IRVarDef *> params;
-        std::vector<BasicBlock *> blocks;
+        std::list<BasicBlock *> blocks;
     };
 
     class IRVar : public IRInst
@@ -334,10 +334,11 @@ namespace COMPILER
         }
         std::string toString() override
         {
-            return name + "(IRVar)";
+            return name + std::to_string(ssa_index) + "(IRVar)";
         }
 
       public:
+        int ssa_index{ 0 };
         std::string name;
         IRVarDef *def{ nullptr };
     };
@@ -353,7 +354,7 @@ namespace COMPILER
         }
         std::string toString() override
         {
-            return name + "(IRVarDef)";
+            return name + (is_ir_gen ? "" : std::to_string(ssa_index)) + "(IRVarDef)";
         }
 
       public:
@@ -404,15 +405,27 @@ namespace COMPILER
         IRValue *src{ nullptr }; // a.k.a rhs
     };
 
-    //    class IRPhi : public IRInst
-    //    {
-    //      public:
-    //        using IRInst::IRInst;
-    //        IRPhi()
-    //        {
-    //            tag = Tag::PHI;
-    //        }
-    //    };
+    class IRPhi : public IRInst
+    {
+      public:
+        using IRInst::IRInst;
+        IRPhi()
+        {
+            tag = Tag::PHI;
+        }
+        std::string toString() override
+        {
+            std::string str = name + std::to_string(ssa_index) + " = phi(";
+            for (const auto &arg : args)
+            {
+                str += arg + " ";
+            }
+            return str + ")";
+        }
+        int ssa_index{ 0 };
+        std::string name;
+        std::vector<std::string> args;
+    };
 } // namespace COMPILER
 
 #endif // CVM_IR_INSTRUCTION_HPP
