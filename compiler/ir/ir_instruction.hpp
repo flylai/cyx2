@@ -114,7 +114,7 @@ namespace COMPILER
 
     class BasicBlock;
     class Use;
-    class IRValue;
+    class IR;
     class IRInst;
     class IRBinary;
     class IRConstant;
@@ -126,7 +126,7 @@ namespace COMPILER
     class IRBranch;
     class IRPhi;
     class IRVar;
-    class IRVarDef;
+    //    class IRVarDef;
     class IRParams;
     class IRAssign;
 
@@ -147,13 +147,14 @@ namespace COMPILER
         }
 
       public:
-        IRVarDef *def{ nullptr };
+        IRVar *def{ nullptr };
         std::list<IRVar *> uses;
     };
 
-    class IRValue
+    class IR
     {
       public:
+        virtual ~IR() = default;
         enum class Tag
         {
             INVALID,
@@ -163,7 +164,6 @@ namespace COMPILER
             JMP,
             CALL,   // function call
             VAR,    // variable
-            VARDEF, // variable definition
             FUNC,   // function decl
             PARAM,  // function params
             BRANCH, // if then else.
@@ -173,14 +173,20 @@ namespace COMPILER
         virtual std::string toString() = 0;
 
       public:
-        IRValue() = default;
+        IR() = default;
     };
 
-    class IRInst : public IRValue
+    class IRValue : public IR
     {
       public:
-        using IRValue::IRValue;
-        LIST(IRInst)
+        using IR::IR;
+        IRInst *belong_inst{ nullptr };
+    };
+
+    class IRInst : public IR
+    {
+      public:
+        using IR::IR;
         COMPILER::BasicBlock *block{ nullptr };
     };
 
@@ -305,13 +311,13 @@ namespace COMPILER
         std::vector<IRInst *> args;
     };
 
-    class IRFunction : public IRValue
+    class IRFunction : public IR
     {
       public:
-        using IRValue::IRValue;
+        using IR::IR;
         IRFunction()
         {
-            tag = IRValue::Tag::FUNC;
+            tag = IR::Tag::FUNC;
         }
         std::string toString() override
         {
@@ -320,46 +326,29 @@ namespace COMPILER
 
       public:
         std::string name;
-        std::vector<IRVarDef *> params;
+        std::vector<IRVar *> params;
         std::list<BasicBlock *> blocks;
     };
 
-    class IRVar : public IRInst
+    class IRVar : public IRValue
     {
       public:
-        using IRInst::IRInst;
+        using IRValue::IRValue;
         IRVar()
         {
-            tag = IRValue::Tag::VAR;
+            tag = IR::Tag::VAR;
         }
         std::string toString() override
         {
-            return name + std::to_string(ssa_index) + "(IRVar)";
+            return name + (is_ir_gen ? "" : std::to_string(ssa_index)) + "(IRVar)";
         }
 
       public:
         int ssa_index{ 0 };
-        std::string name;
-        IRVarDef *def{ nullptr };
-    };
-
-    class IRVarDef : public IRVar
-    {
-      public:
-        using IRVar::IRVar;
-        IRVarDef()
-        {
-            tag = IRValue::Tag::VARDEF;
-            use = new Use;
-        }
-        std::string toString() override
-        {
-            return name + (is_ir_gen ? "" : std::to_string(ssa_index)) + "(IRVarDef)";
-        }
-
-      public:
         bool is_ir_gen{ false };
-        Use *use{ nullptr };
+        std::string name;
+        IRVar *def{ nullptr };
+        Use use;
     };
 
     class IRParams : public IRInst
@@ -368,7 +357,7 @@ namespace COMPILER
         using IRInst::IRInst;
         IRParams()
         {
-            tag = IRValue::Tag::PARAM;
+            tag = IR::Tag::PARAM;
         }
         std::vector<std::string> params;
 
@@ -390,7 +379,7 @@ namespace COMPILER
         using IRInst::IRInst;
         IRAssign()
         {
-            tag = IRValue::Tag::ASSIGN;
+            tag = IR::Tag::ASSIGN;
         }
         std::string toString() override
         {
@@ -401,8 +390,8 @@ namespace COMPILER
         }
 
       public:
-        IRVar *dest{ nullptr };  // a.k.a lhs
-        IRValue *src{ nullptr }; // a.k.a rhs
+        IRVar *dest{ nullptr }; // a.k.a lhs
+        IR *src{ nullptr };     // a.k.a rhs
     };
 
     class IRPhi : public IRInst
