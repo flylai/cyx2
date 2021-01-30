@@ -11,6 +11,7 @@
 namespace COMPILER
 {
     class IRInst;
+    class IRPhi;
     static int BASIC_BLOCK_COUNT = 0;
     class BasicBlock
     {
@@ -49,6 +50,7 @@ namespace COMPILER
         int block_index;
         //
         std::list<IRInst *> insts;
+        std::list<IRPhi *> phis;
         std::unordered_set<BasicBlock *> pres;
         std::unordered_set<BasicBlock *> succs;
     };
