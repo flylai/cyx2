@@ -9,6 +9,9 @@ void COMPILER::IRGenerator::visitUnaryExpr(COMPILER::UnaryExpr *ptr)
     auto *assign = new IRAssign;
     auto *binary = new IRBinary;
 
+    assign->block       = cur_basic_block;
+    binary->belong_inst = assign;
+
     check_var_exist = true;
     ptr->rhs->visit(this);
     check_var_exist = false;
@@ -28,8 +31,11 @@ void COMPILER::IRGenerator::visitUnaryExpr(COMPILER::UnaryExpr *ptr)
 
         if (inOr(ptr->op.keyword, SELFSUB_SUFFIX, SELFADD_SUFFIX))
         {
-            auto *assign2   = new IRAssign;
-            auto *binary2   = new IRBinary;
+            auto *assign2        = new IRAssign;
+            auto *binary2        = new IRBinary;
+            assign2->block       = cur_basic_block;
+            binary2->belong_inst = assign2;
+
             binary2->lhs    = self;
             binary2->opcode = token2IROp(ptr->op.keyword);
             assign2->dest   = newVariable();
@@ -50,43 +56,52 @@ void COMPILER::IRGenerator::visitUnaryExpr(COMPILER::UnaryExpr *ptr)
 
 void COMPILER::IRGenerator::visitBinaryExpr(COMPILER::BinaryExpr *ptr)
 {
-    auto *binary   = new IRBinary;
-    auto *assign   = new IRAssign;
-    binary->opcode = token2IROp(ptr->op.keyword);
-    assign->src    = binary;
-    //
+    auto *binary        = new IRBinary;
+    auto *assign        = new IRAssign;
+    binary->opcode      = token2IROp(ptr->op.keyword);
+    binary->belong_inst = assign;
+    assign->src         = binary;
+    assign->block       = cur_basic_block;
+    // lhs
     check_var_exist = true;
     ptr->lhs->visit(this);
     check_var_exist = false;
     if (cur_value.hasValue())
     {
         // int / double / string
-        auto *lhs  = new IRConstant;
-        lhs->value = std::move(cur_value);
+        auto *lhs        = new IRConstant;
+        lhs->value       = std::move(cur_value);
+        lhs->belong_inst = assign;
+        binary->lhs      = lhs;
         cur_value.reset();
-        binary->lhs = lhs;
     }
     else
     {
-        binary->lhs = consumeVariable();
+        auto *lhs        = consumeVariable();
+        lhs->belong_inst = assign;
+        binary->lhs      = lhs;
     }
-    //
+    // rhs
     check_var_exist = true;
     ptr->rhs->visit(this);
     check_var_exist = false;
     if (cur_value.hasValue())
     {
-        auto *rhs  = new IRConstant;
-        rhs->value = std::move(cur_value);
+        auto *rhs        = new IRConstant;
+        rhs->value       = std::move(cur_value);
+        rhs->belong_inst = assign;
+        binary->rhs      = rhs;
         cur_value.reset();
-        binary->rhs = rhs;
     }
     else
     {
-        binary->rhs = consumeVariable();
+        auto *rhs        = consumeVariable();
+        rhs->belong_inst = assign;
+        binary->rhs      = rhs;
     }
+    assign->dest              = newVariable();
+    assign->dest->belong_inst = assign;
 
-    assign->dest = newVariable();
     cur_basic_block->addInst(assign);
 }
 
@@ -122,24 +137,31 @@ void COMPILER::IRGenerator::visitAssignExpr(COMPILER::AssignExpr *ptr)
         return;
     }
     // actually assign is one of the binary expr
-    auto *assign = new IRAssign;
+    auto *assign  = new IRAssign;
+    assign->block = cur_basic_block;
     //
     ptr->lhs->visit(this);
-    assign->dest = consumeVariable(false);
+    auto *dest        = consumeVariable(false);
+    dest->belong_inst = assign;
+    assign->dest      = dest;
     //
     check_var_exist = true;
     ptr->rhs->visit(this);
     check_var_exist = false;
     if (cur_value.hasValue())
     {
-        auto *constant  = new IRConstant;
-        constant->value = std::move(cur_value);
+        auto *constant        = new IRConstant;
+        constant->value       = std::move(cur_value);
+        constant->belong_inst = assign;
+        assign->src           = constant;
+
         cur_value.reset();
-        assign->src = constant;
     }
     else
     {
-        assign->src = consumeVariable();
+        auto *src        = consumeVariable();
+        src->belong_inst = assign;
+        assign->src      = src;
     }
     cur_basic_block->addInst(assign);
 }
@@ -149,11 +171,10 @@ void COMPILER::IRGenerator::visitIdentifierExpr(COMPILER::IdentifierExpr *ptr)
     auto upval = cur_symbol->query(ptr->value);
     if (upval.type == Symbol::Type::VAR)
     {
-        auto *var  = new IRVar;
-        var->name  = ptr->value;
-        var->def   = upval.var;
-        var->block = cur_basic_block;
-        upval.var->use->addUse(var);
+        auto *var = new IRVar;
+        var->name = ptr->value;
+        var->def  = upval.var;
+        upval.var->use.addUse(var);
 
         tmp_vars.push(var);
     }
@@ -163,9 +184,8 @@ void COMPILER::IRGenerator::visitIdentifierExpr(COMPILER::IdentifierExpr *ptr)
         {
             ERROR("cant find definition of " + ptr->value);
         }
-        auto *var_def  = new IRVarDef;
-        var_def->name  = ptr->value;
-        var_def->block = cur_basic_block;
+        auto *var_def = new IRVar;
+        var_def->name = ptr->value;
 
         Symbol symbol;
         symbol.type = Symbol::Type::VAR;
@@ -335,7 +355,7 @@ void COMPILER::IRGenerator::visitFuncDeclStmt(COMPILER::FuncDeclStmt *ptr)
         ir_func->block = ptr->block;
         for (const auto &param : ptr->params)
         {
-            auto *var = new IRVarDef;
+            auto *var = new IRVar;
             var->name = param;
             ir_func->params.push_back(var);
         }
@@ -393,9 +413,8 @@ COMPILER::IRVar *COMPILER::IRGenerator::newVariable()
     Symbol symbol;
     symbol.type = Symbol::Type::VAR;
 
-    auto *ir_var      = new IRVarDef;
+    auto *ir_var      = new IRVar;
     ir_var->name      = "t" + std::to_string(var_cnt++);
-    ir_var->block     = cur_basic_block;
     ir_var->is_ir_gen = true;
 
     symbol.var = ir_var;
@@ -422,16 +441,14 @@ COMPILER::IRVar *COMPILER::IRGenerator::consumeVariable(bool force_IRVar)
     auto *var_def = tmp_vars.top(); // variable definition
     tmp_vars.pop();
 
-    auto *retval  = new IRVar;
-    retval->block = cur_basic_block;
-    retval->name  = var_def->name;
+    auto *retval = new IRVar;
+    retval->name = var_def->name;
 
-    // def-use
-    // if *var_def* is IRVarDef.
-    if (typeid(*var_def) == typeid(IRVarDef))
+    // def-use.
+    if (var_def->def == nullptr)
     {
-        ((IRVarDef *) var_def)->use->addUse(retval);
-        retval->def = static_cast<IRVarDef *>(var_def);
+        var_def->use.addUse(retval);
+        retval->def = var_def;
     }
     // else -> var_def is IRVar, that is use, not definition. no need to add def-use chain
 
@@ -467,6 +484,8 @@ std::string COMPILER::IRGenerator::irCodeString()
         {
             addSpace(ir_code, 2);
             ir_code += "@" + block->name;
+            ir_code += " " + std::to_string(block->phis.size()) + " phis and " + std::to_string(block->insts.size()) +
+                       " inst(s)\n";
 
             for (auto *phi : block->phis)
             {
@@ -474,7 +493,6 @@ std::string COMPILER::IRGenerator::irCodeString()
                 ir_code += phi->toString() + "\n";
             }
 
-            ir_code += " " + std::to_string(block->insts.size()) + " inst(s)\n";
             for (auto *inst : block->insts)
             {
                 addSpace(ir_code, 4);
@@ -501,11 +519,12 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
         symbol.type = Symbol::Type::VAR;
 
         x.second->rhs->visit(this);
-        auto *var_def = new IRVarDef;
+        auto *var_def = new IRVar;
         var_def->name = x.first;
 
-        auto *assign = new IRAssign;
-        assign->dest = var_def;
+        auto *assign  = new IRAssign;
+        assign->block = cur_basic_block;
+        assign->dest  = var_def;
 
         if (cur_value.hasValue())
         {
@@ -518,7 +537,7 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
         }
         else
         {
-            symbol.var  = static_cast<IRVarDef *>(consumeVariable(false));
+            symbol.var  = consumeVariable(false);
             assign->src = symbol.var;
         }
         cur_symbol->upsert(x.first, symbol);
@@ -587,20 +606,72 @@ void COMPILER::IRGenerator::simplifyIR()
                     if (tmp_next == nullptr) break;
                     // two insts must be IRAssign
                     // MAGIC
-                    if (tmp_cur->tag == IRValue::Tag::ASSIGN && tmp_next->tag == IRValue::Tag::ASSIGN)
+                    if (tmp_cur->tag == IR::Tag::ASSIGN && tmp_next->tag == IR::Tag::ASSIGN)
                     {
                         auto *cur  = static_cast<IRAssign *>(tmp_cur);
                         auto *next = static_cast<IRAssign *>(tmp_next);
-                        if (next->src->tag == IRValue::Tag::VAR && cur->dest->tag == IRValue::Tag::VARDEF)
+                        if (next->src->tag == IR::Tag::VAR && cur->dest->def == nullptr)
                         {
                             auto *var = static_cast<IRVar *>(next->src);
-                            if (static_cast<IRVarDef *>(cur->dest)->is_ir_gen && var->name == cur->dest->name)
+                            if (static_cast<IRVar *>(cur->dest)->is_ir_gen && var->name == cur->dest->name)
                             {
                                 next->src = cur->src;
                                 it        = block->insts.erase(--it); // it is pointing to `next` before --it.
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+void COMPILER::IRGenerator::removeUnusedVarDef()
+{
+    // TODO: `branch` inst may use val
+    for (auto *func : funcs)
+    {
+        // reverse traversal
+        for (auto block_it = func->blocks.crbegin(); block_it != func->blocks.crend(); block_it++)
+        {
+            auto *block = *block_it;
+            for (auto inst_it = block->insts.rbegin(); inst_it != block->insts.rend();)
+            {
+                auto *inst = *inst_it;
+                if (inst->tag != IR::Tag::ASSIGN) return;
+                auto *assign = static_cast<IRAssign *>(inst);
+                if (assign->dest->def == nullptr && assign->dest->use.uses.empty())
+                {
+                    block->insts.erase(--inst_it.base());
+                    if (assign->src->tag == IR::Tag::BINARY)
+                    {
+                        auto *binary = static_cast<IRBinary *>(assign->src);
+                        auto *lhs    = binary->lhs;
+                        auto *rhs    = binary->rhs;
+                        if (lhs->tag == IR::Tag::VAR)
+                        {
+                            auto *tmp = static_cast<IRVar *>(lhs);
+                            tmp->def->use.killUse(tmp);
+                        }
+                        if (rhs->tag == IR::Tag::VAR)
+                        {
+                            auto *tmp = static_cast<IRVar *>(rhs);
+                            tmp->def->use.killUse(tmp);
+                        }
+
+                        delete lhs;
+                        delete rhs;
+                        delete binary;
+                    }
+                    else if (assign->src->tag == IR::Tag::CONST)
+                    {
+                        delete assign->src;
+                    }
+                    delete assign;
+                }
+                else
+                {
+                    inst_it--;
                 }
             }
         }

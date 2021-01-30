@@ -20,6 +20,7 @@ namespace COMPILER
         void visitTree(Tree *ptr) override;
         std::string irCodeString();
         //
+        void removeUnusedVarDef();
         void simplifyIR();
 
       private:
@@ -77,7 +78,7 @@ namespace COMPILER
         {
           public:
             std::string name;
-            std::vector<IRVarDef *> params;
+            std::vector<IRVar *> params;
             BlockStmt *block{ nullptr }; // ast body
         };
 
