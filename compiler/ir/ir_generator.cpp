@@ -174,7 +174,7 @@ void COMPILER::IRGenerator::visitIdentifierExpr(COMPILER::IdentifierExpr *ptr)
         auto *var = new IRVar;
         var->name = ptr->value;
         var->def  = upval.var;
-        upval.var->use.addUse(var);
+        upval.var->addUse(var);
 
         tmp_vars.push(var);
     }
@@ -447,7 +447,7 @@ COMPILER::IRVar *COMPILER::IRGenerator::consumeVariable(bool force_IRVar)
     // def-use.
     if (var_def->def == nullptr)
     {
-        var_def->use.addUse(retval);
+        var_def->addUse(retval);
         retval->def = var_def;
     }
     // else -> var_def is IRVar, that is use, not definition. no need to add def-use chain
@@ -640,7 +640,7 @@ void COMPILER::IRGenerator::removeUnusedVarDef()
                 auto *inst = *inst_it;
                 if (inst->tag != IR::Tag::ASSIGN) return;
                 auto *assign = static_cast<IRAssign *>(inst);
-                if (assign->dest->def == nullptr && assign->dest->use.uses.empty())
+                if (assign->dest->def == nullptr && assign->dest->use.empty())
                 {
                     block->insts.erase(--inst_it.base());
                     if (assign->src->tag == IR::Tag::BINARY)
@@ -651,12 +651,12 @@ void COMPILER::IRGenerator::removeUnusedVarDef()
                         if (lhs->tag == IR::Tag::VAR)
                         {
                             auto *tmp = static_cast<IRVar *>(lhs);
-                            tmp->def->use.killUse(tmp);
+                            tmp->def->killUse(tmp);
                         }
                         if (rhs->tag == IR::Tag::VAR)
                         {
                             auto *tmp = static_cast<IRVar *>(rhs);
-                            tmp->def->use.killUse(tmp);
+                            tmp->def->killUse(tmp);
                         }
 
                         delete lhs;

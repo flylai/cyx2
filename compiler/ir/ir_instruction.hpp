@@ -113,7 +113,6 @@ namespace COMPILER
     }
 
     class BasicBlock;
-    class Use;
     class IR;
     class IRInst;
     class IRBinary;
@@ -126,30 +125,8 @@ namespace COMPILER
     class IRBranch;
     class IRPhi;
     class IRVar;
-    //    class IRVarDef;
     class IRParams;
     class IRAssign;
-
-    class Use
-    {
-      public:
-        Use() = default;
-        void addUse(IRVar *value)
-        {
-            if (std::find(uses.begin(), uses.end(), value) == uses.end())
-            {
-                uses.push_back(value);
-            }
-        }
-        void killUse(IRVar *value)
-        {
-            uses.remove(value);
-        }
-
-      public:
-        IRVar *def{ nullptr };
-        std::list<IRVar *> uses;
-    };
 
     class IR
     {
@@ -342,13 +319,25 @@ namespace COMPILER
         {
             return name + (is_ir_gen ? "" : std::to_string(ssa_index)) + "(IRVar)";
         }
+        //
+        void addUse(IRVar *value)
+        {
+            if (std::find(use.begin(), use.end(), value) == use.end())
+            {
+                use.push_back(value);
+            }
+        }
+        void killUse(IRVar *value)
+        {
+            use.remove(value);
+        }
 
       public:
         int ssa_index{ 0 };
         bool is_ir_gen{ false };
         std::string name;
         IRVar *def{ nullptr };
-        Use use;
+        std::list<IRVar *> use;
     };
 
     class IRParams : public IRInst
@@ -394,7 +383,9 @@ namespace COMPILER
         IR *src{ nullptr };     // a.k.a rhs
     };
 
-    class IRPhi : public IRInst
+    class IRPhi
+        : public IRInst
+        , public IRVar
     {
       public:
         using IRInst::IRInst;
@@ -407,13 +398,12 @@ namespace COMPILER
             std::string str = name + std::to_string(ssa_index) + " = phi(";
             for (const auto &arg : args)
             {
-                str += arg + " ";
+                str += arg->name + std::to_string(ssa_index) + " ";
             }
             return str + ")";
         }
-        int ssa_index{ 0 };
-        std::string name;
-        std::vector<std::string> args;
+        Tag tag;
+        std::vector<IRVar *> args;
     };
 } // namespace COMPILER
 
