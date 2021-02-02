@@ -268,43 +268,45 @@ void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
     @out
      ....
     */
-    auto *init_block  = newBasicBlock();
-    auto *cond_block  = newBasicBlock();
-    auto *body_block  = newBasicBlock();
-    auto *final_block = newBasicBlock();
-    auto *out_block   = newBasicBlock();
-    // CFG LINK
+    auto *init_block = newBasicBlock();
     LINK(cur_basic_block, init_block);
-    LINK(init_block, cond_block);
-    LINK(cond_block, body_block);
-    LINK(body_block, final_block);
-    LINK(cond_block, out_block);
-    //
     cur_basic_block = init_block;
     ptr->init->visit(this);
     //
+    auto *cond_block = newBasicBlock();
+    LINK(cur_basic_block, cond_block);
     cur_basic_block = cond_block;
     ptr->cond->visit(this);
-    auto *branch        = new IRBranch;
-    branch->block       = cur_basic_block;
-    branch->cond        = consumeVariable();
-    branch->true_block  = body_block;
-    branch->false_block = out_block;
-    cur_basic_block->addInst(branch);
+
+    auto *branch      = new IRBranch;
+    auto *cond        = consumeVariable();
+    cond->belong_inst = branch;
+    branch->cond      = cond;
     //
-    cur_basic_block = final_block;
-    ptr->final->visit(this);
-    auto *final_jmp   = new IRJump;
-    final_jmp->target = cond_block;
-    cur_basic_block->addInst(final_jmp);
-    //
+    auto *body_block = newBasicBlock();
+    LINK(cur_basic_block, body_block);
     cur_basic_block = body_block;
     ptr->block->visit(this);
-    auto *body_jmp   = new IRJump;
-    body_jmp->target = final_block;
-    cur_basic_block->addInst(body_jmp);
     //
-    cur_basic_block = out_block;
+    auto *final_block = newBasicBlock();
+    LINK(cur_basic_block, final_block);
+    LINK(final_block, cond_block);
+    cur_basic_block = final_block;
+    ptr->final->visit(this);
+
+    branch->true_block = body_block;
+    auto *jmp          = new IRJump;
+    cur_basic_block->addInst(jmp);
+
+    jmp->target = cond_block;
+    //
+    auto *out_block = newBasicBlock();
+    LINK(cond_block, out_block);
+    cur_basic_block     = out_block;
+    branch->false_block = out_block;
+    // loop
+    out_block->loop_start = init_block;
+    init_block->loop_end  = out_block;
 }
 
 void COMPILER::IRGenerator::visitWhileStmt(COMPILER::WhileStmt *ptr)
@@ -335,6 +337,9 @@ void COMPILER::IRGenerator::visitWhileStmt(COMPILER::WhileStmt *ptr)
     cond_block->addInst(branch);
 
     cur_basic_block = out_block;
+    // loop
+    cond_block->loop_end  = out_block;
+    out_block->loop_start = cond_block;
 }
 
 void COMPILER::IRGenerator::visitSwitchStmt(COMPILER::SwitchStmt *ptr)
