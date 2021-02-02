@@ -383,26 +383,23 @@ namespace COMPILER
         IR *src{ nullptr };     // a.k.a rhs
     };
 
-    class IRPhi
-        : public IRInst
-        , public IRVar
+    class IRPhi : public IRValue
     {
       public:
-        using IRInst::IRInst;
+        using IRValue::IRValue;
         IRPhi()
         {
             tag = Tag::PHI;
         }
         std::string toString() override
         {
-            std::string str = name + std::to_string(ssa_index) + " = phi(";
+            std::string str = "phi(";
             for (const auto &arg : args)
             {
-                str += arg->name + std::to_string(ssa_index) + " ";
+                str += arg->toString() + " ";
             }
             return str + ")";
         }
-        Tag tag;
         std::vector<IRVar *> args;
     };
 } // namespace COMPILER

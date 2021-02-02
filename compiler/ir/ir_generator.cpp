@@ -651,12 +651,12 @@ void COMPILER::IRGenerator::removeUnusedVarDef()
                         if (lhs->tag == IR::Tag::VAR)
                         {
                             auto *tmp = static_cast<IRVar *>(lhs);
-                            tmp->def->killUse(tmp);
+                            if (tmp->def != nullptr) tmp->def->killUse(tmp);
                         }
                         if (rhs->tag == IR::Tag::VAR)
                         {
                             auto *tmp = static_cast<IRVar *>(rhs);
-                            tmp->def->killUse(tmp);
+                            if (tmp->def != nullptr) tmp->def->killUse(tmp);
                         }
 
                         delete lhs;

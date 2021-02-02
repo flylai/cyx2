@@ -11,7 +11,8 @@
 namespace COMPILER
 {
     class IRInst;
-    class IRPhi;
+    class IRAssign;
+    class IR;
     static int BASIC_BLOCK_COUNT = 0;
     class BasicBlock
     {
@@ -50,9 +51,14 @@ namespace COMPILER
         int block_index;
         //
         std::list<IRInst *> insts;
-        std::list<IRPhi *> phis;
+        std::list<IRAssign *> phis;
         std::unordered_set<BasicBlock *> pres;
         std::unordered_set<BasicBlock *> succs;
+        // lifetime interval (a.k.a live ness, live interval analysis) related
+        std::unordered_set<IR *> live_in;
+        std::unordered_set<IR *> live_out;
+        std::unordered_set<IR *> kill;
+        std::unordered_set<IR *> gen;
     };
 } // namespace COMPILER
 
