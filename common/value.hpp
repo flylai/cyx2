@@ -9,7 +9,6 @@
 
 namespace CYX
 {
-
     class Value
     {
       public:
@@ -44,49 +43,49 @@ namespace CYX
         {
             if (is<std::string>() || rhs.is<std::string>())
             {
-                UNREACHABLE()
+                UNREACHABLE();
             }
             if (is<double>() || rhs.is<double>())
             {
                 return Value(as<double>() - rhs.as<double>());
             }
-            else if (is<int> && rhs.is<int>)
+            else if (is<int>() && rhs.is<int>())
             {
                 return Value(as<int>() - rhs.as<int>());
             }
         }
         Value operator*(Value &rhs)
         {
-            if (is<std::string> && rhs.is<std::string>) // "a" * "b"
+            if (is<std::string>() && rhs.is<std::string>()) // "a" * "b"
             {
-                UNREACHABLE()
+                UNREACHABLE();
             }
             if ((is<std::string>() || rhs.is<std::string>()) && (is<int>() || rhs.is<int>())) // "a" * 3 || 3 * "a"
             {
                 std::string ret;
                 std::string str;
                 int len;
-                if (is<int>)
+                if (is<int>())
                 {
-                    str = rhs.as<std::string>;
-                    len = as<int>;
+                    str = rhs.as<std::string>();
+                    len = as<int>();
                 }
                 else
                 {
                     str = as<std::string>();
-                    len = as<int>;
+                    len = as<int>();
                 }
                 for (int i = 0; i < len; i++)
                 {
-                    ret += rhs;
+                    ret += str;
                 }
-                return str;
+                return Value(ret);
             }
             if (is<double>() || rhs.is<double>()) // 3 * 3.14 || 3.14 * 3
             {
                 return Value(as<double>() * rhs.as<double>());
             }
-            else if (is<int> && rhs.is<int>) // 3 * 3
+            else if (is<int>() && rhs.is<int>()) // 3 * 3
             {
                 return Value(as<int>() - rhs.as<int>());
             }
@@ -95,13 +94,13 @@ namespace CYX
         {
             if (is<std::string>() && rhs.is<std::string>())
             {
-                UNREACHABLE()
+                UNREACHABLE();
             }
             if (is<double>() || rhs.is<double>()) // 3.14 * 1 || 1 * 3.14
             {
                 return Value(as<double>() / rhs.as<double>());
             }
-            else if (is<int> && rhs.is<int>) // 1 * 1
+            else if (is<int>() && rhs.is<int>()) // 1 * 1
             {
                 return Value(as<int>() / rhs.as<int>());
             }
