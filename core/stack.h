@@ -5,28 +5,26 @@
 #include "vm_config.h"
 
 #include <stdexcept>
+#include <vector>
 
-namespace CYX::CORE
+namespace CYX
 {
     class Stack
     {
       public:
         Stack() = default;
-        Value *top();
-        Value *pop();
+        CYX::Value *top();
+        CYX::Value *pop();
         void pop(int n);
-        void push(Value *elem);
-        Value *&operator[](int n);
+        void push(CYX::Value *elem);
+        CYX::Value *&operator[](int n);
         //
         int pos() const;
-        Stack *preStack();
-        void setPreStack(Stack *preStack);
 
       private:
-        int position     = 0;
-        Stack *pre_stack = nullptr;
-        Value *stack[CYX::CONFIG::STACK_SIZE]{};
+        int position = 0;
+        std::vector<CYX::Value *> stack;
     };
-} // namespace CYX::CORE
+} // namespace CYX
 
 #endif

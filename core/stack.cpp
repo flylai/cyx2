@@ -1,54 +1,48 @@
 
 #include "stack.h"
 
-void CYX::CORE::Stack::push(Value *elem)
+void CYX::Stack::push(CYX::Value *elem)
 {
-    stack[position++] = elem;
+    stack.push_back(elem);
 }
 
-CYX::Value *CYX::CORE::Stack::top()
+CYX::Value *CYX::Stack::top()
 {
-    if (position == 0)
-        return nullptr;
-    else
-        return stack[position - 1];
+    if (stack.empty()) return nullptr;
+    return stack.back();
 }
 
-CYX::Value *CYX::CORE::Stack::pop()
+CYX::Value *CYX::Stack::pop()
 {
-    if (position == 0) throw std::out_of_range("Stack out of range! stack pos is 0!");
-    Value *retval = stack[--position];
+    if (stack.empty()) throw std::out_of_range("Stack out of range! stack pos is 0!");
+    CYX::Value *retval = stack.back();
+    stack.pop_back();
     return retval;
 }
 
-void CYX::CORE::Stack::pop(int n)
+void CYX::Stack::pop(int n)
 {
-    if (n > position)
+    if (n > stack.size())
         throw std::invalid_argument("Stack out of range! stack pos is " + std::to_string(position) +
                                     "! but you want to pop " + std::to_string(n) + " element(s)!");
     else
-        position -= n;
+    {
+        for (int i = 0; i < n; i++)
+        {
+            stack.pop_back();
+        }
+    }
 }
 
-CYX::Value *&CYX::CORE::Stack::operator[](int n)
+CYX::Value *&CYX::Stack::operator[](int n)
 {
-    if (n > position)
+    if (n > stack.size())
         throw std::out_of_range("Stack out of range! stack pos is " + std::to_string(position) + "!");
     else
         return stack[n];
 }
 
-CYX::CORE::Stack *CYX::CORE::Stack::preStack()
+int CYX::Stack::pos() const
 {
-    return pre_stack;
-}
-
-void CYX::CORE::Stack::setPreStack(CYX::CORE::Stack *preStack)
-{
-    pre_stack = preStack;
-}
-
-int CYX::CORE::Stack::pos() const
-{
-    return position;
+    return stack.size();
 }
