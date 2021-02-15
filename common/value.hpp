@@ -167,9 +167,31 @@ namespace CYX
             if (is<int>()) return static_cast<double>(value<int>());
             return 0;
         }
+        // array specific
+      public:
+        Value &operator[](int n)
+        {
+            if (isArray())
+                return asArray()->at(n);
+            else if (is<std::string>())
+            {
+            }
+            else
+            {
+                UNREACHABLE();
+            }
+        }
+        bool isArray()
+        {
+            return is<std::vector<Value>>();
+        }
+        std::vector<Value> *asArray()
+        {
+            return valuePtr<std::vector<Value>>();
+        }
 
       private:
-        std::variant<std::monostate, int, double, std::string> _value;
+        std::variant<std::monostate, int, double, std::string, std::vector<Value>> _value;
     };
 
 } // namespace CYX
