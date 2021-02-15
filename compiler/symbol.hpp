@@ -1,6 +1,8 @@
 #ifndef CVM_SYMBOL_HPP
 #define CVM_SYMBOL_HPP
 
+#include "ir/ir_instruction.hpp"
+
 #include <any>
 #include <optional>
 #include <string>
@@ -8,78 +10,78 @@
 
 namespace COMPILER
 {
-    enum class SymbolType
-    {
-        INVALID,
-        INT,
-        DOUBLE,
-        STRING,
-    };
     class Symbol
     {
       public:
-        Symbol() = default;
-        template<typename T>
-        Symbol(const std::string &name, T value)
+        enum class Type
         {
-            this->name = name;
-            _value     = value;
-            if constexpr (std::is_same<int, T>()) type = SymbolType::INT;
-            if constexpr (std::is_same<double, T>()) type = SymbolType::DOUBLE;
-            if constexpr (std::is_same<std::string, T>()) type = SymbolType::STRING;
-        };
-
-        SymbolType type{ INVALID };
-        std::string name;
-
-        template<typename T>
-        T value()
-        {
-            return std::any_cast<T>(_value);
-        }
-
-      private:
-        std::any _value;
+            INVALID,
+            FUNC,
+            VAR,
+        } type{ INVALID };
+        COMPILER::IRFunction *func{ nullptr };
+        COMPILER::IRVar *var{ nullptr };
     };
-
-    //
-    //
 
     class SymbolTable
     {
       public:
-        SymbolTable()
+        SymbolTable() = default;
+        SymbolTable(SymbolTable *pre_table)
         {
-            _pre = nullptr;
-        };
-        explicit SymbolTable(SymbolTable *pre) : _pre(pre), depth(pre->depth + 1){};
-
-        std::pair<int, std::optional<Symbol>> query(const std::string &key)
+            pre = pre_table;
+        }
+        Symbol query(std::string name)
         {
-            SymbolTable *tmp = this;
-            while (tmp != nullptr && tmp->table.find(key) == tmp->table.end())
+            auto *cur_table = this;
+            while (cur_table != nullptr)
             {
-                tmp = tmp->_pre;
+                if (cur_table->table.find(name) != cur_table->table.end()) return cur_table->table[name];
+                cur_table = cur_table->pre;
             }
-            if (tmp->table.find(key) != tmp->table.end()) return { tmp->depth, table[key] };
-            return { -1, {} };
-        };
-
-        void upsert(const std::string &key, const Symbol &symbol)
-        {
-            table[key] = symbol;
-        };
-
-        SymbolTable *pre() const
-        {
-            return _pre;
+            return Symbol();
         }
 
-      private:
-        int depth{ 0 };
+        void upsert(const std::string &name, Symbol symbol)
+        {
+            auto *cur_table = this;
+            while (cur_table != nullptr)
+            {
+                if (cur_table->table.find(name) != cur_table->table.end())
+                {
+                    cur_table = cur_table->pre;
+                }
+                else
+                {
+                    table[name] = symbol;
+                    return;
+                }
+            }
+        }
+
+        void del(const std::string &name)
+        {
+            auto *cur_table = this;
+            while (cur_table != nullptr)
+            {
+                if (auto tmp = cur_table->table.find(name); tmp != cur_table->table.end())
+                {
+                    delete tmp->second.func;
+                    delete tmp->second.var;
+                    table.erase(tmp);
+                }
+                else
+                {
+                    cur_table = cur_table->pre;
+                }
+            }
+        }
+
+      public:
         std::unordered_map<std::string, Symbol> table;
-        SymbolTable *_pre{ nullptr };
+        SymbolTable *pre{ nullptr };
     };
+
 } // namespace COMPILER
 
 #endif // CVM_SYMBOL_HPP
