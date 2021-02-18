@@ -1,20 +1,22 @@
 #ifndef CVM_IR_INSTRUCTION_HPP
 #define CVM_IR_INSTRUCTION_HPP
 
+#include "../../common/config.h"
+#include "../../utility/utility.hpp"
 #include "../common/value.hpp"
-#include "../utility/linkedlist.hpp"
+#include "../token.hpp"
+#include "../utility/log.h"
 #include "basicblock.hpp"
 
 #include <list>
 #include <string>
+#include <vector>
 
 // part of `../token.hpp`
 namespace COMPILER
 {
     enum IROpcode : char
     {
-        IR_IF = 0,
-
         IR_ADD,
         IR_SUB,
         IR_MUL,
@@ -55,10 +57,10 @@ namespace COMPILER
     };
 
     const static IROpcodeStr opcode_str[27] = {
-        { IROpcode::IR_IF, "if" },     { IROpcode::IR_ADD, "+" },       { IROpcode::IR_SUB, "-" },
-        { IROpcode::IR_MUL, "*" },     { IROpcode::IR_DIV, "/" },       { IROpcode::IR_MOD, "%" },
-        { IROpcode::IR_BAND, "&" },    { IROpcode::IR_BXOR, "^" },      { IROpcode::IR_BOR, "|" },
-        { IROpcode::IR_EXP, "**" },    { IROpcode::IR_SHL, "<<" },      { IROpcode::IR_SHR, ">>" },
+        { IROpcode::IR_ADD, "+" },     { IROpcode::IR_SUB, "-" },       { IROpcode::IR_MUL, "*" },
+        { IROpcode::IR_DIV, "/" },     { IROpcode::IR_MOD, "%" },       { IROpcode::IR_BAND, "&" },
+        { IROpcode::IR_BXOR, "^" },    { IROpcode::IR_BOR, "|" },       { IROpcode::IR_EXP, "**" },
+        { IROpcode::IR_SHL, "<<" },    { IROpcode::IR_SHR, ">>" },
 
         { IROpcode::IR_LAND, "&&" },   { IROpcode::IR_LOR, "||" },
 
@@ -112,7 +114,6 @@ namespace COMPILER
         }
     }
 
-    class BasicBlock;
     class IR;
     class IRInst;
     class IRBinary;
@@ -131,7 +132,11 @@ namespace COMPILER
     class IR
     {
       public:
-        virtual ~IR() = default;
+        IR()                           = default;
+        virtual ~IR()                  = default;
+        virtual std::string toString() = 0;
+
+      public:
         enum class Tag
         {
             INVALID,
@@ -147,10 +152,6 @@ namespace COMPILER
             ASSIGN, // a = binary / constant / call / var / vardef
             PHI,    // phi node
         } tag{ Tag::INVALID };
-        virtual std::string toString() = 0;
-
-      public:
-        IR() = default;
     };
 
     class IRValue : public IR
@@ -165,6 +166,7 @@ namespace COMPILER
       public:
         using IR::IR;
         COMPILER::BasicBlock *block{ nullptr };
+        int id{ -1 }; // instruction ID, for compute lifetime interval in `cfg.cpp`
     };
 
     class IRConstant : public IRValue
@@ -179,14 +181,14 @@ namespace COMPILER
 
         std::string toString() override
         {
-            std::string retval = value.as<std::string>() + "(IRConstant[";
+            std::string retval = value.as<std::string>() + "(";
             if (value.is<int>())
                 retval += "int";
             else if (value.is<double>())
                 retval += "double";
             else
                 retval += "string";
-            retval += "])";
+            retval += ")";
             return retval;
         }
     };
@@ -205,7 +207,6 @@ namespace COMPILER
             if (lhs != nullptr) retval += lhs->toString();
             retval += " " + opcode_str[opcode].opcode_str + " ";
             if (rhs != nullptr) retval += rhs->toString();
-            retval += "(IRBinary)";
             return retval;
         }
 
@@ -213,27 +214,6 @@ namespace COMPILER
         COMPILER::IROpcode opcode{ IROpcode::IR_INVALID };
         IRValue *lhs{ nullptr };
         IRValue *rhs{ nullptr };
-    };
-
-    class IRBranch : public IRInst
-    {
-      public:
-        using IRInst::IRInst;
-        IRBranch()
-        {
-            tag = Tag::BRANCH;
-        }
-        COMPILER::IRValue *cond{ nullptr };
-        COMPILER::BasicBlock *true_block{ nullptr };
-        COMPILER::BasicBlock *false_block{ nullptr };
-        std::string toString() override
-        {
-            std::string retval = "if ";
-            if (cond) retval += cond->toString() + " ";
-            if (true_block != nullptr) retval += "then goto " + true_block->name + " ";
-            if (false_block != nullptr) retval += "else goto " + false_block->name + " ";
-            return retval + "(IRBranch)";
-        }
     };
 
     class IRReturn : public IRInst
@@ -263,7 +243,7 @@ namespace COMPILER
         }
         std::string toString() override
         {
-            return "jmp " + target->name + "(IRJump)";
+            return (id >= 0 ? std::to_string(id) + " " : "") + "jmp " + target->name;
         }
 
       public:
@@ -317,7 +297,7 @@ namespace COMPILER
         }
         std::string toString() override
         {
-            return name + (is_ir_gen ? "" : std::to_string(ssa_index)) + "(IRVar)";
+            return name + (is_ir_gen || ENABLE_SSA ? "" : std::to_string(ssa_index));
         }
         //
         void addUse(IRVar *value)
@@ -330,6 +310,10 @@ namespace COMPILER
         void killUse(IRVar *value)
         {
             use.remove(value);
+        }
+        bool operator<(const IRVar &var) const
+        {
+            return false;
         }
 
       public:
@@ -372,10 +356,10 @@ namespace COMPILER
         }
         std::string toString() override
         {
-            std::string retval;
+            std::string retval = (id >= 0 ? std::to_string(id) + " " : "");
             if (dest != nullptr) retval += dest->toString();
             if (src != nullptr) retval += " = " + src->toString();
-            return retval + "(IRAssign)";
+            return retval;
         }
 
       public:
@@ -401,6 +385,27 @@ namespace COMPILER
             return str + ")";
         }
         std::vector<IRVar *> args;
+    };
+
+    class IRBranch : public IRInst
+    {
+      public:
+        using IRInst::IRInst;
+        IRBranch()
+        {
+            tag = Tag::BRANCH;
+        }
+        COMPILER::IRVar *cond{ nullptr };
+        COMPILER::BasicBlock *true_block{ nullptr };
+        COMPILER::BasicBlock *false_block{ nullptr };
+        std::string toString() override
+        {
+            std::string retval = (id >= 0 ? std::to_string(id) + " " : "") + "if ";
+            if (cond) retval += cond->toString() + " ";
+            if (true_block != nullptr) retval += "then goto " + true_block->name + " ";
+            if (false_block != nullptr) retval += "else goto " + false_block->name + " ";
+            return retval;
+        }
     };
 } // namespace COMPILER
 
