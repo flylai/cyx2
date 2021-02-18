@@ -18,31 +18,34 @@ namespace COMPILER
 
       public:
         void simplifyCFG();
-        void buildDominateTree();
+        void buildDominateTree(COMPILER::IRFunction *func);
+        void transformToSSA();
+        void removeUnusedPhis(IRFunction *func);
         std::string iDomDetailStr() const;
         std::string dominanceFrontierStr() const;
         std::string dumpCFG() const;
 
       public:
         std::vector<IRFunction *> funcs;
-        BasicBlock *entry{};
 
       private:
-        void init();
+        void init(IRFunction *func);
+        void clear();
         void dfs(BasicBlock *cur_basic_block);
         void tarjan();
-        void calcDominanceFrontier();
+        void calcDominanceFrontier(COMPILER::IRFunction *func);
         // disjoint set
         COMPILER::BasicBlock *find(COMPILER::BasicBlock *block);
         // SSA construction
-        void collectVarAssign();
+        void collectVarAssign(COMPILER::IRFunction *func);
         void insertPhiNode();
         void tryRename();
         void rename(BasicBlock *block);
-        int newId(const std::string &name);
-        int getId(const std::string &name);
+        int newId(const std::string &name, IRVar *def);
+        std::pair<int, IRVar *> getId(const std::string &name);
 
       private:
+        BasicBlock *entry{ nullptr };
         // dfs related
         std::vector<BasicBlock *> dfn;
         std::unordered_map<BasicBlock *, int> dfn_map;
@@ -59,7 +62,7 @@ namespace COMPILER
         // SSA construction.....
         std::unordered_map<std::string, std::unordered_set<BasicBlock *>> var_block_map;
         std::unordered_map<std::string, int> counter;
-        std::unordered_map<std::string, std::stack<int>> stack;
+        std::unordered_map<std::string, std::stack<std::pair<int, IRVar *>>> stack;
     };
 } // namespace COMPILER
 

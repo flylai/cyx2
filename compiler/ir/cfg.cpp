@@ -1,13 +1,31 @@
 #include "cfg.h"
 
-void COMPILER::CFG::init()
+void COMPILER::CFG::init(IRFunction *func)
 {
-    for (auto block : funcs[0]->blocks)
+    for (auto block : func->blocks)
     {
         sdom[block]             = block;
         disjoint_set[block]     = block;
         disjoint_set_val[block] = block;
     }
+}
+
+void COMPILER::CFG::clear()
+{
+    sdom.clear();
+    dfn.clear();
+    dfn_map.clear();
+    father.clear();
+    visited.clear();
+    sdom.clear();
+    idom.clear();
+    tree.clear();
+    dominance_frontier.clear();
+    disjoint_set.clear();
+    disjoint_set_val.clear();
+    var_block_map.clear();
+    counter.clear();
+    stack.clear();
 }
 
 void COMPILER::CFG::dfs(COMPILER::BasicBlock *cur_basic_block)
@@ -71,31 +89,27 @@ void COMPILER::CFG::tarjan()
     }
 }
 
-void COMPILER::CFG::buildDominateTree()
+void COMPILER::CFG::buildDominateTree(COMPILER::IRFunction *func)
 {
-    init();
+    clear();
+    init(func);
     dfs(entry);
     tarjan();
-    calcDominanceFrontier();
+    calcDominanceFrontier(func);
 }
 
-void COMPILER::CFG::calcDominanceFrontier()
+void COMPILER::CFG::calcDominanceFrontier(COMPILER::IRFunction *func)
 {
-    for (auto *func : funcs)
+    for (auto *block : func->blocks)
     {
-        for (auto *block : func->blocks)
+        if (block->pres.size() < 2) continue;
+        for (auto *pre : block->pres)
         {
-            if (block->pres.size() >= 2)
+            auto *runner = pre;
+            while (runner != idom[block] && runner != nullptr)
             {
-                for (auto *pre : block->pres)
-                {
-                    auto *runner = pre;
-                    while (runner != idom[block] && runner != nullptr)
-                    {
-                        dominance_frontier[runner].insert(block);
-                        runner = idom[runner];
-                    }
-                }
+                dominance_frontier[runner].insert(block);
+                runner = idom[runner];
             }
         }
     }
@@ -146,24 +160,57 @@ void COMPILER::CFG::simplifyCFG()
                 it++;
             }
         }
+        // append missing return inst
+        auto *end_block = func->blocks.back();
+        if (end_block->insts.empty() || end_block->insts.back()->tag != IR::Tag::RETURN)
+        {
+            end_block->addInst(new IRReturn);
+        }
     }
 }
 
-void COMPILER::CFG::collectVarAssign()
+void COMPILER::CFG::removeUnusedPhis(IRFunction *func)
+{
+    for (auto *block : func->blocks)
+    {
+        for (auto phi_it = block->phis.begin(); phi_it != block->phis.end();)
+        {
+            auto *phi_assign = *phi_it;
+            if (phi_assign->dest->use.empty())
+                phi_it = block->phis.erase(phi_it);
+            else
+                phi_it++;
+        }
+    }
+}
+
+void COMPILER::CFG::transformToSSA()
 {
     for (auto *func : funcs)
     {
+        if (func->blocks.empty()) continue;
+        entry = func->blocks.front();
+        buildDominateTree(func);
+
         var_block_map.clear();
-        for (auto *block : func->blocks)
+        collectVarAssign(func);
+        insertPhiNode();
+        tryRename();
+        removeUnusedPhis(func);
+    }
+}
+
+void COMPILER::CFG::collectVarAssign(COMPILER::IRFunction *func)
+{
+    for (auto *block : func->blocks)
+    {
+        for (auto *inst : block->insts)
         {
-            for (auto *inst : block->insts)
+            if (inst->tag == IR::Tag::ASSIGN)
             {
-                if (inst->tag == IR::Tag::ASSIGN)
-                {
-                    auto *assign = static_cast<IRAssign *>(inst);
-                    if (assign->dest->def == nullptr && assign->dest->is_ir_gen) continue;
-                    var_block_map[assign->dest->name].insert(block);
-                }
+                auto *assign = static_cast<IRAssign *>(inst);
+                if (assign->dest->def == nullptr && assign->dest->is_ir_gen) continue;
+                var_block_map[assign->dest->name].insert(block);
             }
         }
     }
@@ -192,9 +239,19 @@ void COMPILER::CFG::insertPhiNode()
                 {
                     // add phi node
                     inserted[df_block] = var_name;
-                    auto *phi          = new IRPhi;
-                    phi->name          = var_name;
-                    df_block->phis.push_back(phi);
+                    auto *assign       = new IRAssign;
+                    //
+                    auto *lhs        = new IRVar;
+                    lhs->name        = var_name;
+                    lhs->belong_inst = assign;
+                    //
+                    auto *phi        = new IRPhi;
+                    phi->belong_inst = assign;
+                    //
+                    assign->dest  = lhs;
+                    assign->src   = phi;
+                    assign->block = df_block;
+                    df_block->phis.push_back(assign);
                     // add block's dominance frontier to worklist
                     work_list.push(df_block);
                 }
@@ -216,41 +273,64 @@ void COMPILER::CFG::rename(COMPILER::BasicBlock *block)
 {
     for (auto *phi : block->phis)
     {
-        phi->ssa_index = newId(phi->name);
+        auto *lhs      = phi->dest;
+        lhs->ssa_index = newId(lhs->name, lhs);
     }
     for (auto *inst : block->insts)
     {
-        if (inst->tag == IR::Tag::ASSIGN)
+        if (inst->tag != IR::Tag::ASSIGN) continue;
+        //
+        auto *assign = static_cast<IRAssign *>(inst);
+        if (assign->src->tag == IR::Tag::BINARY)
         {
-            auto *assign = static_cast<IRAssign *>(inst);
-            if (assign->src->tag == IR::Tag::BINARY)
+            auto *src = static_cast<IRBinary *>(assign->src);
+            if (src->lhs != nullptr && src->lhs->tag == IR::Tag::VAR)
             {
-                auto *src = static_cast<IRBinary *>(assign->src);
-                if (src->lhs != nullptr && src->lhs->tag == IR::Tag::VAR)
-                {
-                    auto *src_lhs      = static_cast<IRVar *>(src->lhs);
-                    src_lhs->ssa_index = getId(src_lhs->name);
-                }
-                if (src->rhs != nullptr && src->rhs->tag == IR::Tag::VAR)
-                {
-                    auto *src_rhs      = static_cast<IRVar *>(src->rhs);
-                    src_rhs->ssa_index = getId(src_rhs->name);
-                }
+                auto *src_lhs      = static_cast<IRVar *>(src->lhs);
+                auto [id, def]     = getId(src_lhs->name);
+                src_lhs->ssa_index = id;
+                // def-use chains update
+                src_lhs->def = def;
+                if (src_lhs->def) src_lhs->def->addUse(src_lhs);
             }
-            else if (assign->src->tag == IR::Tag::VAR)
+            if (src->rhs != nullptr && src->rhs->tag == IR::Tag::VAR)
             {
-                auto *src      = static_cast<IRVar *>(assign->src);
-                src->ssa_index = getId(src->name);
+                auto *src_rhs      = static_cast<IRVar *>(src->rhs);
+                auto [id, def]     = getId(src_rhs->name);
+                src_rhs->ssa_index = id;
+                // def-use chains update
+                src_rhs->def = def;
+                if (src_rhs->def) src_rhs->def->addUse(src_rhs);
             }
-            if (assign->dest->def == nullptr && assign->dest->is_ir_gen) continue;
-            assign->dest->ssa_index = newId(assign->dest->name);
         }
+        else if (assign->src->tag == IR::Tag::VAR)
+        {
+            auto *src      = static_cast<IRVar *>(assign->src);
+            auto [id, def] = getId(src->name);
+            src->ssa_index = id;
+            // def-use chains update
+            src->def = def;
+            if (src->def) src->def->addUse(src);
+        }
+        if (assign->dest->def == nullptr && assign->dest->is_ir_gen) continue;
+        assign->dest->ssa_index = newId(assign->dest->name, assign->dest);
     }
     for (auto *succ : block->succs)
     {
         for (auto *phi : succ->phis)
         {
-            phi->args.push_back(phi->name + std::to_string(getId(phi->name)));
+            // add phi args
+            auto *dest       = phi->dest;
+            auto *src        = static_cast<IRPhi *>(phi->src); // real phi function
+            auto [id, def]   = getId(dest->name);
+            auto *arg        = new IRVar;
+            arg->ssa_index   = id;
+            arg->name        = dest->name;
+            arg->belong_inst = phi;
+            // def-use chain
+            arg->def = dynamic_cast<IRVar *>(def);
+            if (def != nullptr) def->addUse(arg);
+            src->args.push_back(arg);
         }
     }
     for (auto *succ : tree[block])
@@ -267,20 +347,20 @@ void COMPILER::CFG::rename(COMPILER::BasicBlock *block)
     }
     for (auto *phi : block->phis)
     {
-        if (!stack[phi->name].empty()) stack[phi->name].pop();
+        if (!stack[phi->dest->name].empty()) stack[phi->dest->name].pop();
     }
 }
 
-int COMPILER::CFG::newId(const std::string &name)
+int COMPILER::CFG::newId(const std::string &name, IRVar *def)
 {
     int i = counter[name]++;
-    stack[name].push(i);
+    stack[name].push({ i, def });
     return i;
 }
 
-int COMPILER::CFG::getId(const std::string &name)
+std::pair<int, COMPILER::IRVar *> COMPILER::CFG::getId(const std::string &name)
 {
-    if (stack[name].empty()) return 0;
+    if (stack[name].empty()) return { 0, nullptr };
     return stack[name].top();
 }
 
