@@ -55,6 +55,11 @@ namespace COMPILER
         COMPILER::IRVar *consumeVariable(bool force_IRVar = true);
         BasicBlock *newBasicBlock(const std::string &name = "");
         //
+        void fixContinueTarget();
+
+      private:
+        std::vector<BasicBlock *> loop_stack;
+        std::vector<IRJump *> fix_continue_wait_list;
 
       public:
         int var_cnt{ 0 };

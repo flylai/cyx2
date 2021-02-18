@@ -269,6 +269,9 @@ void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
      ....
     */
     auto *init_block = newBasicBlock();
+    //
+    loop_stack.push_back(init_block);
+    //
     LINK(cur_basic_block, init_block);
     cur_basic_block = init_block;
     ptr->init->visit(this);
@@ -307,11 +310,16 @@ void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
     // loop
     out_block->loop_start = init_block;
     init_block->loop_end  = out_block;
+    //
+    loop_stack.pop_back();
 }
 
 void COMPILER::IRGenerator::visitWhileStmt(COMPILER::WhileStmt *ptr)
 {
     auto *cond_block = newBasicBlock();
+    //
+    loop_stack.push_back(cond_block);
+    //
     LINK(cur_basic_block, cond_block);
     cur_basic_block = cond_block;
     ptr->cond->visit(this);
@@ -340,6 +348,8 @@ void COMPILER::IRGenerator::visitWhileStmt(COMPILER::WhileStmt *ptr)
     // loop
     cond_block->loop_end  = out_block;
     out_block->loop_start = cond_block;
+    //
+    loop_stack.pop_back();
 }
 
 void COMPILER::IRGenerator::visitSwitchStmt(COMPILER::SwitchStmt *ptr)
@@ -353,32 +363,40 @@ void COMPILER::IRGenerator::visitMatchStmt(COMPILER::MatchStmt *ptr)
 void COMPILER::IRGenerator::visitFuncDeclStmt(COMPILER::FuncDeclStmt *ptr)
 {
     // first scan...
-    if (step == 1)
-    {
-        auto *ir_func  = new HIRFunction;
-        ir_func->name  = ptr->func_name->value;
-        ir_func->block = ptr->block;
-        for (const auto &param : ptr->params)
-        {
-            auto *var = new IRVar;
-            var->name = param;
-            ir_func->params.push_back(var);
-        }
+    if (step != 1) return;
 
-        if (first_scan_vars.find(ir_func->name) != first_scan_vars.end())
-        {
-            ERROR("twice defined! previous " + ir_func->name + " defined is variable!!");
-        }
-        first_scan_funcs[ir_func->name] = ir_func;
+    auto *ir_func  = new HIRFunction;
+    ir_func->name  = ptr->func_name->value;
+    ir_func->block = ptr->block;
+    for (const auto &param : ptr->params)
+    {
+        auto *var = new IRVar;
+        var->name = param;
+        ir_func->params.push_back(var);
     }
+
+    if (first_scan_vars.find(ir_func->name) != first_scan_vars.end())
+    {
+        ERROR("twice defined! previous " + ir_func->name + " defined is variable!!");
+    }
+    first_scan_funcs[ir_func->name] = ir_func;
 }
 
 void COMPILER::IRGenerator::visitBreakStmt(COMPILER::BreakStmt *ptr)
 {
+    if (loop_stack.empty()) ERROR("unexpected BreakStmt");
+    auto *inst   = new IRJump;
+    inst->target = loop_stack.back();
+    fix_continue_wait_list.push_back(inst);
+    cur_basic_block->addInst(inst);
 }
 
 void COMPILER::IRGenerator::visitContinueStmt(COMPILER::ContinueStmt *ptr)
 {
+    if (loop_stack.empty()) ERROR("unexpected ContinueStmt");
+    auto *inst   = new IRJump;
+    inst->target = loop_stack.back();
+    cur_basic_block->addInst(inst);
 }
 
 void COMPILER::IRGenerator::visitReturnStmt(COMPILER::ReturnStmt *ptr)
@@ -446,8 +464,9 @@ COMPILER::IRVar *COMPILER::IRGenerator::consumeVariable(bool force_IRVar)
     auto *var_def = tmp_vars.top(); // variable definition
     tmp_vars.pop();
 
-    auto *retval = new IRVar;
-    retval->name = var_def->name;
+    auto *retval      = new IRVar;
+    retval->name      = var_def->name;
+    retval->is_ir_gen = var_def->is_ir_gen;
 
     // def-use.
     if (var_def->def == nullptr)
@@ -550,6 +569,8 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
     }
     for (const auto &x : first_scan_funcs)
     {
+        loop_stack.clear();
+
         auto *func = new IRFunction;
         func->name = x.first;
         Symbol symbol;
@@ -575,6 +596,8 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
 
         x.second->block->visit(this);
         exitScope();
+        // fix continue stmt, when visit continue stmt, we cant known the out block of the loop
+        fixContinueTarget();
     }
 }
 
@@ -602,27 +625,25 @@ void COMPILER::IRGenerator::simplifyIR()
     {
         for (auto *block : func->blocks)
         {
-            if (block->insts.size() >= 2)
+            if (block->insts.size() < 2) continue;
+            for (auto it = block->insts.begin(); it != block->insts.end();)
             {
-                for (auto it = block->insts.begin(); it != block->insts.end();)
+                auto *tmp_cur  = *it;
+                auto *tmp_next = ++it != block->insts.end() ? *it : nullptr; // next inst iterator
+                if (tmp_next == nullptr) break;
+                // two insts must be IRAssign
+                // MAGIC
+                if (tmp_cur->tag == IR::Tag::ASSIGN && tmp_next->tag == IR::Tag::ASSIGN)
                 {
-                    auto *tmp_cur  = *it;
-                    auto *tmp_next = ++it != block->insts.end() ? *it : nullptr; // next inst iterator
-                    if (tmp_next == nullptr) break;
-                    // two insts must be IRAssign
-                    // MAGIC
-                    if (tmp_cur->tag == IR::Tag::ASSIGN && tmp_next->tag == IR::Tag::ASSIGN)
+                    auto *cur  = static_cast<IRAssign *>(tmp_cur);
+                    auto *next = static_cast<IRAssign *>(tmp_next);
+                    if (next->src->tag == IR::Tag::VAR && cur->dest->def == nullptr)
                     {
-                        auto *cur  = static_cast<IRAssign *>(tmp_cur);
-                        auto *next = static_cast<IRAssign *>(tmp_next);
-                        if (next->src->tag == IR::Tag::VAR && cur->dest->def == nullptr)
+                        auto *var = static_cast<IRVar *>(next->src);
+                        if (static_cast<IRVar *>(cur->dest)->is_ir_gen && var->name == cur->dest->name)
                         {
-                            auto *var = static_cast<IRVar *>(next->src);
-                            if (static_cast<IRVar *>(cur->dest)->is_ir_gen && var->name == cur->dest->name)
-                            {
-                                next->src = cur->src;
-                                it        = block->insts.erase(--it); // it is pointing to `next` before --it.
-                            }
+                            next->src = cur->src;
+                            it        = block->insts.erase(--it); // it is pointing to `next` before --it.
                         }
                     }
                 }
@@ -634,6 +655,7 @@ void COMPILER::IRGenerator::simplifyIR()
 void COMPILER::IRGenerator::removeUnusedVarDef()
 {
     // TODO: `branch` inst may use val
+    // TODO: fixContinueTarget() may cause some errors(i guess)
     for (auto *func : funcs)
     {
         // reverse traversal
@@ -680,6 +702,27 @@ void COMPILER::IRGenerator::removeUnusedVarDef()
                 }
             }
         }
+    }
+}
+
+void COMPILER::IRGenerator::fixContinueTarget()
+{
+    for (auto *inst : fix_continue_wait_list)
+    {
+        auto *candidate_block = inst->target->loop_end;
+        // if loop out block is empty block, it will be removed at CFG.simplifyCFG(), so we need find a not empty succ
+        // block.
+        while (candidate_block->insts.empty())
+        {
+            candidate_block = *candidate_block->succs.begin();
+            if (!candidate_block->insts.empty())
+            {
+                break;
+            }
+            else if (candidate_block->succs.size() > 1)
+                ERROR("loop out block has two or more succs, it impossible!");
+        }
+        inst->target = candidate_block;
     }
 }
 

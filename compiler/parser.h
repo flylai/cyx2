@@ -5,7 +5,6 @@
 #include "ast/ast_visualize.h"
 #include "ast/expr.hpp"
 #include "ast/stmt.hpp"
-#include "ir/cfg_builder.h"
 #include "ir/ir_generator.h"
 #include "lexer.h"
 
@@ -23,10 +22,10 @@ namespace COMPILER
             cur_token = lexer.nextToken();
             pre_token = Token(Keyword::INVALID, "", -1, -1);
         };
-        void parse();
+        Tree *parse();
         bool eat(Keyword tk);
         void eat();
-        void program();
+        Tree *program();
 
         Expr *parsePrimaryExpr();
         Expr *parseUnaryExpr();
@@ -49,6 +48,8 @@ namespace COMPILER
         COMPILER::Stmt *parseForStmt();
         COMPILER::Stmt *parseWhileStmt();
         COMPILER::Stmt *parseReturnStmt();
+        COMPILER::Stmt *parseBreakStmt();
+        COMPILER::Stmt *parseContinueStmt();
         COMPILER::Stmt *parseImportStmt();
         SwitchStmt *parseSwitchStmt();
 

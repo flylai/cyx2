@@ -1,8 +1,10 @@
 #include "parser.h"
 
-void COMPILER::Parser::parse()
+#include "ir/cfg.h"
+
+COMPILER::Tree *COMPILER::Parser::parse()
 {
-    program();
+    return program();
 }
 
 bool COMPILER::Parser::eat(COMPILER::Keyword tk)
@@ -19,33 +21,16 @@ void COMPILER::Parser::eat()
 {
     pre_token = cur_token;
     cur_token = lexer.nextToken();
-    log(pre_token);
 }
 
-void COMPILER::Parser::program()
+COMPILER::Tree *COMPILER::Parser::program()
 {
     auto *ast = new Tree();
     while (cur_token.keyword != Keyword::INVALID)
     {
         ast->stmts.push_back(parseStmt());
     }
-
-    auto *ir_generator = new IRGenerator;
-    ir_generator->visitTree(ast);
-    log(ir_generator->irCodeString());
-
-    auto *cfg_builder = new CFGBuilder();
-    cfg_builder->setInsts(ir_generator->insts());
-    cfg_builder->buildCFG();
-    cfg_builder->cfg2Graph();
-    log(cfg_builder->graph);
-
-    CFG cfg;
-    cfg.basic_blocks = cfg_builder->basicBlock();
-    cfg.entry        = cfg_builder->entry;
-    cfg.buildDominateTree();
-    cfg.showIDom();
-    // do something.
+    return ast;
 }
 
 COMPILER::Expr *COMPILER::Parser::parsePrimaryExpr()
@@ -206,7 +191,7 @@ inline constexpr int COMPILER::Parser::opcodePriority(COMPILER::Keyword keyword)
 COMPILER::Expr *COMPILER::Parser::parseGroupingExpr()
 {
     auto *retval = parseExpr();
-    if (!eat(Keyword::RPAREN)) log("should not reach here");
+    if (!eat(Keyword::RPAREN)) ERROR("should not reach here");
     return retval;
 }
 
@@ -220,6 +205,8 @@ COMPILER::Stmt *COMPILER::Parser::parseStmt()
         case Keyword::WHILE: return parseWhileStmt();
         case Keyword::IMPORT: return parseImportStmt();
         case Keyword::RETURN: return parseReturnStmt();
+        case Keyword::BREAK: return parseBreakStmt();
+        case Keyword::CONTINUE: return parseContinueStmt();
         case Keyword::SWITCH: return parseSwitchStmt();
         default: return parseExprStmt();
     }
@@ -395,6 +382,20 @@ COMPILER::Stmt *COMPILER::Parser::parseReturnStmt()
     auto *return_stmt   = new ReturnStmt(cur_token.row, cur_token.column);
     return_stmt->retval = parseExprStmt();
     return return_stmt;
+}
+
+COMPILER::Stmt *COMPILER::Parser::parseBreakStmt()
+{
+    eat(Keyword::BREAK);
+    auto *break_stmt = new BreakStmt(cur_token.row, cur_token.column);
+    return break_stmt;
+}
+
+COMPILER::Stmt *COMPILER::Parser::parseContinueStmt()
+{
+    eat(Keyword::CONTINUE);
+    auto *break_stmt = new ContinueStmt(cur_token.row, cur_token.column);
+    return break_stmt;
 }
 
 COMPILER::Stmt *COMPILER::Parser::parseImportStmt()
