@@ -98,8 +98,40 @@ namespace CVM
 
 #undef STORE_INST
 
+    struct Arg : VMInstruction
+    {
+        Arg() = default;
+        enum class Type
+        {
+            RAW,
+            MAP
+        } type{ Type::RAW };
+        std::string name;
+        CYX::Value value;
+        std::string toString() override
+        {
+            return type == Type::RAW ? "RAW " + value.as<std::string>() : "MAP " + name;
+        }
+    };
+
     struct Call : VMInstruction
     {
+        Call()
+        {
+            opcode = Opcode::CALL;
+        }
+        std::string toString() override
+        {
+            std::string retval = "CALL " + name + "(" + std::to_string(target) + ")";
+            for (auto arg : args)
+            {
+                retval += "\n" + arg.toString();
+            }
+            return retval;
+        };
+        std::string name;
+        int target{ -1 };
+        std::vector<Arg> args;
     };
 
     struct Func : VMInstruction
@@ -140,6 +172,11 @@ namespace CVM
 
     struct Jmp : VMInstruction
     {
+        Jmp()
+        {
+            opcode = Opcode::JMP;
+        }
+        std::string basic_block_name;
         int target{ -1 };
         std::string toString() override
         {
@@ -149,6 +186,12 @@ namespace CVM
 
     struct Jif : VMInstruction
     {
+        Jif()
+        {
+            opcode = Opcode::JIF;
+        }
+        std::string basic_block_name1;
+        std::string basic_block_name2;
         int target1{ -1 };
         int target2{ -1 };
         std::string toString() override

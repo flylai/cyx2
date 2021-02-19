@@ -200,6 +200,7 @@ void COMPILER::IRGenerator::visitIdentifierExpr(COMPILER::IdentifierExpr *ptr)
 void COMPILER::IRGenerator::visitFuncCallExpr(COMPILER::FuncCallExpr *ptr)
 {
     auto *inst = new IRCall;
+    inst->name = ptr->func_name;
     inst->func = first_scan_funcs[ptr->func_name]->ir_func;
 
     int arg_cnt = 0;

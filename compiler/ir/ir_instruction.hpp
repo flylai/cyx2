@@ -288,6 +288,7 @@ namespace COMPILER
         }
 
       public:
+        std::string name;
         IRFunction *func{ nullptr };
         std::vector<IR *> args;
     };
