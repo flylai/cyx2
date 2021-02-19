@@ -83,6 +83,7 @@ namespace COMPILER
         {
           public:
             std::string name;
+            IRFunction *ir_func{ nullptr };
             std::vector<IRVar *> params;
             BlockStmt *block{ nullptr }; // ast body
         };

@@ -250,24 +250,6 @@ namespace COMPILER
         BasicBlock *target{ nullptr };
     };
 
-    class IRCall : public IRInst
-    {
-      public:
-        using IRInst::IRInst;
-        IRCall()
-        {
-            tag = Tag::CALL;
-        }
-        std::string toString() override
-        {
-            return "(IRCall)";
-        }
-
-      public:
-        IRFunction *func{ nullptr };
-        std::vector<IRInst *> args;
-    };
-
     class IRFunction : public IR
     {
       public:
@@ -278,13 +260,36 @@ namespace COMPILER
         }
         std::string toString() override
         {
-            return "@" + name + "(IRFunction)";
+            return "@" + name + "";
         }
 
       public:
         std::string name;
         std::vector<IRVar *> params;
         std::list<BasicBlock *> blocks;
+    };
+
+    class IRCall : public IRInst
+    {
+      public:
+        using IRInst::IRInst;
+        IRCall()
+        {
+            tag = Tag::CALL;
+        }
+        std::string toString() override
+        {
+            std::string retval = func->toString() + "(";
+            for (auto *arg : args)
+            {
+                retval += arg->toString() + ", ";
+            }
+            return retval + ")";
+        }
+
+      public:
+        IRFunction *func{ nullptr };
+        std::vector<IR *> args;
     };
 
     class IRVar : public IRValue

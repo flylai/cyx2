@@ -199,15 +199,46 @@ void COMPILER::IRGenerator::visitIdentifierExpr(COMPILER::IdentifierExpr *ptr)
 
 void COMPILER::IRGenerator::visitFuncCallExpr(COMPILER::FuncCallExpr *ptr)
 {
-    //    auto *inst = new IRInstruction;
-    //
-    //    auto var_tmp = newVariable();
-    //
-    //    inst->dest          = var_tmp;
-    //    inst->opcode        = IROpcode::IR_ASSIGN;
-    //    inst->lhs      = ptr->func_name;
-    //    inst->operand1_type = IROperandType::LABEL;
-    //    instructions.push_back(inst);
+    auto *inst = new IRCall;
+    inst->func = first_scan_funcs[ptr->func_name]->ir_func;
+
+    int arg_cnt = 0;
+    std::vector<IR *> tmp_arg;
+
+    for (auto *arg : ptr->args)
+    {
+        arg->visit(this);
+        if (cur_value.hasValue())
+        {
+            auto *constant  = new IRConstant;
+            constant->value = std::move(cur_value);
+            cur_value.reset();
+            tmp_arg.push_back(constant);
+            arg_cnt++;
+        }
+        else
+        {
+            tmp_arg.push_back(consumeVariable());
+            arg_cnt++;
+        }
+    }
+    // args
+    for (; arg_cnt < ptr->args.size(); arg_cnt++)
+    {
+        inst->args.push_back(cur_basic_block->insts.back());
+        cur_basic_block->insts.pop_back();
+    }
+    for (auto *arg : tmp_arg)
+    {
+        inst->args.push_back(arg);
+    }
+
+    inst->block   = cur_basic_block;
+    auto *assign  = new IRAssign;
+    assign->dest  = newVariable();
+    assign->block = cur_basic_block;
+    assign->src   = inst;
+    cur_basic_block->insts.push_back(assign);
 }
 
 void COMPILER::IRGenerator::visitExprStmt(COMPILER::ExprStmt *ptr)
@@ -365,21 +396,22 @@ void COMPILER::IRGenerator::visitFuncDeclStmt(COMPILER::FuncDeclStmt *ptr)
     // first scan...
     if (step != 1) return;
 
-    auto *ir_func  = new HIRFunction;
-    ir_func->name  = ptr->func_name->value;
-    ir_func->block = ptr->block;
+    auto *func    = new HIRFunction;
+    func->ir_func = new IRFunction;
+    func->name    = ptr->func_name->value;
+    func->block   = ptr->block;
     for (const auto &param : ptr->params)
     {
         auto *var = new IRVar;
         var->name = param;
-        ir_func->params.push_back(var);
+        func->params.push_back(var);
     }
 
-    if (first_scan_vars.find(ir_func->name) != first_scan_vars.end())
+    if (first_scan_vars.find(func->name) != first_scan_vars.end())
     {
-        ERROR("twice defined! previous " + ir_func->name + " defined is variable!!");
+        ERROR("twice defined! previous " + func->name + " defined is variable!!");
     }
-    first_scan_funcs[ir_func->name] = ir_func;
+    first_scan_funcs[func->name] = func;
 }
 
 void COMPILER::IRGenerator::visitBreakStmt(COMPILER::BreakStmt *ptr)
@@ -401,6 +433,9 @@ void COMPILER::IRGenerator::visitContinueStmt(COMPILER::ContinueStmt *ptr)
 
 void COMPILER::IRGenerator::visitReturnStmt(COMPILER::ReturnStmt *ptr)
 {
+    ptr->retval->visit(this);
+    auto *inst = new IRReturn;
+    cur_basic_block->addInst(inst);
 }
 
 void COMPILER::IRGenerator::visitImportStmt(COMPILER::ImportStmt *ptr)
@@ -571,7 +606,7 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
     {
         loop_stack.clear();
 
-        auto *func = new IRFunction;
+        auto *func = x.second->ir_func;
         func->name = x.first;
         Symbol symbol;
         symbol.type = Symbol::Type::FUNC;
