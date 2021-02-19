@@ -167,6 +167,10 @@ namespace CVM
 
     struct Ret : VMInstruction
     {
+        Ret()
+        {
+            opcode = Opcode::RET;
+        }
         // TODO: none void return value
         std::string toString() override
         {
@@ -204,39 +208,6 @@ namespace CVM
         }
     };
 
-    struct Cmp : VMInstruction
-    {
-        int reg_idx1{ -1 };
-        int reg_idx2{ -1 };
-    };
-
-#define CMP_INST(X, OP)                                                                                                \
-    struct X : Cmp                                                                                                     \
-    {                                                                                                                  \
-        X()                                                                                                            \
-        {                                                                                                              \
-            opcode = Opcode::OP;                                                                                       \
-        }                                                                                                              \
-        std::string toString() override                                                                                \
-        {                                                                                                              \
-            std::ostringstream oss;                                                                                    \
-            oss << #OP << " %";                                                                                        \
-            oss << reg_idx1 << " %" << reg_idx2;                                                                       \
-            return oss.str();                                                                                          \
-        }                                                                                                              \
-    };
-
-    CMP_INST(Lor, LOR)
-    CMP_INST(Land, LAND)
-    CMP_INST(Ge, GE)
-    CMP_INST(Gt, GT)
-    CMP_INST(Le, LE)
-    CMP_INST(Lt, LE)
-    CMP_INST(Ne, NE)
-    CMP_INST(Eq, EQ)
-
-#undef CMP_INST
-
     struct Binary : VMInstruction
     {
         int reg_idx1{ -1 };
@@ -271,6 +242,37 @@ namespace CVM
     ARITHMETIC_INST(Shr, SHR)
 
 #undef ARITHMETIC_INST
+
+    struct Cmp : Binary
+    {
+    };
+
+#define CMP_INST(X, OP)                                                                                                \
+    struct X : Cmp                                                                                                     \
+    {                                                                                                                  \
+        X()                                                                                                            \
+        {                                                                                                              \
+            opcode = Opcode::OP;                                                                                       \
+        }                                                                                                              \
+        std::string toString() override                                                                                \
+        {                                                                                                              \
+            std::ostringstream oss;                                                                                    \
+            oss << #OP << " %";                                                                                        \
+            oss << reg_idx1 << " %" << reg_idx2;                                                                       \
+            return oss.str();                                                                                          \
+        }                                                                                                              \
+    };
+
+    CMP_INST(Lor, LOR)
+    CMP_INST(Land, LAND)
+    CMP_INST(Ge, GE)
+    CMP_INST(Gt, GT)
+    CMP_INST(Le, LE)
+    CMP_INST(Lt, LE)
+    CMP_INST(Ne, NE)
+    CMP_INST(Eq, EQ)
+
+#undef CMP_INST
 
     struct Unary : VMInstruction
     {

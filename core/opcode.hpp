@@ -34,8 +34,8 @@ namespace CVM
         LE,
         GT,
         GE,
-        // unary
         LAND,
+        // unary
         LNOT,
         BNOT,
         //
@@ -61,6 +61,11 @@ namespace CVM
     static unsigned char inline constexpr opcode2UChar(Opcode opcode)
     {
         return static_cast<unsigned char>(opcode);
+    }
+
+    static Opcode inline constexpr uchar2Opcode(unsigned char x)
+    {
+        return static_cast<Opcode>(x);
     }
 
 } // namespace CVM
