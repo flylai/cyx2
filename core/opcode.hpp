@@ -1,7 +1,7 @@
 #ifndef CORE_OPCODE_H
 #define CORE_OPCODE_H
 
-namespace CYX
+namespace CVM
 {
     enum class OperandTarget
     {
@@ -26,6 +26,7 @@ namespace CYX
         BXOR,
         SHL,
         SHR,
+        LOR,
         // CMP
         NE,
         EQ,
@@ -35,7 +36,6 @@ namespace CYX
         GE,
         // unary
         LAND,
-        LOR,
         LNOT,
         BNOT,
         //
@@ -45,12 +45,16 @@ namespace CYX
         STORED,
         LOADS,
         STORES,
+        LOADX,
+        STOREX,
         CALL,
+        FUNC,
+        ARG,
+        PARAM,
         RET,
         JMP, // unconditional jump
-        JIF, // conditional jump, dependent on `state`
+        JIF, // conditional jump, depend on `state`
 
-        FUNC    = 0xfe,
         UNKNOWN = 0xff
     };
 
@@ -59,6 +63,6 @@ namespace CYX
         return static_cast<unsigned char>(opcode);
     }
 
-} // namespace CYX
+} // namespace CVM
 
 #endif

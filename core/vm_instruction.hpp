@@ -100,7 +100,10 @@ namespace CVM
 
     struct Arg : VMInstruction
     {
-        Arg() = default;
+        Arg()
+        {
+            opcode = Opcode::ARG;
+        }
         enum class Type
         {
             RAW,
@@ -164,6 +167,7 @@ namespace CVM
 
     struct Ret : VMInstruction
     {
+        // TODO: none void return value
         std::string toString() override
         {
             return "RET";
