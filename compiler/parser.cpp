@@ -14,7 +14,7 @@ bool COMPILER::Parser::eat(COMPILER::Keyword tk)
         eat();
         return true;
     }
-    return false;
+    ERROR("expected " + keyword_table[tk].identifier);
 }
 
 void COMPILER::Parser::eat()
@@ -291,12 +291,13 @@ std::vector<COMPILER::Stmt *> COMPILER::Parser::parseArgListStmt()
 {
     std::vector<Stmt *> args;
     eat(Keyword::LPAREN);
-    while (inOr(cur_token.keyword, Keyword::COMMA, Keyword::IDENTIFIER))
+    while (inOr(cur_token.keyword, Keyword::COMMA, Keyword::IDENTIFIER, Keyword::INTEGER, Keyword::DOUBLE,
+                Keyword::STRING))
     {
-        if (cur_token.keyword == Keyword::IDENTIFIER)
-            args.push_back(parseExprStmt());
-        else
+        if (cur_token.keyword == Keyword::COMMA)
             eat();
+        else
+            args.push_back(parseExprStmt());
     }
     eat(Keyword::RPAREN);
     return args;
