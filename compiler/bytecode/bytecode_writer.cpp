@@ -2,7 +2,7 @@
 
 void COMPILER::BytecodeWriter::writeInsts()
 {
-    writeHeader(0);
+    writeHeader(entry);
     for (auto *inst : vm_insts)
     {
         writeOpcode(inst->opcode);

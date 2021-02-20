@@ -49,8 +49,11 @@ namespace CVM
         void readJmp();
         void readJif();
 
-      private:
+      public:
+        int pc{ -1 };
         std::vector<VMInstruction *> vm_insts;
+
+      private:
         Opcode cur_opcode;
         std::string filename;
         int pos{ 0 };

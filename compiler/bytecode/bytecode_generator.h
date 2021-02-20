@@ -42,6 +42,9 @@ namespace COMPILER
         void genStore(const std::string &name, T val);
         void genStoreX(const std::string &name, int reg_idx);
 
+      public:
+        int entry{ -1 };
+
       private:
         std::unordered_map<std::string, int> block_table;
         std::unordered_map<std::string, int> funcs_table;

@@ -55,6 +55,7 @@ namespace COMPILER
         std::vector<unsigned char> buffer;
 
       public:
+        int entry{ -1 };
         std::vector<CVM::VMInstruction *> vm_insts;
     };
 } // namespace COMPILER

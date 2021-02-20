@@ -179,6 +179,7 @@ void COMPILER::BytecodeGenerator::genCall(COMPILER::IRCall *ptr)
 
 void COMPILER::BytecodeGenerator::genFunc(COMPILER::IRFunction *ptr)
 {
+    if (ptr->name == ENTRY_FUNC) entry = vm_insts.size();
     funcs_table[ptr->name] = vm_insts.size();
     auto *func_inst        = new CVM::Func();
     func_inst->name        = ptr->name;
@@ -320,18 +321,18 @@ void COMPILER::BytecodeGenerator::fixJmp()
         if (inst->opcode == CVM::Opcode::JMP)
         {
             auto *tmp   = static_cast<CVM::Jmp *>(inst);
-            tmp->target = block_table[tmp->basic_block_name] + 1;
+            tmp->target = block_table[tmp->basic_block_name] - 1;
         }
         else if (inst->opcode == CVM::Opcode::JIF)
         {
             auto *tmp    = static_cast<CVM::Jif *>(inst);
-            tmp->target1 = block_table[tmp->basic_block_name1] + 1;
-            tmp->target2 = block_table[tmp->basic_block_name2] + 1;
+            tmp->target1 = block_table[tmp->basic_block_name1] - 1;
+            tmp->target2 = block_table[tmp->basic_block_name2] - 1;
         }
         else if (inst->opcode == CVM::Opcode::CALL)
         {
             auto *tmp   = static_cast<CVM::Call *>(inst);
-            tmp->target = funcs_table[tmp->name];
+            tmp->target = funcs_table[tmp->name] - 1;
         }
     }
 }
