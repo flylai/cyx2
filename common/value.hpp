@@ -38,6 +38,7 @@ namespace CYX
             {
                 return Value(as<std::string>() + rhs.as<std::string>());
             }
+            UNREACHABLE();
         }
         Value operator-(Value &rhs)
         {
@@ -53,6 +54,7 @@ namespace CYX
             {
                 return Value(as<int>() - rhs.as<int>());
             }
+            UNREACHABLE();
         }
         Value operator*(Value &rhs)
         {
@@ -87,8 +89,9 @@ namespace CYX
             }
             else if (is<int>() && rhs.is<int>()) // 3 * 3
             {
-                return Value(as<int>() - rhs.as<int>());
+                return Value(as<int>() * rhs.as<int>());
             }
+            UNREACHABLE();
         }
         Value operator/(Value &rhs)
         {
@@ -104,6 +107,7 @@ namespace CYX
             {
                 return Value(as<int>() / rhs.as<int>());
             }
+            UNREACHABLE();
         }
         Value operator%(Value &rhs)
         {
