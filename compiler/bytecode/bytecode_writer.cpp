@@ -181,29 +181,31 @@ void COMPILER::BytecodeWriter::writeStore()
 
 void COMPILER::BytecodeWriter::writeArg()
 {
-    auto *tmp = static_cast<CVM::Arg *>(cur_inst);
+    auto *arg = static_cast<CVM::Arg *>(cur_inst);
     // write target type
-    if (tmp->type == CVM::Arg::Type::MAP)
+    if (arg->type == CVM::Arg::Type::MAP)
     {
         writeByte(0);
-        writeString(tmp->name);
+        writeString(arg->name);
     }
-    else if (tmp->type == CVM::Arg::Type::RAW)
+    else if (arg->type == CVM::Arg::Type::RAW)
     {
         writeByte(1);
-        // int / double / string
-        if (tmp->value.is<int>())
+        // int = 0 / double = 1 / string = 2
+        if (arg->value.is<int>())
         {
-            // todo write id
-            writeInt(tmp->value.as<int>());
+            writeByte(0);
+            writeInt(arg->value.as<int>());
         }
-        else if (tmp->value.is<double>())
+        else if (arg->value.is<double>())
         {
-            writeDouble(tmp->value.as<double>());
+            writeByte(1);
+            writeDouble(arg->value.as<double>());
         }
-        else if (tmp->value.is<std::string>())
+        else if (arg->value.is<std::string>())
         {
-            writeString(tmp->value.as<std::string>());
+            writeByte(2);
+            writeString(arg->value.as<std::string>());
         }
     }
 }

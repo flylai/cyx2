@@ -159,22 +159,22 @@ void COMPILER::BytecodeGenerator::genCall(COMPILER::IRCall *ptr)
 {
     auto *call = new CVM::Call;
     call->name = ptr->name;
+    vm_insts.push_back(call);
     for (auto *arg : ptr->args)
     {
-        CVM::Arg x;
+        auto x = new CVM::Arg;
         if (auto var = as<IRVar, IR::Tag::VAR>(arg); var != nullptr)
         {
-            x.type = CVM::Arg::Type::MAP;
-            x.name = var->name;
+            x->type = CVM::Arg::Type::MAP;
+            x->name = var->name;
         }
         else if (auto constant = as<IRConstant, IR::Tag::CONST>(arg); arg != nullptr)
         {
-            x.type  = CVM::Arg::Type::RAW;
-            x.value = std::move(constant->value);
+            x->type  = CVM::Arg::Type::RAW;
+            x->value = std::move(constant->value);
         }
-        call->args.push_back(x);
+        vm_insts.push_back(x);
     }
-    vm_insts.push_back(call);
 }
 
 void COMPILER::BytecodeGenerator::genFunc(COMPILER::IRFunction *ptr)
@@ -321,18 +321,18 @@ void COMPILER::BytecodeGenerator::fixJmp()
         if (inst->opcode == CVM::Opcode::JMP)
         {
             auto *tmp   = static_cast<CVM::Jmp *>(inst);
-            tmp->target = block_table[tmp->basic_block_name] - 1;
+            tmp->target = block_table[tmp->basic_block_name];
         }
         else if (inst->opcode == CVM::Opcode::JIF)
         {
             auto *tmp    = static_cast<CVM::Jif *>(inst);
-            tmp->target1 = block_table[tmp->basic_block_name1] - 1;
-            tmp->target2 = block_table[tmp->basic_block_name2] - 1;
+            tmp->target1 = block_table[tmp->basic_block_name1];
+            tmp->target2 = block_table[tmp->basic_block_name2];
         }
         else if (inst->opcode == CVM::Opcode::CALL)
         {
             auto *tmp   = static_cast<CVM::Call *>(inst);
-            tmp->target = funcs_table[tmp->name] - 1;
+            tmp->target = funcs_table[tmp->name];
         }
     }
 }

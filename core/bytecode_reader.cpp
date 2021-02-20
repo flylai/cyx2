@@ -220,16 +220,16 @@ void CVM::BytecodeReader::readArg()
     inst->type = readByte() == 0 ? Arg::Type::MAP : Arg::Type::RAW;
     if (inst->type == CVM::Arg::Type::RAW)
     {
-        auto type = readByte(); // todo.....
-        if (type == 1)
+        auto type = readByte();
+        if (type == 0)
         {
             inst->value = (int) readInt();
         }
-        else if (type == 2)
+        else if (type == 1)
         {
             inst->value = readDouble();
         }
-        else if (type == 3)
+        else if (type == 2)
         {
             inst->value = readString();
         }
@@ -264,6 +264,9 @@ void CVM::BytecodeReader::readParam()
 
 void CVM::BytecodeReader::readRet()
 {
+    auto *inst = new Ret;
+    // todo none void return value
+    vm_insts.push_back(inst);
 }
 
 void CVM::BytecodeReader::readJmp()
