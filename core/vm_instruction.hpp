@@ -268,7 +268,7 @@ namespace CVM
     CMP_INST(Ge, GE)
     CMP_INST(Gt, GT)
     CMP_INST(Le, LE)
-    CMP_INST(Lt, LE)
+    CMP_INST(Lt, LT)
     CMP_INST(Ne, NE)
     CMP_INST(Eq, EQ)
 
