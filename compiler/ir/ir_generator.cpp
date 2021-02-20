@@ -282,7 +282,7 @@ void COMPILER::IRGenerator::visitIfStmt(COMPILER::IfStmt *ptr)
 void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
 {
     /*
-    IR code similar to the following code.
+    IR vm_insts similar to the following vm_insts.
     //
     @init
      t0=1
@@ -317,6 +317,7 @@ void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
     auto *cond        = consumeVariable();
     cond->belong_inst = branch;
     branch->cond      = cond;
+    cur_basic_block->addInst(branch);
     //
     auto *body_block = newBasicBlock();
     LINK(cur_basic_block, body_block);
