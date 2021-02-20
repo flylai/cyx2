@@ -105,6 +105,151 @@ namespace CYX
                 return Value(as<int>() / rhs.as<int>());
             }
         }
+        Value operator%(Value &rhs)
+        {
+            if (is<int>() && rhs.is<int>())
+            {
+                return Value(as<int>() % rhs.as<int>());
+            }
+            UNREACHABLE();
+        }
+        Value operator&(Value &rhs)
+        {
+            if (is<int>() && rhs.is<int>())
+            {
+                return Value(as<int>() & rhs.as<int>());
+            }
+            UNREACHABLE();
+        }
+        Value operator|(Value &rhs)
+        {
+            if (is<int>() && rhs.is<int>())
+            {
+                return Value(as<int>() | rhs.as<int>());
+            }
+            UNREACHABLE();
+        }
+        Value operator^(Value &rhs)
+        {
+            if (is<int>() && rhs.is<int>())
+            {
+                return Value(as<int>() ^ rhs.as<int>());
+            }
+            UNREACHABLE();
+        }
+        Value operator>>(Value &rhs)
+        {
+            if (is<int>() && rhs.is<int>())
+            {
+                return Value(as<int>() >> rhs.as<int>());
+            }
+            UNREACHABLE();
+        }
+        Value operator<<(Value &rhs)
+        {
+            if (is<int>() && rhs.is<int>())
+            {
+                return Value(as<int>() << rhs.as<int>());
+            }
+            UNREACHABLE();
+        }
+        bool operator!=(Value &rhs)
+        {
+            if (is<std::string>() && rhs.is<std::string>())
+            {
+                return as<std::string>() != rhs.as<std::string>();
+            }
+            else if (!is<std::string>() && !rhs.is<std::string>())
+            {
+                return as<double>() != rhs.as<double>();
+            }
+            else
+                return true;
+        }
+        bool operator==(Value &rhs)
+        {
+            if (is<std::string>() && rhs.is<std::string>())
+            {
+                return as<std::string>() == rhs.as<std::string>();
+            }
+            else if (!is<std::string>() && !rhs.is<std::string>())
+            {
+                return as<double>() == rhs.as<double>();
+            }
+            else
+                return true;
+        }
+        //
+        bool operator>(Value &rhs)
+        {
+            if (is<std::string>() && rhs.is<std::string>())
+            {
+                return as<std::string>() > rhs.as<std::string>();
+            }
+            else if (!is<std::string>() && !rhs.is<std::string>())
+            {
+                return as<double>() > rhs.as<double>();
+            }
+            else
+                return false;
+        }
+        bool operator<(Value &rhs)
+        {
+            if (is<std::string>() && rhs.is<std::string>())
+            {
+                return as<std::string>() < rhs.as<std::string>();
+            }
+            else if (!is<std::string>() && !rhs.is<std::string>())
+            {
+                return as<double>() < rhs.as<double>();
+            }
+            else
+                return false;
+        }
+        bool operator>=(Value &rhs)
+        {
+            if (is<std::string>() && rhs.is<std::string>())
+            {
+                return as<std::string>() >= rhs.as<std::string>();
+            }
+            else if (!is<std::string>() && !rhs.is<std::string>())
+            {
+                return as<double>() >= rhs.as<double>();
+            }
+            else
+                return false;
+        }
+        bool operator<=(Value &rhs)
+        {
+            if (is<std::string>() && rhs.is<std::string>())
+            {
+                return as<std::string>() <= rhs.as<std::string>();
+            }
+            else if (!is<std::string>() && !rhs.is<std::string>())
+            {
+                return as<double>() <= rhs.as<double>();
+            }
+            else
+                return false;
+        }
+        //
+        Value operator~()
+        {
+            if (is<int>())
+            {
+                return Value(~as<int>());
+            }
+            UNREACHABLE();
+        }
+        Value operator!()
+        {
+            if (is<int>())
+            {
+                return Value(!as<int>());
+            }
+            UNREACHABLE();
+        }
+
         //
         template<typename T>
         bool is()
