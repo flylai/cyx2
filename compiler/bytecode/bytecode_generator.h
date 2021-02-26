@@ -22,7 +22,7 @@ namespace COMPILER
         std::string vmInstStr();
 
       private:
-        void fixJmp();
+        void fixJmp(int start, int end);
         void genBinary(IRBinary *ptr);
         void genLoadConst(CYX::Value &val, int reg_idx);
         void genStoreConst(CYX::Value &val, const std::string &name);

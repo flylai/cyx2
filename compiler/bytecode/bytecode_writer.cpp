@@ -230,7 +230,7 @@ void COMPILER::BytecodeWriter::writeParam()
 
 void COMPILER::BytecodeWriter::writeRet()
 {
-    // TODO none void return value
+    // there is nothing to do...
 }
 
 void COMPILER::BytecodeWriter::writeJmp()

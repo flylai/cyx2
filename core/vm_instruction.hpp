@@ -171,10 +171,11 @@ namespace CVM
         {
             opcode = Opcode::RET;
         }
-        // TODO: none void return value
+        int ret_size{ 0 };
+        std::vector<int> ret_regs;
         std::string toString() override
         {
-            return "RET";
+            return "RET " + std::to_string(ret_size) + "retval";
         }
     };
 

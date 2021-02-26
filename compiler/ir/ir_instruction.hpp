@@ -226,11 +226,11 @@ namespace COMPILER
         }
         std::string toString() override
         {
-            return "(IRReturn)";
+            return "RETURN " + (ret ? ret->toString() : "");
         }
 
       public:
-        IRInst *ret{ nullptr };
+        IRValue *ret{ nullptr };
     };
 
     class IRJump : public IRInst

@@ -265,7 +265,6 @@ void CVM::BytecodeReader::readParam()
 void CVM::BytecodeReader::readRet()
 {
     auto *inst = new Ret;
-    // todo none void return value
     vm_insts.push_back(inst);
 }
 

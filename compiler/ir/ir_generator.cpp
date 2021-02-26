@@ -437,6 +437,22 @@ void COMPILER::IRGenerator::visitReturnStmt(COMPILER::ReturnStmt *ptr)
 {
     ptr->retval->visit(this);
     auto *inst = new IRReturn;
+    if (cur_value.hasValue())
+    {
+        auto *constant  = new IRConstant;
+        constant->value = std::move(cur_value);
+        cur_value.reset();
+        inst->ret = constant;
+    }
+    else if (ptr->retval != nullptr)
+    {
+        auto *var = consumeVariable();
+        inst->ret = var;
+    }
+    else
+    {
+        // return void
+    }
     cur_basic_block->addInst(inst);
 }
 

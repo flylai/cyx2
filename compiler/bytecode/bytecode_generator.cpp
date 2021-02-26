@@ -6,6 +6,7 @@ void COMPILER::BytecodeGenerator::ir2VmInst()
     {
         block_table.clear();
         genFunc(func);
+        int start = vm_insts.size();
         for (auto *block : func->blocks)
         {
             block_table[block->name] = vm_insts.size();
@@ -41,7 +42,7 @@ void COMPILER::BytecodeGenerator::ir2VmInst()
                 }
             }
         }
-        fixJmp();
+        fixJmp(start, vm_insts.size());
     }
 }
 
@@ -137,6 +138,27 @@ void COMPILER::BytecodeGenerator::genStoreConst(CYX::Value &val, const std::stri
 void COMPILER::BytecodeGenerator::genReturn(COMPILER::IRReturn *ptr)
 {
     auto *ret = new CVM::Ret;
+    if (ptr->ret != nullptr)
+    {
+        auto *constant = as<IRConstant, IR::Tag::CONST>(ptr->ret);
+        auto *var      = as<IRVar, IR::Tag::VAR>(ptr->ret);
+        if (constant != nullptr)
+        {
+            if (constant->value.is<int>())
+                genLoad(1, constant->value.as<int>());
+            else if (constant->value.is<double>())
+                genLoad(1, constant->value.as<double>());
+            else if (constant->value.is<std::string>())
+                genLoad(1, constant->value.as<std::string>());
+        }
+        else if (var != nullptr)
+        {
+            genLoadX(1, var->name);
+        }
+        // if has more retval.....unsupported now.
+        ret->ret_size = 1;
+        ret->ret_regs.push_back(1);
+    }
     vm_insts.push_back(ret);
 }
 
@@ -313,10 +335,11 @@ void COMPILER::BytecodeGenerator::genStoreX(const std::string &name, int reg_idx
     vm_insts.push_back(store_x);
 }
 
-void COMPILER::BytecodeGenerator::fixJmp()
+void COMPILER::BytecodeGenerator::fixJmp(int start, int end)
 {
-    for (auto *inst : vm_insts)
+    for (int i = start; i < end; i++)
     {
+        auto *inst = vm_insts[i];
         if (!inOr(inst->opcode, CVM::Opcode::JMP, CVM::Opcode::JIF, CVM::Opcode::CALL)) continue;
         if (inst->opcode == CVM::Opcode::JMP)
         {
