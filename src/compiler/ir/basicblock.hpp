@@ -1,8 +1,6 @@
 #ifndef CVM_BASICBLOCK_HPP
 #define CVM_BASICBLOCK_HPP
 
-#include "../ast/ast.hpp"
-
 #include <list>
 #include <unordered_set>
 #include <utility>
@@ -12,7 +10,7 @@ namespace COMPILER
 {
     class IRInst;
     class IRAssign;
-    class IR;
+    class IRVar;
     static int BASIC_BLOCK_COUNT = 0;
     class BasicBlock
     {
@@ -55,10 +53,16 @@ namespace COMPILER
         std::unordered_set<BasicBlock *> pres;
         std::unordered_set<BasicBlock *> succs;
         // lifetime interval (a.k.a live ness, live interval analysis) related
-        std::unordered_set<IR *> live_in;
-        std::unordered_set<IR *> live_out;
-        std::unordered_set<IR *> kill;
-        std::unordered_set<IR *> gen;
+        std::unordered_set<std::string> live_in;
+        std::unordered_set<std::string> live_out;
+        std::unordered_set<std::string> kill;
+        std::unordered_set<std::string> gen;
+        //
+        int from{ -1 };
+        int to{ -1 };
+        // loop related
+        BasicBlock *loop_start{ nullptr };
+        BasicBlock *loop_end{ nullptr };
     };
 } // namespace COMPILER
 
