@@ -1,271 +1,214 @@
 #include "vm.hpp"
 
-void CYX::ASM::VM::run()
+void CVM::VM::run()
 {
-    while (pc < 28)
+    while (fetch())
     {
-        CYX::ASM::Instruction inst = code[pc];
-
-        switch (inst.opcode)
+        switch (cur_inst->opcode)
         {
-            case Opcode::MOV: mov(inst); break;
+            case Opcode::ADD:
+            case Opcode::SUB:
+            case Opcode::MUL:
+            case Opcode::DIV:
+            case Opcode::MOD:
+            case Opcode::EXP:
+            case Opcode::BAND:
+            case Opcode::BOR:
+            case Opcode::BXOR:
+            case Opcode::SHL:
+            case Opcode::SHR:
+            case Opcode::LOR:
+            case Opcode::NE:
+            case Opcode::EQ:
+            case Opcode::LT:
+            case Opcode::LE:
+            case Opcode::GT:
+            case Opcode::GE:
+            case Opcode::LAND: binary(); break;
 
-            case Opcode::ADD: arithmetic<Opcode::ADD>(inst); break;
-            case Opcode::SUB: arithmetic<Opcode::SUB>(inst); break;
-            case Opcode::MUL: arithmetic<Opcode::MUL>(inst); break;
-            case Opcode::DIV: arithmetic<Opcode::DIV>(inst); break;
-
-            case Opcode::PUSH: push(inst); break;
-            case Opcode::POP: pop(inst); break;
-            case Opcode::CALL: call(inst); break;
-            case Opcode::RET: ret(inst); break;
-            case Opcode::JMP: jmp(inst); break;
-
-            case Opcode::NE: comparison<Opcode::NE>(inst); break;
-            case Opcode::EQ: comparison<Opcode::EQ>(inst); break;
-            case Opcode::LE: comparison<Opcode::LE>(inst); break;
-            case Opcode::LT: comparison<Opcode::LT>(inst); break;
-            case Opcode::GE: comparison<Opcode::GE>(inst); break;
-            case Opcode::GT: comparison<Opcode::GT>(inst); break;
-
-            case Opcode::JIF: jif(inst); break;
-            case Opcode::UNKNOWN:
-            default: break;
+            case Opcode::LNOT: break; // todo
+            case Opcode::BNOT: break; // todo
+            case Opcode::LOADI:
+            case Opcode::LOADD:
+            case Opcode::LOADS: load(); break;
+            case Opcode::LOADX: loadX(); break;
+            case Opcode::STOREI:
+            case Opcode::STORED:
+            case Opcode::STORES: store(); break;
+            case Opcode::STOREX: storeX(); break;
+            case Opcode::CALL: call(); break;
+            case Opcode::FUNC: break;
+            case Opcode::ARG: arg(); break;
+            case Opcode::PARAM: param(); break;
+            case Opcode::RET: ret(); break;
+            case Opcode::JMP: jmp(); break;
+            case Opcode::JIF: jif(); break;
+            default: UNREACHABLE();
         }
-
         pc++;
     }
-    dbg(reg[1]->value<int>());
+    logX(reg[1].as<std::string>());
 }
 
-void CYX::ASM::VM::setCode(const std::vector<ASM::Instruction> &insts)
+void CVM::VM::setInsts(const std::vector<VMInstruction *> &insts)
 {
-    VM::code = insts;
+    vm_insts = insts;
 }
 
-void CYX::ASM::VM::mov(const CYX::ASM::Instruction &instruction)
-{
-
-    if (instruction.operand_target1 == ASM::OperandTarget::REGISTER)
-    {
-        int dest_reg_idx = instruction.idx1;
-        if (instruction.operand_target2 == ASM::OperandTarget::RAW)
-        {
-            delete reg[dest_reg_idx];
-            reg[dest_reg_idx] = new Value(instruction.operand2->value<int>());
-        }
-        else if (instruction.operand_target2 == ASM::OperandTarget::REGISTER)
-        {
-            int src_reg_idx   = instruction.idx2;
-            reg[dest_reg_idx] = new Value(reg[src_reg_idx]->value<int>());
-        }
-    }
-}
-
-void CYX::ASM::VM::jmp(const CYX::ASM::Instruction &instruction)
-{
-    pc = instruction.idx1;
-}
-
-void CYX::ASM::VM::jif(const CYX::ASM::Instruction &instruction)
-{
-    if (state == 1) jmp(instruction);
-    state = 0;
-}
-
-void CYX::ASM::VM::call(const CYX::ASM::Instruction &instruction)
-{
-    stack.push(new Value(pc));
-    pc = instruction.idx1;
-}
-
-void CYX::ASM::VM::ret(const CYX::ASM::Instruction &instruction)
-{
-    auto *pc_ptr = stack.pop();
-    pc           = pc_ptr->value<int>();
-    delete pc_ptr;
-}
-
-void CYX::ASM::VM::push(const CYX::ASM::Instruction &instruction)
-{
-    if (instruction.operand_target1 == ASM::OperandTarget::REGISTER) stack.push(reg[instruction.idx1]);
-    if (instruction.operand_target1 == ASM::OperandTarget::STACK) stack.push(stack[instruction.idx1]);
-    if (instruction.operand_target1 == ASM::OperandTarget::RAW)
-        stack.push(new Value(instruction.operand1->value<int>()));
-}
-
-void CYX::ASM::VM::pop(const CYX::ASM::Instruction &instruction)
-{
-    if (instruction.operand_target1 == ASM::OperandTarget::REGISTER) reg[instruction.idx1] = stack.pop();
-    if (instruction.operand_target1 == ASM::OperandTarget::STACK) stack[instruction.idx1] = stack.pop();
-    if (instruction.operand_target1 == ASM::OperandTarget::RAW) stack.pop(instruction.idx1);
-}
-
-template<CYX::ASM::Opcode Op>
-void CYX::ASM::VM::arithmetic(const CYX::ASM::Instruction &instruction)
-{
-    Value *obj1 = nullptr, *obj2 = nullptr, *result = nullptr;
-    if (instruction.operand_target1 == ASM::OperandTarget::REGISTER) obj1 = reg[instruction.idx1];
-    if (instruction.operand_target2 == ASM::OperandTarget::REGISTER)
-        obj2 = reg[instruction.idx2];
-    else
-        obj2 = instruction.operand2.get();
-
-    switch (Op)
-    {
-        case Opcode::ADD:
-            if (obj1->is<std::string>() || obj2->is<std::string>())
-            {
-                result = new Value(obj1->as<std::string>() + obj2->as<std::string>());
-            }
-            if (obj1->is<double>() || obj2->is<double>())
-            {
-                result = new Value(obj1->as<double>() + obj2->as<double>());
-            }
-            if (obj1->is<int>() && obj2->is<int>())
-            {
-                result = new Value(obj1->as<int>() + obj2->as<int>());
-            }
-            break;
-        case Opcode::SUB:
-            if (obj1->is<double>() || obj2->is<double>())
-            {
-                result = new Value(obj1->as<double>() - obj2->as<double>());
-            }
-            if (obj1->is<int>() && obj2->is<int>())
-            {
-                result = new Value(obj1->as<int>() - obj2->as<int>());
-            }
-            break;
-        case Opcode::MUL:
-            if (obj1->is<double>() || obj2->is<double>())
-            {
-                result = new Value(obj1->as<double>() * obj2->as<double>());
-            }
-            if (obj1->is<int>() && obj2->is<int>())
-            {
-                result = new Value(obj1->as<int>() * obj2->as<int>());
-            }
-            if (obj1->is<std::string>() && !obj2->is<std::string>() || //
-                obj2->is<std::string>() && !obj1->is<std::string>())
-            {
-                std::string origin_str, tmp;
-                int times;
-                if (obj1->is<std::string>())
-                {
-                    origin_str = obj1->value<std::string>();
-                    times      = obj2->as<int>();
-                }
-                else
-                {
-                    origin_str = obj2->value<std::string>();
-                    times      = obj1->as<int>();
-                }
-                for (int i = 0; i < times; i++)
-                {
-                    tmp += origin_str;
-                }
-                result = new Value(tmp);
-            }
-            break;
-        case Opcode::DIV:
-            if (obj1->is<double>() || obj2->is<double>())
-            {
-                result = new Value(obj1->as<double>() / obj2->as<double>());
-            }
-            if (obj1->is<int>() && obj2->is<int>())
-            {
-                result = new Value(obj1->as<int>() / obj2->as<int>());
-            }
-            break;
-    }
-
-    delete reg[instruction.idx1];
-    reg[instruction.idx1] = result;
-}
-
-template<CYX::ASM::Opcode Op>
-void CYX::ASM::VM::comparison(const CYX::ASM::Instruction &instruction)
-{
-    state = 0; // initialize
-
-    Value *obj1 = nullptr, *obj2 = nullptr;
-    if (instruction.operand_target1 == ASM::OperandTarget::REGISTER)
-        obj1 = reg[instruction.idx1];
-    else if (instruction.operand_target1 == ASM::OperandTarget::RAW)
-        obj1 = instruction.operand1.get();
-
-    if (instruction.operand_target2 == ASM::OperandTarget::REGISTER)
-        obj2 = reg[instruction.idx2];
-    else if (instruction.operand_target2 == ASM::OperandTarget::RAW)
-        obj2 = instruction.operand2.get();
-
-    switch (Op)
-    {
-        case Opcode::NE:
-            if (!obj1->is<std::string>() && !obj2->is<std::string>())
-            {
-                state = obj1->as<double>() != obj2->as<double>();
-            }
-            else if (obj1->is<std::string>() && obj2->is<std::string>())
-            {
-                state = obj1->as<std::string>() != obj2->as<std::string>();
-            }
-            break;
-        case Opcode::EQ:
-            if (!obj1->is<std::string>() && !obj2->is<std::string>())
-            {
-                state = obj1->as<double>() == obj2->as<double>();
-            }
-            else if (obj1->is<std::string>() && obj2->is<std::string>())
-            {
-                state = obj1->as<std::string>() == obj2->as<std::string>();
-            }
-            break;
-        case Opcode::LE:
-            if (!obj1->is<std::string>() && !obj2->is<std::string>())
-            {
-                state = obj1->as<double>() <= obj2->as<double>();
-            }
-            else if (obj1->is<std::string>() && obj2->is<std::string>())
-            {
-                state = obj1->as<std::string>() <= obj2->as<std::string>();
-            }
-            break;
-        case Opcode::LT:
-            if (!obj1->is<std::string>() && !obj2->is<std::string>())
-            {
-                state = obj1->as<double>() < obj2->as<double>();
-            }
-            else if (obj1->is<std::string>() && obj2->is<std::string>())
-            {
-                state = obj1->as<std::string>() < obj2->as<std::string>();
-            }
-            break;
-        case Opcode::GE:
-            if (!obj1->is<std::string>() && !obj2->is<std::string>())
-            {
-                state = obj1->as<double>() >= obj2->as<double>();
-            }
-            else if (obj1->is<std::string>() && obj2->is<std::string>())
-            {
-                state = obj1->as<std::string>() >= obj2->as<std::string>();
-            }
-            break;
-        case Opcode::GT:
-            if (!obj1->is<std::string>() && !obj2->is<std::string>())
-            {
-                state = obj1->as<double>() > obj2->as<double>();
-            }
-            else if (obj1->is<std::string>() && obj2->is<std::string>())
-            {
-                state = obj1->as<std::string>() > obj2->as<std::string>();
-            }
-            break;
-    }
-}
-
-void CYX::ASM::VM::setEntry(int i)
+void CVM::VM::setEntry(int i)
 {
     pc = i;
+}
+
+bool CVM::VM::fetch()
+{
+    if (pc < vm_insts.size())
+    {
+        cur_inst = vm_insts[pc];
+        return true;
+    }
+    return false;
+}
+
+void CVM::VM::binary()
+{
+    auto *inst   = static_cast<Binary *>(cur_inst);
+    int reg_idx1 = inst->reg_idx1;
+    int reg_idx2 = inst->reg_idx2;
+    switch (cur_inst->opcode)
+    {
+        case Opcode::ADD: reg[reg_idx1] = reg[reg_idx1] + reg[reg_idx2]; break;
+        case Opcode::SUB: reg[reg_idx1] = reg[reg_idx1] - reg[reg_idx2]; break;
+        case Opcode::MUL: reg[reg_idx1] = reg[reg_idx1] * reg[reg_idx2]; break;
+        case Opcode::DIV: reg[reg_idx1] = reg[reg_idx1] / reg[reg_idx2]; break;
+        case Opcode::MOD: reg[reg_idx1] = reg[reg_idx1] % reg[reg_idx2]; break;
+        case Opcode::EXP: /*TODO*/ break;
+        case Opcode::BAND: reg[reg_idx1] = reg[reg_idx1] & reg[reg_idx2]; break;
+        case Opcode::BOR: reg[reg_idx1] = reg[reg_idx1] | reg[reg_idx2]; break;
+        case Opcode::BXOR: reg[reg_idx1] = reg[reg_idx1] ^ reg[reg_idx2]; break;
+        case Opcode::SHL: reg[reg_idx1] = reg[reg_idx1] << reg[reg_idx2]; break;
+        case Opcode::SHR: reg[reg_idx1] = reg[reg_idx1] >> reg[reg_idx2]; break;
+        case Opcode::LOR: /*TODO*/ break;
+        case Opcode::LAND: /*TODO*/ break;
+        case Opcode::NE: state = reg[reg_idx1] != reg[reg_idx2]; break;
+        case Opcode::EQ: state = reg[reg_idx1] == reg[reg_idx2]; break;
+        case Opcode::LT: state = reg[reg_idx1] < reg[reg_idx2]; break;
+        case Opcode::LE: state = reg[reg_idx1] <= reg[reg_idx2]; break;
+        case Opcode::GT: state = reg[reg_idx1] > reg[reg_idx2]; break;
+        case Opcode::GE: state = reg[reg_idx1] >= reg[reg_idx2]; break;
+        default: UNREACHABLE(); break;
+    }
+}
+
+void CVM::VM::loadX()
+{
+    auto *inst         = static_cast<LoadX *>(cur_inst);
+    reg[inst->reg_idx] = frame.back().symbols[inst->name];
+}
+
+void CVM::VM::load()
+{
+    auto op = cur_inst->opcode;
+    if (op == Opcode::LOADI)
+    {
+        auto *inst         = static_cast<LoadI *>(cur_inst);
+        reg[inst->reg_idx] = (int) inst->val;
+    }
+    else if (op == Opcode::LOADD)
+    {
+        auto *inst         = static_cast<LoadD *>(cur_inst);
+        reg[inst->reg_idx] = inst->val;
+    }
+    else if (op == Opcode::LOADS)
+    {
+        auto *inst         = static_cast<LoadS *>(cur_inst);
+        reg[inst->reg_idx] = inst->val;
+    }
+    else
+        UNREACHABLE();
+}
+
+void CVM::VM::storeX()
+{
+    auto *inst                       = static_cast<StoreX *>(cur_inst);
+    frame.back().symbols[inst->name] = reg[inst->reg_idx];
+}
+
+void CVM::VM::store()
+{
+    auto op = cur_inst->opcode;
+    if (op == Opcode::STOREI)
+    {
+        auto *inst                       = static_cast<StoreI *>(cur_inst);
+        frame.back().symbols[inst->name] = (int) inst->val;
+    }
+    else if (op == Opcode::STORED)
+    {
+        auto *inst                       = static_cast<StoreD *>(cur_inst);
+        frame.back().symbols[inst->name] = inst->val;
+    }
+    else if (op == Opcode::STORES)
+    {
+        auto *inst                       = static_cast<StoreS *>(cur_inst);
+        frame.back().symbols[inst->name] = inst->val;
+    }
+    else
+        UNREACHABLE();
+}
+
+void CVM::VM::arg()
+{
+    // pass
+}
+
+void CVM::VM::call()
+{
+    auto *inst      = static_cast<Call *>(cur_inst);
+    frame.back().pc = pc;
+    frame.emplace_back(Frame());
+    pc = inst->target - 1;
+}
+
+void CVM::VM::func()
+{
+    // pass
+}
+
+void CVM::VM::param()
+{
+    auto *inst      = static_cast<Param *>(cur_inst);
+    auto *pre_frame = &frame[frame.size() - 2];
+    auto *arg       = static_cast<Arg *>(vm_insts[++pre_frame->pc]);
+    if (arg->type == Arg::Type::MAP)
+    {
+        frame.back().symbols[inst->name] = pre_frame->symbols[arg->name];
+    }
+    else if (arg->type == Arg::Type::RAW)
+    {
+        frame.back().symbols[inst->name] = arg->value;
+    }
+    else
+        UNREACHABLE();
+}
+
+void CVM::VM::ret()
+{
+    frame.pop_back();
+    pc = frame.back().pc;
+}
+
+void CVM::VM::jmp()
+{
+    auto *inst = static_cast<Jmp *>(cur_inst);
+    pc         = inst->target - 1;
+}
+
+void CVM::VM::jif()
+{
+    auto *inst = static_cast<Jif *>(cur_inst);
+    if (state)
+        pc = inst->target1 - 1;
+    else
+        pc = inst->target2 - 1;
+    state = false;
 }

@@ -2,50 +2,54 @@
 #define CORE_VM_HPP
 
 #include "../common/value.hpp"
-#include "instruction.hpp"
+#include "frame.hpp"
 #include "opcode.hpp"
-#include "stack.h"
-#include "vm_config.h"
+#include "vm_instruction.hpp"
 
-#include <array>
 #include <dbg.h>
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace CYX::ASM
+namespace CVM
 {
     class VM
     {
       public:
         void run();
 
-      private:
-        void mov(const ASM::Instruction &instruction);
-        void jmp(const ASM::Instruction &instruction);
-        void jif(const ASM::Instruction &instruction);
-        void call(const ASM::Instruction &instruction);
-        void ret(const ASM::Instruction &instruction);
-        void push(const ASM::Instruction &instruction);
-        void pop(const ASM::Instruction &instruction);
-
-        template<Opcode Op>
-        void arithmetic(const ASM::Instruction &instruction);
-        template<Opcode Op>
-        void comparison(const ASM::Instruction &instruction);
-
-      private:
-        std::array<Value *, CONFIG::REGISTER_SIZE> reg;
-        CORE::Stack stack;
         //
-        int pc    = 0;
-        int state = 0; // if stmt state
-        std::vector<ASM::Instruction> code;
+        int pc = 0;
+
+      private:
+        bool fetch();
+        void binary();
+        //
+        void loadX();
+        void load();
+        //
+        void storeX();
+        void store();
+        //
+        void arg();
+        void call();
+        void func();
+        void param();
+        void ret();
+        void jmp();
+        void jif();
+
+      private:
+        std::array<CYX::Value, 12> reg;
+        std::vector<CVM::Frame> frame{ Frame() };
+        bool state = false; // if stmt state
+        std::vector<VMInstruction *> vm_insts;
+        VMInstruction *cur_inst{ nullptr };
 
       public:
-        void setCode(const std::vector<ASM::Instruction> &insts);
+        void setInsts(const std::vector<VMInstruction *> &insts);
         void setEntry(int i);
     };
-} // namespace CYX::ASM
+} // namespace CVM
 
 #endif
