@@ -1,7 +1,7 @@
 #ifndef CVM_AST_VISUALIZE_H
 #define CVM_AST_VISUALIZE_H
 
-#include "../utility/utility.hpp"
+#include "../../utility/utility.hpp"
 #include "ast_visitor.h"
 #include "expr.hpp"
 #include "stmt.hpp"

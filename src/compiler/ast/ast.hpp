@@ -1,8 +1,8 @@
 #ifndef CVM_AST_HPP
 #define CVM_AST_HPP
 
+#include "../../utility/log.h"
 #include "../token.hpp"
-#include "../utility/log.h"
 
 #include <string>
 #include <vector>

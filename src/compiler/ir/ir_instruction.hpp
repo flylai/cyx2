@@ -2,10 +2,10 @@
 #define CVM_IR_INSTRUCTION_HPP
 
 #include "../../common/config.h"
+#include "../../common/value.hpp"
+#include "../../utility/log.h"
 #include "../../utility/utility.hpp"
-#include "../common/value.hpp"
 #include "../token.hpp"
-#include "../utility/log.h"
 #include "basicblock.hpp"
 
 #include <list>
