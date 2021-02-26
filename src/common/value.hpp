@@ -15,7 +15,9 @@ namespace CYX
         Value() = default;
         //
         template<typename T>
-        explicit Value(T value) : _value(value){};
+        explicit Value(T value) : _value(value)
+        {
+        }
         template<typename T>
         Value &operator=(const T &rhs)
         {
