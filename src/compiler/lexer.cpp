@@ -153,7 +153,7 @@ COMPILER::Token COMPILER::Lexer::nextToken()
                 advance();
                 return MK_TOKEN2(Keyword::DIV_ASSIGN, "/=");
             }
-            return MK_TOKEN2(Keyword::SUB, "/");
+            return MK_TOKEN2(Keyword::DIV, "/");
         case '%':
             advance();
             if (current_char == '=')
