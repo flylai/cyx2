@@ -404,6 +404,10 @@ std::string COMPILER::CFG::dumpCFG() const
             {
                 str += "|" + inst->toString();
             }
+            for (auto *phi : block->phis)
+            {
+                str += "|" + phi->toString();
+            }
             str += "}\"]\n";
 
             for (auto *succ : block->succs)
