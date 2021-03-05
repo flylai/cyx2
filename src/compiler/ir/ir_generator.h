@@ -1,6 +1,7 @@
 #ifndef CVM_IR_GENERATOR_H
 #define CVM_IR_GENERATOR_H
 
+#include "../../common/config.h"
 #include "../../utility/utility.hpp"
 #include "../ast/ast_visitor.h"
 #include "../ast/expr.hpp"

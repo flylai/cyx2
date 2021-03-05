@@ -22,6 +22,13 @@ namespace CYX
         Value &operator=(const T &rhs)
         {
             _value = rhs;
+
+            return *this;
+        }
+        Value &operator=(const Value &rhs)
+        {
+            _value = rhs._value;
+
             return *this;
         }
         //

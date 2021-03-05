@@ -70,7 +70,7 @@ void COMPILER::IRGenerator::visitBinaryExpr(COMPILER::BinaryExpr *ptr)
     {
         // int / double / string
         auto *lhs        = new IRConstant;
-        lhs->value       = std::move(cur_value);
+        lhs->value       = cur_value;
         lhs->belong_inst = assign;
         binary->lhs      = lhs;
         cur_value.reset();
@@ -88,7 +88,7 @@ void COMPILER::IRGenerator::visitBinaryExpr(COMPILER::BinaryExpr *ptr)
     if (cur_value.hasValue())
     {
         auto *rhs        = new IRConstant;
-        rhs->value       = std::move(cur_value);
+        rhs->value       = cur_value;
         rhs->belong_inst = assign;
         binary->rhs      = rhs;
         cur_value.reset();
@@ -99,10 +99,41 @@ void COMPILER::IRGenerator::visitBinaryExpr(COMPILER::BinaryExpr *ptr)
         rhs->belong_inst = assign;
         binary->rhs      = rhs;
     }
-    assign->dest              = newVariable();
-    assign->dest->belong_inst = assign;
 
-    cur_basic_block->addInst(assign);
+    // constant folding
+    if (CONSTANT_FOLDING && binary->lhs->tag == IR::Tag::CONST && binary->rhs->tag == IR::Tag::CONST &&
+        inOr(ptr->op.keyword, ADD, SUB, MUL, DIV, BOR, BXOR, MOD, SHR, SHL))
+    {
+        CYX::Value value;
+        auto l = as<IRConstant, IR::Tag::CONST>(binary->lhs)->value;
+        auto r = as<IRConstant, IR::Tag::CONST>(binary->rhs)->value;
+
+        switch (ptr->op.keyword)
+        {
+            case ADD: value = l + r; break;
+            case SUB: value = l - r; break;
+            case MUL: value = l * r; break;
+            case DIV: value = l / r; break;
+            case BOR: value = l | r; break;
+            case BXOR: value = l ^ r; break;
+            case MOD: value = l % r; break;
+            case SHR: value = l >> r; break;
+            case SHL: value = l << r; break;
+            default: UNREACHABLE();
+        }
+        cur_value = value;
+
+        delete binary->rhs;
+        delete binary->lhs;
+        delete binary;
+    }
+    else
+    {
+        assign->dest              = newVariable();
+        assign->dest->belong_inst = assign;
+
+        cur_basic_block->addInst(assign);
+    }
 }
 
 void COMPILER::IRGenerator::visitIntExpr(COMPILER::IntExpr *ptr)
@@ -151,7 +182,7 @@ void COMPILER::IRGenerator::visitAssignExpr(COMPILER::AssignExpr *ptr)
     if (cur_value.hasValue())
     {
         auto *constant        = new IRConstant;
-        constant->value       = std::move(cur_value);
+        constant->value       = cur_value;
         constant->belong_inst = assign;
         assign->src           = constant;
 
@@ -440,7 +471,7 @@ void COMPILER::IRGenerator::visitReturnStmt(COMPILER::ReturnStmt *ptr)
     if (cur_value.hasValue())
     {
         auto *constant  = new IRConstant;
-        constant->value = std::move(cur_value);
+        constant->value = cur_value;
         cur_value.reset();
         inst->ret = constant;
     }
@@ -606,7 +637,7 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
         if (cur_value.hasValue())
         {
             auto *constant  = new IRConstant;
-            constant->value = std::move(cur_value);
+            constant->value = cur_value;
             cur_value.reset();
             assign->src = constant;
 
