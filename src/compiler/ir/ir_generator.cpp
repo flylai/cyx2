@@ -101,33 +101,72 @@ void COMPILER::IRGenerator::visitBinaryExpr(COMPILER::BinaryExpr *ptr)
     }
 
     // constant folding
-    if (CONSTANT_FOLDING && binary->lhs->tag == IR::Tag::CONST && binary->rhs->tag == IR::Tag::CONST &&
-        inOr(ptr->op.keyword, ADD, SUB, MUL, DIV, BOR, BXOR, MOD, SHR, SHL))
+    int operand_count = 0;
+    if (CONSTANT_FOLDING && inOr(ptr->op.keyword, ADD, SUB, MUL, DIV, BOR, BXOR, MOD, SHR, SHL))
     {
+        CYX::Value operand1;
+        CYX::Value operand2;
         CYX::Value value;
-        auto l = as<IRConstant, IR::Tag::CONST>(binary->lhs)->value;
-        auto r = as<IRConstant, IR::Tag::CONST>(binary->rhs)->value;
 
-        switch (ptr->op.keyword)
+        auto *operand1_const_ptr = as<IRConstant, IR::Tag::CONST>(binary->lhs);
+        auto *operand1_var_ptr   = as<IRVar, IR::Tag::VAR>(binary->lhs);
+        auto *operand2_const_ptr = as<IRConstant, IR::Tag::CONST>(binary->rhs);
+        auto *operand2_var_ptr   = as<IRVar, IR::Tag::VAR>(binary->rhs);
+
+        if (operand1_const_ptr != nullptr)
         {
-            case ADD: value = l + r; break;
-            case SUB: value = l - r; break;
-            case MUL: value = l * r; break;
-            case DIV: value = l / r; break;
-            case BOR: value = l | r; break;
-            case BXOR: value = l ^ r; break;
-            case MOD: value = l % r; break;
-            case SHR: value = l >> r; break;
-            case SHL: value = l << r; break;
-            default: UNREACHABLE();
+            operand1 = operand1_const_ptr->value;
+            operand_count++;
         }
-        cur_value = value;
-
-        delete binary->rhs;
-        delete binary->lhs;
-        delete binary;
+        if (operand2_const_ptr != nullptr)
+        {
+            operand2 = operand2_const_ptr->value;
+            operand_count++;
+        }
+        if (operand1_var_ptr != nullptr)
+        {
+            auto *tmp_assign = as<IRAssign, IR::Tag::ASSIGN>(operand1_var_ptr->def->belong_inst);
+            if (tmp_assign->src->tag == IR::Tag::CONST)
+            {
+                operand1 = as<IRConstant, IR::Tag::CONST>(tmp_assign->src)->value;
+                operand_count++;
+            }
+        }
+        if (operand2_var_ptr != nullptr)
+        {
+            auto *tmp_assign = as<IRAssign, IR::Tag::ASSIGN>(operand2_var_ptr->def->belong_inst);
+            if (tmp_assign->src->tag == IR::Tag::CONST)
+            {
+                operand2 = as<IRConstant, IR::Tag::CONST>(tmp_assign->src)->value;
+                operand_count++;
+            }
+        }
+        if (operand_count == 2)
+        {
+            switch (ptr->op.keyword)
+            {
+                case ADD: value = operand1 + operand2; break;
+                case SUB: value = operand1 - operand2; break;
+                case MUL: value = operand1 * operand2; break;
+                case DIV: value = operand1 / operand2; break;
+                case BOR: value = operand1 | operand2; break;
+                case BXOR: value = operand1 ^ operand2; break;
+                case MOD: value = operand1 % operand2; break;
+                case SHR: value = operand1 >> operand2; break;
+                case SHL: value = operand1 << operand2; break;
+                default: UNREACHABLE();
+            }
+            cur_value = value;
+            // free memory
+            destroyVar(operand1_var_ptr);
+            destroyVar(operand2_var_ptr);
+            delete operand1_const_ptr;
+            delete operand2_const_ptr;
+            delete binary;
+        }
     }
-    else
+
+    if (operand_count != 2)
     {
         assign->dest              = newVariable();
         assign->dest->belong_inst = assign;
@@ -243,7 +282,7 @@ void COMPILER::IRGenerator::visitFuncCallExpr(COMPILER::FuncCallExpr *ptr)
         if (cur_value.hasValue())
         {
             auto *constant  = new IRConstant;
-            constant->value = std::move(cur_value);
+            constant->value = cur_value;
             cur_value.reset();
             tmp_arg.push_back(constant);
             arg_cnt++;
@@ -558,7 +597,11 @@ COMPILER::IRVar *COMPILER::IRGenerator::consumeVariable(bool force_IRVar)
         var_def->addUse(retval);
         retval->def = var_def;
     }
-    // else -> var_def is IRVar, that is use, not definition. no need to add def-use chain
+    else
+    {
+        retval->def = var_def->def;
+        var_def->def->addUse(retval);
+    }
 
     return retval;
 }
@@ -794,8 +837,8 @@ void COMPILER::IRGenerator::fixContinueTarget()
     for (auto *inst : fix_continue_wait_list)
     {
         auto *candidate_block = inst->target->loop_end;
-        // if loop out block is empty block, it will be removed at CFG.simplifyCFG(), so we need find a not empty succ
-        // block.
+        // if loop out block is empty block, it will be removed at CFG.simplifyCFG(), so we need find a not empty
+        // succ block.
         while (candidate_block->insts.empty())
         {
             candidate_block = *candidate_block->succs.begin();
@@ -808,6 +851,21 @@ void COMPILER::IRGenerator::fixContinueTarget()
         }
         inst->target = candidate_block;
     }
+}
+
+void COMPILER::IRGenerator::destroyVar(IRVar *var)
+{
+    if (var == nullptr) return;
+    // kill define
+    if (var->def)
+    {
+        var->def->killUse(var);
+    }
+    if (!var->use.empty())
+    {
+        ERROR("this var is some vars' defined");
+    }
+    delete var;
 }
 
 #undef LINK

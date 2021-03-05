@@ -55,6 +55,7 @@ namespace COMPILER
         std::string newLabel();
         COMPILER::IRVar *consumeVariable(bool force_IRVar = true);
         BasicBlock *newBasicBlock(const std::string &name = "");
+        void destroyVar(IRVar *var);
         //
         void fixContinueTarget();
 
@@ -62,7 +63,7 @@ namespace COMPILER
         std::vector<BasicBlock *> loop_stack;
         std::vector<IRJump *> fix_continue_wait_list;
 
-      public:
+      private:
         int var_cnt{ 0 };
         int label_cnt{ 0 };
         SymbolTable global_table;
@@ -75,8 +76,10 @@ namespace COMPILER
         BasicBlock *cur_basic_block{ nullptr };
         SymbolTable *cur_symbol{ nullptr };
         //
-        std::vector<IRFunction *> funcs;
         BasicBlock *global_var_decl{ nullptr };
+
+      public:
+        std::vector<IRFunction *> funcs;
 
       private:
         // AST first scan.
