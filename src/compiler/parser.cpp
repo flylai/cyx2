@@ -124,7 +124,7 @@ COMPILER::Expr *COMPILER::Parser::parseBinaryExpr(COMPILER::Expr *lhs, int prior
         eat();
         binary_expr->lhs = lhs;
         binary_expr->op  = pre_token;
-        binary_expr->rhs = parseExpr(opcodePriority(pre_token.keyword));
+        binary_expr->rhs = parseExpr(opcodePriority(pre_token.keyword) + 1);
         lhs              = binary_expr;
     }
     return lhs;
