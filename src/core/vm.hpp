@@ -1,6 +1,7 @@
 #ifndef CORE_VM_HPP
 #define CORE_VM_HPP
 
+#include "../common/buildin.hpp"
 #include "../common/value.hpp"
 #include "frame.hpp"
 #include "opcode.hpp"
@@ -33,6 +34,7 @@ namespace CVM
         //
         void arg();
         void call();
+        void callBuildin();
         void func();
         void param();
         void ret();

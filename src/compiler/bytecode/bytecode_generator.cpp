@@ -1,5 +1,14 @@
 #include "bytecode_generator.h"
 
+COMPILER::BytecodeGenerator::BytecodeGenerator()
+{
+    // add buildin functions to table
+    for (const auto &x : buildin_functions)
+    {
+        funcs_table[x.first.substr(8)] = 0 - x.second.second;
+    }
+}
+
 void COMPILER::BytecodeGenerator::ir2VmInst()
 {
     for (auto *func : funcs)

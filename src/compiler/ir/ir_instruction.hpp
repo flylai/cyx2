@@ -279,7 +279,7 @@ namespace COMPILER
         }
         std::string toString() override
         {
-            std::string retval = func->toString() + "(";
+            std::string retval = (func ? func->toString() : "") + "(";
             for (auto *arg : args)
             {
                 retval += arg->toString() + ", ";

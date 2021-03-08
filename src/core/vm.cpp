@@ -163,10 +163,36 @@ void CVM::VM::arg()
 
 void CVM::VM::call()
 {
-    auto *inst      = static_cast<Call *>(cur_inst);
+    auto *inst = static_cast<Call *>(cur_inst);
+    if (inst->target < 0)
+    {
+        callBuildin();
+        return;
+    }
     frame.back().pc = pc;
     frame.emplace_back(Frame());
     pc = inst->target - 1;
+}
+
+void CVM::VM::callBuildin()
+{
+    auto *call = static_cast<Call *>(cur_inst);
+    pc++;
+    auto *buildin_func = buildin_functions_index.at(-call->target);
+    // TODO: some bugs here...
+    while (vm_insts[pc]->opcode == Opcode::ARG)
+    {
+        auto *arg = static_cast<Arg *>(vm_insts[pc]);
+        if (arg->type == Arg::Type::MAP)
+        {
+            buildin_func(&frame.back().symbols[arg->name]);
+        }
+        else if (arg->type == Arg::Type::RAW)
+        {
+            buildin_func(&arg->value);
+        }
+        pc++;
+    }
 }
 
 void CVM::VM::func()

@@ -1,6 +1,7 @@
 #ifndef CVM_BYTECODE_GENERATOR_H
 #define CVM_BYTECODE_GENERATOR_H
 
+#include "../../common/buildin.hpp"
 #include "../../common/config.h"
 #include "../../core/opcode.hpp"
 #include "../../core/vm_instruction.hpp"
@@ -16,6 +17,7 @@ namespace COMPILER
     class BytecodeGenerator
     {
       public:
+        BytecodeGenerator();
         void ir2VmInst();
         std::vector<IRFunction *> funcs;
         std::vector<CVM::VMInstruction *> vm_insts;

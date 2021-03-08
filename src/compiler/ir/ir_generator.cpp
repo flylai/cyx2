@@ -271,7 +271,17 @@ void COMPILER::IRGenerator::visitFuncCallExpr(COMPILER::FuncCallExpr *ptr)
 {
     auto *inst = new IRCall;
     inst->name = ptr->func_name;
-    inst->func = first_scan_funcs[ptr->func_name]->ir_func;
+
+    bool is_buildin = buildin_functions.find("buildin_" + ptr->func_name) != buildin_functions.end();
+
+    if (first_scan_funcs.find(ptr->func_name) == first_scan_funcs.end() && !is_buildin)
+    {
+        ERROR("can't find function definition of " + ptr->func_name);
+    }
+    if (!is_buildin)
+    {
+        inst->func = first_scan_funcs[ptr->func_name]->ir_func;
+    }
 
     int arg_cnt = 0;
     std::vector<IR *> tmp_arg;
