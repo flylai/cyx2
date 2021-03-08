@@ -78,13 +78,13 @@ unsigned char CVM::BytecodeReader::readByte()
 long long CVM::BytecodeReader::readInt()
 {
     unsigned long long ret = 0;
-    int i                  = 0;
     int base               = 256;
-    while (i < 8)
+    int k                  = 1;
+    for (int i = 0; i < 8; i++)
     {
         auto byte = readByte();
-        if (byte != 0) ret += byte * std::pow(base, i);
-        i++;
+        if (byte != 0) ret += byte * k;
+        k *= base;
     }
     return reinterpret_cast<long long &>(ret);
 }

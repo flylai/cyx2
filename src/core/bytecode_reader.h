@@ -5,7 +5,6 @@
 #include "opcode.hpp"
 #include "vm_instruction.hpp"
 
-#include <cmath>
 #include <fstream>
 #include <utility>
 
