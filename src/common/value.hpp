@@ -316,13 +316,46 @@ namespace CYX
         int asInt()
         {
             if (is<double>())
+            {
                 return static_cast<int>(value<double>());
+            }
+            else if (is<std::string>())
+            {
+                try
+                {
+                    return std::stoi(as<std::string>());
+                }
+                catch (const std::exception &)
+                {
+                    return 0;
+                }
+            }
             else
+            {
                 return 0;
+            }
         }
         double asDouble()
         {
-            if (is<int>()) return static_cast<double>(value<int>());
+            if (is<int>())
+            {
+                return static_cast<double>(value<int>());
+            }
+            else if (is<std::string>())
+            {
+                try
+                {
+                    return std::stod(as<std::string>());
+                }
+                catch (const std::exception &)
+                {
+                    return 0;
+                }
+            }
+            else
+            {
+                return 0;
+            }
             return 0;
         }
         // array specific
