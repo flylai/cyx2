@@ -40,6 +40,7 @@ static constexpr void addSpace(std::string &str, int n)
 template<typename T, COMPILER::IR::Tag TAG>
 static inline T *as(COMPILER::IR *inst)
 {
+    if (inst == nullptr) return nullptr;
     if (inst->tag == TAG) return static_cast<T *>(inst);
     return nullptr;
 }

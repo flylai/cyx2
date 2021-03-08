@@ -126,7 +126,7 @@ void COMPILER::IRGenerator::visitBinaryExpr(COMPILER::BinaryExpr *ptr)
         if (operand1_var_ptr != nullptr)
         {
             auto *tmp_assign = as<IRAssign, IR::Tag::ASSIGN>(operand1_var_ptr->def->belong_inst);
-            if (tmp_assign->src->tag == IR::Tag::CONST)
+            if (tmp_assign != nullptr && tmp_assign->src->tag == IR::Tag::CONST)
             {
                 operand1 = as<IRConstant, IR::Tag::CONST>(tmp_assign->src)->value;
                 operand_count++;
@@ -135,7 +135,7 @@ void COMPILER::IRGenerator::visitBinaryExpr(COMPILER::BinaryExpr *ptr)
         if (operand2_var_ptr != nullptr)
         {
             auto *tmp_assign = as<IRAssign, IR::Tag::ASSIGN>(operand2_var_ptr->def->belong_inst);
-            if (tmp_assign->src->tag == IR::Tag::CONST)
+            if (tmp_assign != nullptr && tmp_assign->src->tag == IR::Tag::CONST)
             {
                 operand2 = as<IRConstant, IR::Tag::CONST>(tmp_assign->src)->value;
                 operand_count++;
