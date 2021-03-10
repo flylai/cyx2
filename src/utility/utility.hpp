@@ -1,8 +1,6 @@
 #ifndef CVM_UTILITY_HPP
 #define CVM_UTILITY_HPP
 
-#include "../compiler/ir/ir_instruction.hpp"
-
 #include <sstream>
 
 template<typename T, typename... U>
@@ -35,14 +33,6 @@ static constexpr void addSpace(std::string &str, int n)
     {
         str += " ";
     }
-}
-
-template<typename T, COMPILER::IR::Tag TAG>
-static inline T *as(COMPILER::IR *inst)
-{
-    if (inst == nullptr) return nullptr;
-    if (inst->tag == TAG) return static_cast<T *>(inst);
-    return nullptr;
 }
 
 #endif // CVM_UTILITY_HPP

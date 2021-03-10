@@ -154,6 +154,16 @@ namespace COMPILER
         } tag{ Tag::INVALID };
     };
 
+    // IR conversion
+    template<typename T, COMPILER::IR::Tag TAG>
+    static inline T *as(COMPILER::IR *inst)
+    {
+        if (inst == nullptr) return nullptr;
+        if (inst->tag == TAG) return static_cast<T *>(inst);
+        return nullptr;
+    }
+    //
+
     class IRValue : public IR
     {
       public:
@@ -352,27 +362,6 @@ namespace COMPILER
         }
     };
 
-    class IRAssign : public IRInst
-    {
-      public:
-        using IRInst::IRInst;
-        IRAssign()
-        {
-            tag = IR::Tag::ASSIGN;
-        }
-        std::string toString() override
-        {
-            std::string retval = (id >= 0 ? std::to_string(id) + " " : "");
-            if (dest != nullptr) retval += dest->toString();
-            if (src != nullptr) retval += " = " + src->toString();
-            return retval;
-        }
-
-      public:
-        IRVar *dest{ nullptr }; // a.k.a lhs
-        IR *src{ nullptr };     // a.k.a rhs
-    };
-
     class IRPhi : public IRValue
     {
       public:
@@ -391,6 +380,75 @@ namespace COMPILER
             return str + ")";
         }
         std::vector<IRVar *> args;
+    };
+
+    class IRAssign : public IRInst
+    {
+      public:
+        using IRInst::IRInst;
+        IRAssign()
+        {
+            tag = IR::Tag::ASSIGN;
+        }
+        void setDest(IRVar *dest)
+        {
+            this->_dest       = dest;
+            dest->belong_inst = this;
+        }
+        void setSrc(IR *src)
+        {
+            if (inOr(src->tag, IR::Tag::BINARY, IR::Tag::VAR, IR::Tag::PHI))
+            {
+                auto *binary = as<IRBinary, IR::Tag::BINARY>(src);
+                auto *var    = as<IRVar, IR::Tag::VAR>(src);
+                auto *phi    = as<IRPhi, IR::Tag::PHI>(src);
+                if (binary != nullptr)
+                {
+                    binary->belong_inst = this;
+                    auto *lhs_const     = as<IRConstant, IR::Tag::CONST>(binary->lhs);
+                    auto *lhs_var       = as<IRVar, IR::Tag::VAR>(binary->lhs);
+                    auto *rhs_const     = as<IRConstant, IR::Tag::CONST>(binary->rhs);
+                    auto *rhs_var       = as<IRVar, IR::Tag::VAR>(binary->rhs);
+                    if (lhs_const != nullptr) lhs_const->belong_inst = this;
+                    if (lhs_var != nullptr) lhs_var->belong_inst = this;
+                    if (rhs_const != nullptr) rhs_const->belong_inst = this;
+                    if (rhs_var != nullptr) rhs_const->belong_inst = this;
+                }
+                else if (var != nullptr)
+                {
+                    var->belong_inst = this;
+                }
+                else if (phi != nullptr)
+                {
+                    phi->belong_inst = this;
+                    for (auto *v : phi->args)
+                    {
+                        v->belong_inst = this;
+                    }
+                }
+            }
+            _src = src;
+        }
+        IRVar *dest()
+        {
+            return _dest;
+        }
+        IR *src()
+        {
+            return _src;
+        }
+
+        std::string toString() override
+        {
+            std::string retval = (id >= 0 ? std::to_string(id) + " " : "");
+            if (_dest != nullptr) retval += _dest->toString();
+            if (_src != nullptr) retval += " = " + _src->toString();
+            return retval;
+        }
+
+      private:
+        IRVar *_dest{ nullptr }; // a.k.a lhs
+        IR *_src{ nullptr };     // a.k.a rhs
     };
 
     class IRBranch : public IRInst
@@ -413,6 +471,7 @@ namespace COMPILER
             return retval;
         }
     };
+
 } // namespace COMPILER
 
 #endif // CVM_IR_INSTRUCTION_HPP

@@ -241,23 +241,23 @@ void COMPILER::BytecodeGenerator::genAssign(COMPILER::IRAssign *ptr)
      * add 1 2
      * storex a 1
      * */
-    std::string lhs = ptr->dest->name;
+    std::string lhs = ptr->dest()->name;
 
-    if (auto *binary = as<IRBinary, IR::Tag::BINARY>(ptr->src); binary != nullptr)
+    if (auto *binary = as<IRBinary, IR::Tag::BINARY>(ptr->src()); binary != nullptr)
     {
         genBinary(binary);
         genStoreX(lhs, 1);
     }
-    else if (auto *constant = as<IRConstant, IR::Tag::CONST>(ptr->src); constant != nullptr)
+    else if (auto *constant = as<IRConstant, IR::Tag::CONST>(ptr->src()); constant != nullptr)
     {
         genStoreConst(constant->value, lhs);
     }
-    else if (auto *var = as<IRVar, IR::Tag::VAR>(ptr->src); var != nullptr)
+    else if (auto *var = as<IRVar, IR::Tag::VAR>(ptr->src()); var != nullptr)
     {
         genLoadX(1, var->name);
         genStoreX(lhs, 1);
     }
-    else if (auto *call = as<IRCall, IR::Tag::CALL>(ptr->src); call != nullptr)
+    else if (auto *call = as<IRCall, IR::Tag::CALL>(ptr->src()); call != nullptr)
     {
         genCall(call);
         genStoreX(lhs, 1);
