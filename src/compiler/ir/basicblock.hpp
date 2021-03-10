@@ -33,6 +33,31 @@ namespace COMPILER
         {
             insts.push_back(instruction);
         }
+        void addInstAfter(IRInst *instruction, const IRInst *after)
+        {
+            for (auto it = insts.begin(); it != insts.end(); it++)
+            {
+                auto *inst = *it;
+                if (inst == after)
+                {
+                    insts.insert(it, instruction);
+                    break;
+                }
+            }
+        }
+        void addInstBefore(IRInst *instruction, const IRInst *before)
+        {
+            for (auto it = insts.begin(), pre_it = it; it != insts.end(); it++)
+            {
+                auto *inst = *it;
+                if (inst == before)
+                {
+                    insts.insert(pre_it, instruction);
+                    break;
+                }
+                pre_it = it;
+            }
+        }
         //
         void addPre(BasicBlock *block)
         {
