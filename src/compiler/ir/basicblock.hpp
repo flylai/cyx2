@@ -47,15 +47,13 @@ namespace COMPILER
         }
         void addInstBefore(IRInst *instruction, const IRInst *before)
         {
-            for (auto it = insts.begin(), pre_it = it; it != insts.end(); it++)
+            for (auto it = insts.begin(); it != insts.end(); it++)
             {
-                auto *inst = *it;
-                if (inst == before)
+                if (*it == before)
                 {
-                    insts.insert(pre_it, instruction);
+                    insts.insert(it, instruction);
                     break;
                 }
-                pre_it = it;
             }
         }
         //
