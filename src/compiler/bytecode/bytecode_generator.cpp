@@ -59,7 +59,7 @@ void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
 {
     if (auto *lhs = as<IRVar, IR::Tag::VAR>(ptr->lhs); lhs != nullptr)
     {
-        genLoadX(1, lhs->name);
+        genLoadX(1, lhs->toString());
     }
     else if (auto *lhs = as<IRConstant, IR::Tag::CONST>(ptr->lhs); lhs != nullptr)
     {
@@ -72,7 +72,7 @@ void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
     //
     if (auto *rhs = as<IRVar, IR::Tag::VAR>(ptr->rhs); rhs != nullptr)
     {
-        genLoadX(2, rhs->name);
+        genLoadX(2, rhs->toString());
     }
     else if (auto *rhs = as<IRConstant, IR::Tag::CONST>(ptr->rhs); rhs != nullptr)
     {
@@ -162,7 +162,7 @@ void COMPILER::BytecodeGenerator::genReturn(COMPILER::IRReturn *ptr)
         }
         else if (var != nullptr)
         {
-            genLoadX(1, var->name);
+            genLoadX(1, var->toString());
         }
         // if has more retval.....unsupported now.
         ret->ret_size = 1;
@@ -197,7 +197,7 @@ void COMPILER::BytecodeGenerator::genCall(COMPILER::IRCall *ptr)
         if (auto var = as<IRVar, IR::Tag::VAR>(arg); var != nullptr)
         {
             x->type = CVM::Arg::Type::MAP;
-            x->name = var->name;
+            x->name = var->toString();
         }
         else if (auto constant = as<IRConstant, IR::Tag::CONST>(arg); arg != nullptr)
         {
@@ -220,14 +220,14 @@ void COMPILER::BytecodeGenerator::genFunc(COMPILER::IRFunction *ptr)
     for (auto param : ptr->params)
     {
         auto *p = new CVM::Param();
-        p->name = param->name;
+        p->name = param->toString();
         vm_insts.push_back(p);
     }
 }
 
 void COMPILER::BytecodeGenerator::genBranch(COMPILER::IRBranch *ptr)
 {
-    genLoadX(STATE_REGISTER, ptr->cond->name); // state register
+    genLoadX(STATE_REGISTER, ptr->cond->toString()); // state register
     genJif(ptr->true_block, ptr->false_block);
 }
 
@@ -241,7 +241,7 @@ void COMPILER::BytecodeGenerator::genAssign(COMPILER::IRAssign *ptr)
      * add 1 2
      * storex a 1
      * */
-    std::string lhs = ptr->dest()->name;
+    std::string lhs = ptr->dest()->toString();
 
     if (auto *binary = as<IRBinary, IR::Tag::BINARY>(ptr->src()); binary != nullptr)
     {
@@ -254,7 +254,7 @@ void COMPILER::BytecodeGenerator::genAssign(COMPILER::IRAssign *ptr)
     }
     else if (auto *var = as<IRVar, IR::Tag::VAR>(ptr->src()); var != nullptr)
     {
-        genLoadX(1, var->name);
+        genLoadX(1, var->toString());
         genStoreX(lhs, 1);
     }
     else if (auto *call = as<IRCall, IR::Tag::CALL>(ptr->src()); call != nullptr)
