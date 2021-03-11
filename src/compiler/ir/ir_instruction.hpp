@@ -412,7 +412,7 @@ namespace COMPILER
                     if (lhs_const != nullptr) lhs_const->belong_inst = this;
                     if (lhs_var != nullptr) lhs_var->belong_inst = this;
                     if (rhs_const != nullptr) rhs_const->belong_inst = this;
-                    if (rhs_var != nullptr) rhs_const->belong_inst = this;
+                    if (rhs_var != nullptr) rhs_var->belong_inst = this;
                 }
                 else if (var != nullptr)
                 {
