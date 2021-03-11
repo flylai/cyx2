@@ -9,7 +9,7 @@ void COMPILER::IRGenerator::visitUnaryExpr(COMPILER::UnaryExpr *ptr)
     auto *assign = new IRAssign;
     auto *binary = new IRBinary;
 
-    assign->block       = cur_basic_block;
+    assign->block = cur_basic_block;
 
     check_var_exist = true;
     ptr->rhs->visit(this);
@@ -29,9 +29,9 @@ void COMPILER::IRGenerator::visitUnaryExpr(COMPILER::UnaryExpr *ptr)
 
         if (inOr(ptr->op.keyword, SELFSUB_SUFFIX, SELFADD_SUFFIX))
         {
-            auto *assign2        = new IRAssign;
-            auto *binary2        = new IRBinary;
-            assign2->block       = cur_basic_block;
+            auto *assign2  = new IRAssign;
+            auto *binary2  = new IRBinary;
+            assign2->block = cur_basic_block;
 
             binary2->lhs    = self;
             binary2->opcode = token2IROp(ptr->op.keyword);
@@ -65,15 +65,15 @@ void COMPILER::IRGenerator::visitBinaryExpr(COMPILER::BinaryExpr *ptr)
     if (cur_value.hasValue())
     {
         // int / double / string
-        auto *lhs        = new IRConstant;
-        lhs->value       = cur_value;
-        binary->lhs      = lhs;
+        auto *lhs   = new IRConstant;
+        lhs->value  = cur_value;
+        binary->lhs = lhs;
         cur_value.reset();
     }
     else
     {
-        auto *lhs        = consumeVariable();
-        binary->lhs      = lhs;
+        auto *lhs   = consumeVariable();
+        binary->lhs = lhs;
     }
     // rhs
     check_var_exist = true;
@@ -81,88 +81,19 @@ void COMPILER::IRGenerator::visitBinaryExpr(COMPILER::BinaryExpr *ptr)
     check_var_exist = false;
     if (cur_value.hasValue())
     {
-        auto *rhs        = new IRConstant;
-        rhs->value       = cur_value;
-        binary->rhs      = rhs;
+        auto *rhs   = new IRConstant;
+        rhs->value  = cur_value;
+        binary->rhs = rhs;
         cur_value.reset();
     }
     else
     {
-        auto *rhs        = consumeVariable();
-        binary->rhs      = rhs;
+        auto *rhs   = consumeVariable();
+        binary->rhs = rhs;
     }
 
-    // constant folding
-    int operand_count = 0;
-    if (CONSTANT_FOLDING && inOr(ptr->op.keyword, ADD, SUB, MUL, DIV, BOR, BXOR, MOD, SHR, SHL))
-    {
-        CYX::Value operand1;
-        CYX::Value operand2;
-        CYX::Value value;
-
-        auto *operand1_const_ptr = as<IRConstant, IR::Tag::CONST>(binary->lhs);
-        auto *operand1_var_ptr   = as<IRVar, IR::Tag::VAR>(binary->lhs);
-        auto *operand2_const_ptr = as<IRConstant, IR::Tag::CONST>(binary->rhs);
-        auto *operand2_var_ptr   = as<IRVar, IR::Tag::VAR>(binary->rhs);
-
-        if (operand1_const_ptr != nullptr)
-        {
-            operand1 = operand1_const_ptr->value;
-            operand_count++;
-        }
-        if (operand2_const_ptr != nullptr)
-        {
-            operand2 = operand2_const_ptr->value;
-            operand_count++;
-        }
-        if (operand1_var_ptr != nullptr)
-        {
-            auto *tmp_assign = as<IRAssign, IR::Tag::ASSIGN>(operand1_var_ptr->def->belong_inst);
-            if (tmp_assign != nullptr && tmp_assign->src()->tag == IR::Tag::CONST)
-            {
-                operand1 = as<IRConstant, IR::Tag::CONST>(tmp_assign->src())->value;
-                operand_count++;
-            }
-        }
-        if (operand2_var_ptr != nullptr)
-        {
-            auto *tmp_assign = as<IRAssign, IR::Tag::ASSIGN>(operand2_var_ptr->def->belong_inst);
-            if (tmp_assign != nullptr && tmp_assign->src()->tag == IR::Tag::CONST)
-            {
-                operand2 = as<IRConstant, IR::Tag::CONST>(tmp_assign->src())->value;
-                operand_count++;
-            }
-        }
-        if (operand_count == 2)
-        {
-            switch (ptr->op.keyword)
-            {
-                case ADD: value = operand1 + operand2; break;
-                case SUB: value = operand1 - operand2; break;
-                case MUL: value = operand1 * operand2; break;
-                case DIV: value = operand1 / operand2; break;
-                case BOR: value = operand1 | operand2; break;
-                case BXOR: value = operand1 ^ operand2; break;
-                case MOD: value = operand1 % operand2; break;
-                case SHR: value = operand1 >> operand2; break;
-                case SHL: value = operand1 << operand2; break;
-                default: UNREACHABLE();
-            }
-            cur_value = value;
-            // free memory
-            destroyVar(operand1_var_ptr);
-            destroyVar(operand2_var_ptr);
-            delete operand1_const_ptr;
-            delete operand2_const_ptr;
-            delete binary;
-        }
-    }
-
-    if (operand_count != 2)
-    {
-        assign->setDest(newVariable());
-        cur_basic_block->addInst(assign);
-    }
+    assign->setDest(newVariable());
+    cur_basic_block->addInst(assign);
 }
 
 void COMPILER::IRGenerator::visitIntExpr(COMPILER::IntExpr *ptr)
@@ -201,7 +132,7 @@ void COMPILER::IRGenerator::visitAssignExpr(COMPILER::AssignExpr *ptr)
     assign->block = cur_basic_block;
     //
     ptr->lhs->visit(this);
-    auto *dest        = consumeVariable(false);
+    auto *dest = consumeVariable(false);
     assign->setDest(dest);
     //
     check_var_exist = true;
@@ -209,15 +140,15 @@ void COMPILER::IRGenerator::visitAssignExpr(COMPILER::AssignExpr *ptr)
     check_var_exist = false;
     if (cur_value.hasValue())
     {
-        auto *constant        = new IRConstant;
-        constant->value       = cur_value;
+        auto *constant  = new IRConstant;
+        constant->value = cur_value;
         assign->setSrc(constant);
 
         cur_value.reset();
     }
     else
     {
-        auto *src        = consumeVariable();
+        auto *src = consumeVariable();
         assign->setSrc(src);
     }
     cur_basic_block->addInst(assign);
