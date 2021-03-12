@@ -379,7 +379,8 @@ namespace COMPILER
             }
             return str + ")";
         }
-        std::vector<IRVar *> args;
+        // var / constant
+        std::vector<IRValue *> args;
     };
 
     class IRAssign : public IRInst

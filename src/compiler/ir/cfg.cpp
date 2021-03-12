@@ -26,6 +26,7 @@ void COMPILER::CFG::clear()
     var_block_map.clear();
     counter.clear();
     stack.clear();
+    ssa_def_map.clear();
 }
 
 void COMPILER::CFG::dfs(COMPILER::BasicBlock *cur_basic_block)
@@ -176,7 +177,7 @@ void COMPILER::CFG::removeUnusedPhis(IRFunction *func)
         for (auto phi_it = block->phis.begin(); phi_it != block->phis.end();)
         {
             auto *phi_assign = *phi_it;
-            if (phi_assign->dest->use.empty())
+            if (phi_assign->dest()->use.empty())
                 phi_it = block->phis.erase(phi_it);
             else
                 phi_it++;
@@ -186,6 +187,7 @@ void COMPILER::CFG::removeUnusedPhis(IRFunction *func)
 
 void COMPILER::CFG::transformToSSA()
 {
+    if (DISABLE_SSA) return;
     for (auto *func : funcs)
     {
         if (func->blocks.empty()) continue;
@@ -197,6 +199,13 @@ void COMPILER::CFG::transformToSSA()
         insertPhiNode();
         tryRename();
         removeUnusedPhis(func);
+        removeTrivialPhi(func);
+        if (CONSTANT_FOLDING)
+        {
+            constantFolding(func);
+            if (CONSTANT_PROPAGATION) constantPropagation(func);
+        }
+        phiElimination(func);
     }
 }
 
@@ -209,8 +218,8 @@ void COMPILER::CFG::collectVarAssign(COMPILER::IRFunction *func)
             if (inst->tag == IR::Tag::ASSIGN)
             {
                 auto *assign = static_cast<IRAssign *>(inst);
-                if (assign->dest->def == nullptr && assign->dest->is_ir_gen) continue;
-                var_block_map[assign->dest->name].insert(block);
+                if (assign->dest()->def == nullptr && assign->dest()->is_ir_gen) continue;
+                var_block_map[assign->dest()->name].insert(block);
             }
         }
     }
@@ -241,15 +250,13 @@ void COMPILER::CFG::insertPhiNode()
                     inserted[df_block] = var_name;
                     auto *assign       = new IRAssign;
                     //
-                    auto *lhs        = new IRVar;
-                    lhs->name        = var_name;
-                    lhs->belong_inst = assign;
+                    auto *lhs = new IRVar;
+                    lhs->name = var_name;
                     //
-                    auto *phi        = new IRPhi;
-                    phi->belong_inst = assign;
+                    auto *phi = new IRPhi;
                     //
-                    assign->dest  = lhs;
-                    assign->src   = phi;
+                    assign->setDest(lhs);
+                    assign->setSrc(phi);
                     assign->block = df_block;
                     df_block->phis.push_back(assign);
                     // add block's dominance frontier to worklist
@@ -257,6 +264,278 @@ void COMPILER::CFG::insertPhiNode()
                 }
             }
         }
+    }
+}
+
+void COMPILER::CFG::removeTrivialPhi(COMPILER::IRFunction *func)
+{
+    // remove phi node like x2 = phi(x1, x1)
+    for (auto *block : func->blocks)
+    {
+        for (auto it = block->phis.begin(); it != block->phis.end();)
+        {
+            // check phi node
+            auto *assign       = as<IRAssign, IR::Tag::ASSIGN>(*it);
+            auto *phi          = as<IRPhi, IR::Tag::PHI>(assign->src());
+            int pre_idx        = -1;
+            int same_idx_count = 1;
+            for (auto *tmp : phi->args)
+            {
+                auto *var = as<IRVar, IR::Tag::VAR>(tmp);
+                if (pre_idx == -1)
+                {
+                    pre_idx = var->ssa_index;
+                    continue;
+                }
+                if (var->ssa_index == pre_idx)
+                    same_idx_count++;
+                else
+                    break;
+            }
+            // if found phi(x1, x1, x1, x1....), remove it~
+            if (same_idx_count == phi->args.size())
+            {
+                it = block->phis.erase(it);
+                destroyPhiNode(assign);
+            }
+            else
+                it++;
+        }
+    }
+}
+
+void COMPILER::CFG::constantPropagation(COMPILER::IRFunction *func)
+{
+    // constant propagation will be executed after constant folding.
+    // find some variables like following
+    // a1 = 1
+    // a3 = phi(a1, a2)
+    // -> a3 = phi(1, a2)
+    for (auto block : func->blocks)
+    {
+        for (auto *assign : block->phis)
+        {
+            auto *phi = as<IRPhi, IR::Tag::PHI>(assign->src());
+            for (auto &arg : phi->args)
+            {
+                auto *var        = as<IRVar, IR::Tag::VAR>(arg);
+                auto *arg_assign = as<IRAssign, IR::Tag::ASSIGN>(var->def->belong_inst);
+                if (arg_assign == nullptr) continue;
+                auto *constant = as<IRConstant, IR::Tag::CONST>(arg_assign->src());
+                if (constant == nullptr) continue;
+                // this is constant! propagate it!
+                var->def->killUse(var);
+                delete var;
+                // make a copy
+                auto *new_const        = new IRConstant;
+                new_const->value       = constant->value;
+                new_const->belong_inst = arg_assign;
+                //
+                arg = new_const;
+            }
+        }
+    }
+}
+
+void COMPILER::CFG::constantFolding(COMPILER::IRFunction *func)
+{
+    for (auto block : func->blocks)
+    {
+        for (auto *inst : block->insts)
+        {
+            auto *assign = as<IRAssign, IR::Tag::ASSIGN>(inst);
+            if (assign == nullptr) continue;
+            if (assign->src()->tag == IR::Tag::CONST) continue;
+            //
+            auto constant = tryFindConstant(assign->dest());
+            if (constant.has_value())
+            {
+                auto *result  = new IRConstant;
+                result->value = constant.value();
+                // free memory
+                auto *var = as<IRVar, IR::Tag ::VAR>(assign->src());
+                if (var != nullptr)
+                {
+                    var->def->killUse(var);
+                    delete var;
+                }
+                //
+                auto *binary = as<IRBinary, IR::Tag ::BINARY>(assign->src());
+                if (binary != nullptr)
+                {
+                    auto *lhs_const = as<IRConstant, IR::Tag::CONST>(binary->lhs);
+                    auto *lhs_var   = as<IRVar, IR::Tag::VAR>(binary->lhs);
+                    //
+                    auto *rhs_const = as<IRConstant, IR::Tag::CONST>(binary->rhs);
+                    auto *rhs_var   = as<IRVar, IR::Tag::VAR>(binary->rhs);
+                    // update ud-chains
+                    delete lhs_const;
+                    delete rhs_const;
+                    if (lhs_var != nullptr)
+                    {
+                        lhs_var->def->killUse(lhs_var);
+                        delete lhs_var;
+                    }
+                    if (rhs_var != nullptr)
+                    {
+                        rhs_var->def->killUse(rhs_var);
+                        delete rhs_var;
+                    }
+                }
+                // set new constant
+                assign->setSrc(result);
+            }
+        }
+    }
+}
+
+std::optional<CYX::Value> COMPILER::CFG::tryFindConstant(COMPILER::IRVar *var)
+{
+    // recursive exit
+    if (var == nullptr) return {};
+    auto *assign = as<IRAssign, IR::Tag::ASSIGN>(var->belong_inst);
+    if (assign == nullptr) return {};
+    // c = 1
+    // a = c
+    auto *src_var = as<IRVar, IR::Tag::VAR>(assign->src());
+    if (src_var != nullptr)
+    {
+        return tryFindConstant(src_var->def);
+    }
+    // a = 1
+    auto *src_constant = as<IRConstant, IR::Tag::CONST>(assign->src());
+    if (src_constant)
+    {
+        return src_constant->value;
+    }
+    // c = 1
+    // b = 1
+    // a = b + c
+    auto *src_binary = as<IRBinary, IR::Tag::BINARY>(assign->src());
+    if (src_binary && inOr(src_binary->opcode, IR_ADD, IR_SUB, IR_MUL, IR_DIV, IR_BOR, IR_BXOR, IR_MOD, IR_SHR, IR_SHL))
+    {
+        auto *lhs_const = as<IRConstant, IR::Tag::CONST>(src_binary->lhs);
+        auto *lhs_var   = as<IRVar, IR::Tag::VAR>(src_binary->lhs);
+        //
+        auto *rhs_const = as<IRConstant, IR::Tag::CONST>(src_binary->rhs);
+        auto *rhs_var   = as<IRVar, IR::Tag::VAR>(src_binary->rhs);
+        //
+        // recursive to find definitions. return null if found it not a constant.
+        //
+        CYX::Value lhs, rhs;
+        if (lhs_const != nullptr)
+            lhs = lhs_const->value;
+        else if (lhs_var != nullptr)
+        {
+            auto tmp = tryFindConstant(lhs_var->def);
+            if (tmp.has_value())
+                lhs = tmp.value();
+            else
+                return {};
+        }
+        //
+        if (rhs_const != nullptr)
+            rhs = rhs_const->value;
+        else if (rhs_var != nullptr)
+        {
+            auto tmp = tryFindConstant(rhs_var->def);
+            if (tmp.has_value())
+                rhs = tmp.value();
+            else
+                return {};
+        }
+        switch (src_binary->opcode)
+        {
+            case IR_ADD: return lhs + rhs;
+            case IR_SUB: return lhs - rhs;
+            case IR_MUL: return lhs * rhs;
+            case IR_DIV: return lhs / rhs;
+            case IR_BOR: return lhs | rhs;
+            case IR_BXOR: return lhs ^ rhs;
+            case IR_MOD: return lhs % rhs;
+            case IR_SHR: return lhs >> rhs;
+            case IR_SHL: return lhs << rhs;
+            default: UNREACHABLE();
+        }
+    }
+    return {};
+}
+
+void COMPILER::CFG::destroyPhiNode(COMPILER::IRAssign *assign)
+{
+    delete assign->dest();
+    auto *phi = as<IRPhi, IR::Tag::PHI>(assign->src());
+    for (auto *tmp : phi->args)
+    {
+        auto *var = as<IRVar, IR::Tag::VAR>(tmp);
+        if (var->def) var->def->killUse(var);
+        delete var;
+    }
+    delete phi;
+    delete assign;
+}
+
+void COMPILER::CFG::phiElimination(COMPILER::IRFunction *func)
+{
+    for (auto *block : func->blocks)
+    {
+        for (auto *assign : block->phis)
+        {
+            auto args = as<IRPhi, IR::Tag::PHI>(assign->src())->args;
+
+            const auto dest_name    = assign->dest()->name;
+            const auto dest_ssa_idx = assign->dest()->ssa_index;
+            auto *dest              = assign->dest();
+            //
+            for (int i = 0; i < args.size(); i++)
+            {
+                auto *new_assign = new IRAssign;
+                if (i != 0)
+                {
+                    auto *new_var      = new IRVar;
+                    new_var->name      = dest_name;
+                    new_var->ssa_index = dest_ssa_idx;
+                    new_assign->setDest(new_var);
+                    new_var->def = dest;
+                    dest->addUse(new_var);
+                }
+                else
+                {
+                    new_assign->setDest(dest);
+                }
+                //
+
+                BasicBlock *insert_block;
+                if (auto *tmp = as<IRVar, IR::Tag::VAR>(args[i]); tmp != nullptr)
+                {
+                    insert_block = tmp->def->belong_inst->block;
+                }
+                else if (auto *tmp = as<IRConstant, IR::Tag::CONST>(args[i]))
+                {
+                    insert_block = tmp->belong_inst->block;
+                }
+                else
+                {
+                    UNREACHABLE();
+                }
+                new_assign->setSrc(args[i]);
+                new_assign->block = insert_block;
+                // avoid insert as following code
+                // jmp L1
+                // x1 = x2
+                if (insert_block->insts.back()->tag == IR::Tag::JMP)
+                {
+                    insert_block->addInstBefore(new_assign, insert_block->insts.back());
+                }
+                else
+                {
+                    insert_block->addInst(new_assign);
+                }
+            }
+            delete assign;
+        }
+        // remove all phi functions.
+        block->phis.clear();
     }
 }
 
@@ -273,55 +552,21 @@ void COMPILER::CFG::rename(COMPILER::BasicBlock *block)
 {
     for (auto *phi : block->phis)
     {
-        auto *lhs      = phi->dest;
-        lhs->ssa_index = newId(lhs->name, lhs);
+        auto *lhs                                               = phi->dest();
+        lhs->ssa_index                                          = newId(lhs->name, lhs);
+        ssa_def_map[lhs->name + std::to_string(lhs->ssa_index)] = lhs;
     }
     for (auto *inst : block->insts)
     {
-        if (inst->tag != IR::Tag::ASSIGN) continue;
-        //
-        auto *assign = static_cast<IRAssign *>(inst);
-        if (assign->src->tag == IR::Tag::BINARY)
-        {
-            auto *src = static_cast<IRBinary *>(assign->src);
-            if (src->lhs != nullptr && src->lhs->tag == IR::Tag::VAR)
-            {
-                auto *src_lhs      = static_cast<IRVar *>(src->lhs);
-                auto [id, def]     = getId(src_lhs->name);
-                src_lhs->ssa_index = id;
-                // def-use chains update
-                src_lhs->def = def;
-                if (src_lhs->def) src_lhs->def->addUse(src_lhs);
-            }
-            if (src->rhs != nullptr && src->rhs->tag == IR::Tag::VAR)
-            {
-                auto *src_rhs      = static_cast<IRVar *>(src->rhs);
-                auto [id, def]     = getId(src_rhs->name);
-                src_rhs->ssa_index = id;
-                // def-use chains update
-                src_rhs->def = def;
-                if (src_rhs->def) src_rhs->def->addUse(src_rhs);
-            }
-        }
-        else if (assign->src->tag == IR::Tag::VAR)
-        {
-            auto *src      = static_cast<IRVar *>(assign->src);
-            auto [id, def] = getId(src->name);
-            src->ssa_index = id;
-            // def-use chains update
-            src->def = def;
-            if (src->def) src->def->addUse(src);
-        }
-        if (assign->dest->def == nullptr && assign->dest->is_ir_gen) continue;
-        assign->dest->ssa_index = newId(assign->dest->name, assign->dest);
+        renameIrArgs(inst);
     }
     for (auto *succ : block->succs)
     {
         for (auto *phi : succ->phis)
         {
             // add phi args
-            auto *dest       = phi->dest;
-            auto *src        = static_cast<IRPhi *>(phi->src); // real phi function
+            auto *dest       = phi->dest();
+            auto *src        = as<IRPhi, IR::Tag::PHI>(phi->src()); // real phi function
             auto [id, def]   = getId(dest->name);
             auto *arg        = new IRVar;
             arg->ssa_index   = id;
@@ -341,14 +586,84 @@ void COMPILER::CFG::rename(COMPILER::BasicBlock *block)
     {
         if (inst->tag == IR::Tag::ASSIGN)
         {
-            auto *assign = static_cast<IRAssign *>(inst);
-            if (!stack[assign->dest->name].empty()) stack[assign->dest->name].pop();
+            auto *assign = as<IRAssign, IR::Tag::ASSIGN>(inst);
+            if (!stack[assign->dest()->name].empty()) stack[assign->dest()->name].pop();
         }
     }
     for (auto *phi : block->phis)
     {
-        if (!stack[phi->dest->name].empty()) stack[phi->dest->name].pop();
+        if (!stack[phi->dest()->name].empty()) stack[phi->dest()->name].pop();
     }
+}
+
+void COMPILER::CFG::renameIrArgs(COMPILER::IR *inst)
+{
+    auto *func_call = as<IRCall, IR::Tag::CALL>(inst);
+    if (func_call != nullptr)
+    {
+        renameFuncCall(func_call);
+        return;
+    }
+    //
+    auto *assign = as<IRAssign, IR::Tag::ASSIGN>(inst);
+    auto *var    = as<IRVar, IR::Tag::VAR>(inst);
+    if (var != nullptr)
+    {
+        renameVar(var);
+        return;
+    }
+    if (assign == nullptr) return;
+    // try type cast
+    auto *binary = as<IRBinary, IR::Tag::BINARY>(assign->src());
+    var          = as<IRVar, IR::Tag::VAR>(assign->src());
+    func_call    = as<IRCall, IR::Tag ::CALL>(assign->src());
+    // rename src!
+    if (binary != nullptr)
+    {
+        auto *src_lhs = as<IRVar, IR::Tag::VAR>(binary->lhs);
+        auto *src_rhs = as<IRVar, IR::Tag::VAR>(binary->rhs);
+        renameVar(src_lhs);
+        renameVar(src_rhs);
+    }
+    if (var != nullptr)
+    {
+        renameVar(var);
+    }
+    if (func_call != nullptr)
+    {
+        renameFuncCall(func_call);
+    }
+    // rename dest
+    if (assign->dest()->def == nullptr && assign->dest()->is_ir_gen) return;
+    assign->dest()->ssa_index = newId(assign->dest()->name, assign->dest());
+    auto dest_name            = assign->dest()->name + std::to_string(assign->dest()->ssa_index);
+    ssa_def_map[dest_name]    = assign->dest();
+    assign->dest()->use.clear();
+    assign->dest()->def = nullptr;
+}
+
+void COMPILER::CFG::renameFuncCall(COMPILER::IRCall *inst)
+{
+    for (auto *arg : inst->args)
+    {
+        renameIrArgs(arg);
+    }
+}
+
+void COMPILER::CFG::renameVar(COMPILER::IRVar *var)
+{
+    if (var == nullptr) return;
+    auto [id, def] = getId(var->name);
+    var->ssa_index = id;
+    // def-use chains update
+    auto def_name = var->name + std::to_string(id);
+    if (ssa_def_map.find(def_name) != ssa_def_map.end())
+    {
+        var->def = ssa_def_map[def_name];
+        var->def->addUse(var);
+    }
+    else
+        UNREACHABLE();
 }
 
 int COMPILER::CFG::newId(const std::string &name, IRVar *def)

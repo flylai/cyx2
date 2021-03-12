@@ -39,8 +39,20 @@ namespace COMPILER
         // SSA construction
         void collectVarAssign(COMPILER::IRFunction *func);
         void insertPhiNode();
+        void removeTrivialPhi(COMPILER::IRFunction *func);
+        //
+        void constantPropagation(COMPILER::IRFunction *func);
+        void constantFolding(COMPILER::IRFunction *func);
+        std::optional<CYX::Value> tryFindConstant(COMPILER::IRVar *var);
+        //
+        void destroyPhiNode(COMPILER::IRAssign *assign);
+        void phiElimination(COMPILER::IRFunction *func);
+        // rename
         void tryRename();
         void rename(BasicBlock *block);
+        void renameIrArgs(IR *inst);
+        void renameFuncCall(IRCall *inst);
+        void renameVar(IRVar *var);
         int newId(const std::string &name, IRVar *def);
         std::pair<int, IRVar *> getId(const std::string &name);
 
@@ -63,6 +75,8 @@ namespace COMPILER
         std::unordered_map<std::string, std::unordered_set<BasicBlock *>> var_block_map;
         std::unordered_map<std::string, int> counter;
         std::unordered_map<std::string, std::stack<std::pair<int, IRVar *>>> stack;
+        // for build new def-use chain.
+        std::unordered_map<std::string, IRVar *> ssa_def_map;
     };
 } // namespace COMPILER
 
