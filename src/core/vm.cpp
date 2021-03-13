@@ -176,12 +176,12 @@ void CVM::VM::call()
 
 void CVM::VM::callBuildin()
 {
-    auto *call = static_cast<Call *>(cur_inst);
-    pc++;
+    auto *call         = static_cast<Call *>(cur_inst);
     auto *buildin_func = buildin_functions_index.at(-call->target);
     // TODO: some bugs here...
-    while (vm_insts[pc]->opcode == Opcode::ARG)
+    if (vm_insts[pc + 1]->opcode == Opcode::ARG)
     {
+        pc++;
         auto *arg = static_cast<Arg *>(vm_insts[pc]);
         if (arg->type == Arg::Type::MAP)
         {
@@ -191,7 +191,11 @@ void CVM::VM::callBuildin()
         {
             buildin_func(&arg->value);
         }
-        pc++;
+    }
+    else
+    {
+        auto *retval = buildin_func(nullptr);
+        reg[1]       = *retval;
     }
 }
 

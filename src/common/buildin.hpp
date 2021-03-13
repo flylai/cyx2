@@ -6,36 +6,41 @@
 #include <iostream>
 #include <string>
 
-static void buildin_print(CYX::Value *arg)
+static CYX::Value *buildin_print(CYX::Value *arg)
 {
     std::cout << arg->as<std::string>();
+    return nullptr;
 }
 
-static void buildin_println(CYX::Value *arg)
+static CYX::Value *buildin_println(CYX::Value *arg)
 {
     std::cout << arg->as<std::string>() << std::endl;
+    return nullptr;
 }
 
-static void buildin_read(CYX::Value *target)
+static CYX::Value *buildin_read(CYX::Value *target)
 {
     std::string input;
     std::cin >> input;
-    *target = input;
+    return new CYX::Value(input);
 }
 
-static void buildin_int(CYX::Value *target)
+static CYX::Value *buildin_int(CYX::Value *target)
 {
     *target = target->as<int>();
+    return nullptr;
 }
 
-static void buildin_double(CYX::Value *target)
+static CYX::Value *buildin_double(CYX::Value *target)
 {
     *target = target->as<double>();
+    return nullptr;
 }
 
-static void buildin_string(CYX::Value *target)
+static CYX::Value *buildin_string(CYX::Value *target)
 {
     *target = target->as<std::string>();
+    return nullptr;
 }
 
 #define BUILDIN_NAME(IDX, X)                                                                                           \
@@ -51,7 +56,7 @@ static void buildin_string(CYX::Value *target)
         IDX, &X                                                                                                        \
     }
 
-static const std::unordered_map<std::string, std::pair<void (*)(CYX::Value *), int>> buildin_functions = {
+static const std::unordered_map<std::string, std::pair<CYX::Value *(*) (CYX::Value *), int>> buildin_functions = {
     BUILDIN_NAME(1, buildin_print),   //
     BUILDIN_NAME(2, buildin_println), //
     BUILDIN_NAME(3, buildin_read),    //
@@ -60,7 +65,7 @@ static const std::unordered_map<std::string, std::pair<void (*)(CYX::Value *), i
     BUILDIN_NAME(6, buildin_string),  //
 };
 
-static const std::unordered_map<int, void (*)(CYX::Value *)> buildin_functions_index = {
+static const std::unordered_map<int, CYX::Value *(*) (CYX::Value *)> buildin_functions_index = {
     BUILDIN_IDX(1, buildin_print),   //
     BUILDIN_IDX(2, buildin_println), //
     BUILDIN_IDX(3, buildin_read),    //
