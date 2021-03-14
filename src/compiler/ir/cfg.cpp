@@ -204,6 +204,7 @@ void COMPILER::CFG::transformToSSA()
         {
             constantFolding(func);
             if (CONSTANT_PROPAGATION) constantPropagation(func);
+            removeUnusedPhis(func);
         }
         phiElimination(func);
     }
