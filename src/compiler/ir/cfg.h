@@ -23,7 +23,7 @@ namespace COMPILER
         void removeUnusedPhis(IRFunction *func);
         std::string iDomDetailStr() const;
         std::string dominanceFrontierStr() const;
-        std::string dumpCFG() const;
+        std::string cfgStr() const;
 
       public:
         std::vector<IRFunction *> funcs;

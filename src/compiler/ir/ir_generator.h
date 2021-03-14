@@ -20,7 +20,7 @@ namespace COMPILER
         IRGenerator();
         ~IRGenerator();
         void visitTree(Tree *ptr) override;
-        std::string irCodeString();
+        std::string irStr();
         //
         void removeUnusedVarDef();
         void simplifyIR();

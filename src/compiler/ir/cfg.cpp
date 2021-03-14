@@ -707,29 +707,31 @@ std::string COMPILER::CFG::dominanceFrontierStr() const
     return str;
 }
 
-std::string COMPILER::CFG::dumpCFG() const
+std::string COMPILER::CFG::cfgStr() const
 {
-    std::string str;
+    std::string str = "digraph G{\n";
     for (auto *func : funcs)
     {
         for (auto *block : func->blocks)
         {
+            addSpace(str, 4);
             str += block->name + " [shape=record, label=\"{" + block->name;
-            for (auto *inst : block->insts)
-            {
-                str += "|" + inst->toString();
-            }
             for (auto *phi : block->phis)
             {
                 str += "|" + phi->toString();
+            }
+            for (auto *inst : block->insts)
+            {
+                str += "|" + inst->toString();
             }
             str += "}\"]\n";
 
             for (auto *succ : block->succs)
             {
+                addSpace(str, 4);
                 str += block->name + " -> " + succ->name + "\n";
             }
         }
     }
-    return str;
+    return str + "\n}";
 }

@@ -368,6 +368,7 @@ void COMPILER::BytecodeGenerator::fixJmp(int start, int end)
         }
     }
 }
+
 std::string COMPILER::BytecodeGenerator::vmInstStr()
 {
     std::string str;

@@ -538,7 +538,7 @@ COMPILER::IRGenerator::IRGenerator()
     cur_symbol = new SymbolTable(global_table);
 }
 
-std::string COMPILER::IRGenerator::irCodeString()
+std::string COMPILER::IRGenerator::irStr()
 {
     std::string ir_code = "There are " + std::to_string(global_var_decl->insts.size()) + " variable(s) declared!\n";
     for (auto *var : global_var_decl->insts)
