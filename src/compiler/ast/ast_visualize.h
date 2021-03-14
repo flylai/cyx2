@@ -34,7 +34,9 @@ namespace COMPILER
         void visitImportStmt(ImportStmt *ptr) override;
         void visitBlockStmt(BlockStmt *ptr) override;
 
-      public:
+        std::string astStr();
+
+      private:
         std::string graph;
     };
 } // namespace COMPILER

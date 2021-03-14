@@ -181,3 +181,12 @@ void COMPILER::ASTVisualize::visitTree(COMPILER::Tree *ptr)
 void COMPILER::ASTVisualize::visitFuncCallExpr(COMPILER::FuncCallExpr *ptr)
 {
 }
+
+std::string COMPILER::ASTVisualize::astStr()
+{
+    return graph;
+}
+
+#undef NODE
+#undef VISIT
+#undef EDGE
