@@ -313,7 +313,7 @@ namespace COMPILER
         }
         std::string toString() override
         {
-            return name + (is_ir_gen || DISABLE_SSA ? "" : std::to_string(ssa_index));
+            return name + (is_ir_gen || NO_SSA ? "" : std::to_string(ssa_index));
         }
         //
         void addUse(IRVar *value)

@@ -47,7 +47,6 @@ void CVM::VM::run()
         }
         pc++;
     }
-    logX(reg[1].as<std::string>());
 }
 
 void CVM::VM::setInsts(const std::vector<VMInstruction *> &insts)

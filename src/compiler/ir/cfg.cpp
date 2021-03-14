@@ -187,7 +187,7 @@ void COMPILER::CFG::removeUnusedPhis(IRFunction *func)
 
 void COMPILER::CFG::transformToSSA()
 {
-    if (DISABLE_SSA) return;
+    if (NO_SSA) return;
     for (auto *func : funcs)
     {
         if (func->blocks.empty()) continue;

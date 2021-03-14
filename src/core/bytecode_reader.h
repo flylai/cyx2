@@ -49,7 +49,7 @@ namespace CVM
         void readJif();
 
       public:
-        int pc{ -1 };
+        int entry{ -1 };
         std::vector<VMInstruction *> vm_insts;
 
       private:

@@ -65,7 +65,7 @@ void CVM::BytecodeReader::readHeader()
 {
     auto magic_number = readByte();
     auto version      = readByte();
-    pc                = readInt();
+    entry             = readInt();
     if (magic_number != 0xc2 && version != 0x01) ERROR("bytecode file error!");
 }
 
