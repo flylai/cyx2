@@ -15,6 +15,8 @@ namespace COMPILER
       public:
         explicit Lexer(std::string raw_code);
         void skipBlank();
+        void skipSingleLineComment();
+        void skipMultiLineComment();
         void advance();
         char currentChar() const;
         char peekNextChar() const;

@@ -26,6 +26,20 @@ void COMPILER::Lexer::skipBlank()
         advance();
 }
 
+void COMPILER::Lexer::skipSingleLineComment()
+{
+    while (current_char != '\n')
+        advance();
+}
+
+void COMPILER::Lexer::skipMultiLineComment()
+{
+    while (current_char != '*' && peekNextChar() != '/')
+        advance();
+    advance();
+    advance();
+}
+
 COMPILER::Token COMPILER::Lexer::number()
 {
     std::string retval;
@@ -153,7 +167,23 @@ COMPILER::Token COMPILER::Lexer::nextToken()
                 advance();
                 return MK_TOKEN2(Keyword::DIV_ASSIGN, "/=");
             }
+            else if (current_char == '*')
+            {
+                advance();
+                skipMultiLineComment();
+                return nextToken();
+            }
+            else if (current_char == '/')
+            {
+                advance();
+                skipSingleLineComment();
+                return nextToken();
+            }
             return MK_TOKEN2(Keyword::DIV, "/");
+        case '#':
+            advance();
+            skipSingleLineComment();
+            return nextToken();
         case '%':
             advance();
             if (current_char == '=')
