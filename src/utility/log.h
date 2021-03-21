@@ -1,8 +1,6 @@
 #ifndef CVM_LOG_H
 #define CVM_LOG_H
 
-#include "debug_helper.hpp"
-
 #include <dbg.h>
 
 #ifdef CYX_DEBUG
