@@ -33,10 +33,13 @@ namespace CVM
         void readBinary();
         //
         void readLoadX();
+        void readLoadA();
+        void readLoadXA();
         template<typename T>
         void readLoad();
         //
         void readStoreX();
+        void readStoreA();
         template<typename T>
         void readStore();
         //

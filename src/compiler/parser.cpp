@@ -47,6 +47,10 @@ COMPILER::Expr *COMPILER::Parser::parsePrimaryExpr()
             func_call_expr->args      = std::move(parseArgListStmt());
             return func_call_expr;
         }
+        else if (cur_token.keyword == Keyword::LBRACKET)
+        {
+            return parseArrayIdExpr();
+        }
         else if (inOr(cur_token.keyword, Keyword::SELFADD, Keyword::SELFSUB))
         {
             // suffix unary expr
@@ -140,6 +144,11 @@ COMPILER::Expr *COMPILER::Parser::parseExpr(int priority)
         return parseGroupingExpr();
     }
 
+    if (cur_token.keyword == Keyword::LBRACKET)
+    {
+        return parseArrayExpr();
+    }
+
     return parseBinaryExpr(lhs, priority,
 
                            Keyword::ADD, Keyword::SUB, Keyword::MUL, Keyword::DIV, Keyword::MOD, Keyword::BAND,
@@ -152,6 +161,35 @@ COMPILER::Expr *COMPILER::Parser::parseExpr(int priority)
                            Keyword::SUB_ASSIGN, Keyword::MOD_ASSIGN, Keyword::DIV_ASSIGN
 
     );
+}
+
+COMPILER::ArrayExpr *COMPILER::Parser::parseArrayExpr()
+{
+    eat(Keyword::LBRACKET);
+    auto *array_expr = new ArrayExpr;
+    while (true)
+    {
+        array_expr->content.push_back(parseStmt());
+        if (cur_token.keyword == Keyword::COMMA)
+            eat(Keyword::COMMA);
+        else
+            break;
+    }
+    eat(Keyword::RBRACKET);
+    return array_expr;
+}
+
+COMPILER::ArrayIdExpr *COMPILER::Parser::parseArrayIdExpr()
+{
+    auto arr_id_expr  = new ArrayIdExpr;
+    arr_id_expr->name = pre_token.value;
+    while (cur_token.keyword == Keyword::LBRACKET)
+    {
+        eat(Keyword::LBRACKET);
+        arr_id_expr->index.push_back(parseStmt());
+        eat(Keyword::RBRACKET);
+    }
+    return arr_id_expr;
 }
 
 inline constexpr int COMPILER::Parser::opcodePriority(COMPILER::Keyword keyword)

@@ -39,10 +39,17 @@ namespace COMPILER
         template<typename T>
         void genLoad(int reg_idx, T val);
         void genLoadX(int reg_idx, const std::string &name);
+        void genLoadX(int reg_idx, const std::string &name, const std::vector<CVM::ArrIdx> &idx);
+        void genLoadXA(int reg_idx, const std::vector<std::pair<std::string, int>> &idx);
+        void genLoadA(int reg_idx, const std::vector<CYX::Value> &index);
         //
         template<typename T>
         void genStore(const std::string &name, T val);
+        void genStoreA(const std::string &name, CYX::Value &value, const std::vector<CVM::ArrIdx> &idx);
         void genStoreX(const std::string &name, int reg_idx);
+        void genStoreX(const std::string &name, int reg_idx, const std::vector<CVM::ArrIdx> &idx);
+        //
+        void parseVarArr(IRVar *var, std::vector<CVM::ArrIdx> &arr_idx);
 
       public:
         int entry{ -1 };

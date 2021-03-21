@@ -35,6 +35,10 @@ namespace COMPILER
         void visitAssignExpr(AssignExpr *ptr) override;
         void visitIdentifierExpr(IdentifierExpr *ptr) override;
         void visitFuncCallExpr(FuncCallExpr *ptr) override;
+        void visitArrayExpr(ArrayExpr *ptr) override;
+        void visitArrayIdExpr(ArrayIdExpr *ptr) override;
+
+      private:
         //
         void visitExprStmt(ExprStmt *ptr) override;
         void visitIfStmt(IfStmt *ptr) override;

@@ -187,6 +187,18 @@ std::string COMPILER::ASTVisualize::astStr()
     return graph;
 }
 
+void COMPILER::ASTVisualize::visitArrayExpr(COMPILER::ArrayExpr *ptr)
+{
+    if (ptr == nullptr) return;
+    graph += NODE(ptr) + "[label=\"ArrayExpr#\"]\n";
+}
+
+void COMPILER::ASTVisualize::visitArrayIdExpr(COMPILER::ArrayIdExpr *ptr)
+{
+    if (ptr == nullptr) return;
+    graph += NODE(ptr) + "[label=\"ArrayIdExpr#\"" + ptr->name + "]\n";
+}
+
 #undef NODE
 #undef VISIT
 #undef EDGE

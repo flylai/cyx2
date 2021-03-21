@@ -151,6 +151,8 @@ namespace COMPILER
             BRANCH, // if then else.
             ASSIGN, // a = binary / constant / call / var / vardef
             PHI,    // phi node
+            ARRAY,  // [1,a,[a,2]]
+            INDEX,  // a[1], a[f()][a]
         } tag{ Tag::INVALID };
     };
 
@@ -303,6 +305,27 @@ namespace COMPILER
         std::vector<IR *> args;
     };
 
+    class IRArray : public IRValue
+    {
+      public:
+        using IRValue::IRValue;
+        IRArray()
+        {
+            tag = IR::Tag::ARRAY;
+        }
+        // [IRVar,IRArray,IRCall,IRConstant]
+        std::vector<IR *> content;
+        std::string toString() override
+        {
+            std::string str = "[";
+            for (auto *x : content)
+            {
+                str += x->toString() + ", ";
+            }
+            return str + "]";
+        }
+    };
+
     class IRVar : public IRValue
     {
       public:
@@ -311,9 +334,25 @@ namespace COMPILER
         {
             tag = IR::Tag::VAR;
         }
+        std::string ssaName()
+        {
+            return NO_SSA ? name : name + std::to_string(ssa_index);
+        }
         std::string toString() override
         {
-            return name + (is_ir_gen || NO_SSA ? "" : std::to_string(ssa_index));
+            std::string str = name;
+            if (is_array)
+            {
+                for (auto x : index)
+                {
+                    str += "[" + x->toString() + "]";
+                }
+            }
+            else
+            {
+                str += (is_ir_gen || NO_SSA ? "" : std::to_string(ssa_index));
+            }
+            return str;
         }
         //
         void addUse(IRVar *value)
@@ -333,9 +372,12 @@ namespace COMPILER
         }
 
       public:
-        int ssa_index{ 0 };
+        bool is_array{ false };
+        std::vector<IR *> index;
+        //
         bool is_ir_gen{ false };
         std::string name;
+        int ssa_index{ 0 };
         IRVar *def{ nullptr };
         std::list<IRVar *> use;
     };

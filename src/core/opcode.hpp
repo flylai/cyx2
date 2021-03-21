@@ -3,15 +3,6 @@
 
 namespace CVM
 {
-    enum class OperandTarget
-    {
-        REGISTER = 0x02,
-        STACK    = 0x04,
-        GLOBAL   = 0x08,
-        RAW      = 0x10,
-        UNKNOWN  = 0xff
-    };
-
     enum class Opcode : unsigned char
     {
         // binary
@@ -42,10 +33,14 @@ namespace CVM
         LOADI,
         LOADD,
         LOADS,
+        LOADA,
         LOADX,
+        LOADXA,
+
         STOREI,
         STORED,
         STORES,
+        STOREA,
         STOREX,
         CALL,
         FUNC,
@@ -54,8 +49,9 @@ namespace CVM
         RET,
         JMP, // unconditional jump
         JIF, // conditional jump, depend on `state`
+        //
 
-        UNKNOWN = 0xff
+        UNKNOWN = 0xff,
     };
 
     static unsigned char inline constexpr opcode2UChar(Opcode opcode)

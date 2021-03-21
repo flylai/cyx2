@@ -504,30 +504,26 @@ std::string COMPILER::IRGenerator::newLabel()
 
 COMPILER::IRVar *COMPILER::IRGenerator::consumeVariable(bool force_IRVar)
 {
-    if (!force_IRVar)
-    {
-        auto *retval = tmp_vars.top();
-        tmp_vars.pop();
-        return retval;
-    }
-
-    auto *var_def = tmp_vars.top(); // variable definition
+    auto *tmp = tmp_vars.top();
     tmp_vars.pop();
-
+    if (!force_IRVar || tmp->is_array)
+    {
+        return tmp;
+    }
     auto *retval      = new IRVar;
-    retval->name      = var_def->name;
-    retval->is_ir_gen = var_def->is_ir_gen;
+    retval->name      = tmp->name;
+    retval->is_ir_gen = tmp->is_ir_gen;
 
     // def-use.
-    if (var_def->def == nullptr)
+    if (tmp->def == nullptr)
     {
-        var_def->addUse(retval);
-        retval->def = var_def;
+        tmp->addUse(retval);
+        retval->def = tmp;
     }
     else
     {
-        retval->def = var_def->def;
-        var_def->def->addUse(retval);
+        retval->def = tmp->def;
+        tmp->def->addUse(retval);
     }
 
     return retval;
@@ -708,7 +704,7 @@ void COMPILER::IRGenerator::simplifyIR()
 
 void COMPILER::IRGenerator::removeUnusedVarDef()
 {
-    // TODO: `branch` inst may use val
+    // TODO: `branch` inst may use value
     // TODO: fixContinueTarget() may cause some errors(i guess)
     for (auto *func : funcs)
     {
@@ -793,6 +789,54 @@ void COMPILER::IRGenerator::destroyVar(IRVar *var)
         ERROR("this var is some vars' defined");
     }
     delete var;
+}
+
+void COMPILER::IRGenerator::visitArrayExpr(COMPILER::ArrayExpr *ptr)
+{
+    auto *array_expr = new IRArray;
+    for (auto x : ptr->content)
+    {
+        x->visit(this);
+        if (cur_value.hasValue())
+        {
+            auto *ir_const  = new IRConstant;
+            ir_const->value = cur_value;
+            array_expr->content.push_back(ir_const);
+            cur_value.reset();
+        }
+        else
+        {
+            array_expr->content.push_back(consumeVariable());
+        }
+    }
+    auto *var    = newVariable();
+    auto *assign = new IRAssign;
+    assign->setDest(var);
+    assign->setSrc(array_expr);
+    cur_basic_block->addInst(assign);
+}
+
+void COMPILER::IRGenerator::visitArrayIdExpr(COMPILER::ArrayIdExpr *ptr)
+{
+    auto *var     = new IRVar();
+    var->is_array = true;
+    var->name     = ptr->name;
+    for (auto *idx : ptr->index)
+    {
+        idx->visit(this);
+        if (cur_value.hasValue())
+        {
+            auto *ir_const  = new IRConstant;
+            ir_const->value = cur_value;
+            var->index.push_back(ir_const);
+            cur_value.reset();
+        }
+        else
+        {
+            var->index.push_back(consumeVariable());
+        }
+    }
+    tmp_vars.push(var);
 }
 
 #undef LINK

@@ -17,6 +17,8 @@ namespace COMPILER
         virtual void visitAssignExpr(AssignExpr *ptr)         = 0;
         virtual void visitIdentifierExpr(IdentifierExpr *ptr) = 0;
         virtual void visitFuncCallExpr(FuncCallExpr *ptr)     = 0;
+        virtual void visitArrayExpr(ArrayExpr *ptr)           = 0;
+        virtual void visitArrayIdExpr(ArrayIdExpr *ptr)       = 0;
 
         // Stmt
         virtual void visitExprStmt(ExprStmt *ptr)         = 0;

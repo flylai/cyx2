@@ -34,10 +34,35 @@ namespace COMPILER
         };
     };
 
+    // [2,4,5,5,[5],443,543,4554,3,5]
+    class ArrayExpr : public Expr
+    {
+      public:
+        using Expr::Expr;
+        std::vector<Stmt *> content;
+        void visit(ASTVisitor *visitor) override
+        {
+            visitor->visitArrayExpr(this);
+        };
+    };
+
+    // a[1][func(c)] = 1
+    class ArrayIdExpr : public Expr
+    {
+      public:
+        using Expr::Expr;
+        std::string name;
+        std::vector<Stmt *> index;
+        void visit(ASTVisitor *visitor) override
+        {
+            visitor->visitArrayIdExpr(this);
+        };
+    };
+
     class IdentifierExpr : public Expr
     {
       public:
-        using Expr ::Expr;
+        using Expr::Expr;
         std::string value;
         void visit(ASTVisitor *visitor) override
         {

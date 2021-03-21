@@ -31,12 +31,15 @@ namespace COMPILER
         void writeBinary();
         //
         void writeLoadX();
+        void writeLoadA();
+        void writeLoadXA();
         template<typename T>
         void writeLoad();
         //
         void writeStoreX();
         template<typename T>
         void writeStore();
+        void writeStoreA();
         //
         void writeArg();
         void writeCall();
@@ -45,6 +48,11 @@ namespace COMPILER
         void writeRet();
         void writeJmp();
         void writeJif();
+        //
+        void writeIntTag();
+        void writeDoubleTag();
+        void writeStringTag();
+        void writeEmptyTag();
 
       private:
         CVM::VMInstruction *cur_inst{ nullptr };

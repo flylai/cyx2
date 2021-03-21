@@ -30,12 +30,15 @@ void COMPILER::BytecodeWriter::writeInsts()
             case CVM::Opcode::LAND: writeBinary(); break;
             case CVM::Opcode::LNOT:
             case CVM::Opcode::BNOT: break;
+            case CVM::Opcode::LOADA: writeLoadA(); break;
+            case CVM::Opcode::LOADXA: writeLoadXA(); break;
             case CVM::Opcode::LOADI: writeLoad<int>(); break;
             case CVM::Opcode::STOREI: writeStore<int>(); break;
             case CVM::Opcode::LOADD: writeLoad<double>(); break;
             case CVM::Opcode::STORED: writeStore<double>(); break;
             case CVM::Opcode::LOADS: writeLoad<std::string>(); break;
             case CVM::Opcode::STORES: writeStore<std::string>(); break;
+            case CVM::Opcode::STOREA: writeStoreA(); break;
             case CVM::Opcode::LOADX: writeLoadX(); break;
             case CVM::Opcode::STOREX: writeStoreX(); break;
             case CVM::Opcode::CALL: writeCall(); break;
@@ -113,12 +116,64 @@ void COMPILER::BytecodeWriter::writeBinary()
     writeByte(tmp->reg_idx2);
 }
 
+void COMPILER::BytecodeWriter::writeLoadA()
+{
+    auto *tmp = static_cast<CVM::LoadA *>(cur_inst);
+    writeByte(tmp->reg_idx);
+    writeInt(tmp->array.size());
+    for (auto value : tmp->array)
+    {
+        if (!value.hasValue())
+        {
+            writeEmptyTag();
+            continue;
+        }
+        if (value.is<int>())
+        {
+            writeIntTag();
+            writeInt(value.as<int>());
+        }
+        else if (value.is<double>())
+        {
+            writeDoubleTag();
+            writeDouble(value.as<double>());
+        }
+        else if (value.is<std::string>())
+        {
+            writeStringTag();
+            writeString(value.as<std::string>());
+        }
+    }
+}
+
+void COMPILER::BytecodeWriter::writeLoadXA()
+{
+    auto *tmp = static_cast<CVM::LoadXA *>(cur_inst);
+    writeByte(tmp->reg_idx);
+    writeInt(tmp->index);
+    writeString(tmp->name);
+}
+
 void COMPILER::BytecodeWriter::writeLoadX()
 {
     // LOAD DEST SRC
     auto *tmp = static_cast<CVM::LoadX *>(cur_inst);
     writeByte(tmp->reg_idx);
     writeString(tmp->name);
+    writeInt(tmp->index.size());
+    for (auto idx : tmp->index)
+    {
+        if (std::holds_alternative<int>(idx))
+        {
+            writeIntTag();
+            writeInt(std::get<int>(idx));
+        }
+        else
+        {
+            writeStringTag();
+            writeString(std::get<std::string>(idx));
+        }
+    }
 }
 
 template<typename T>
@@ -150,8 +205,60 @@ void COMPILER::BytecodeWriter::writeStoreX()
 {
     // STORE DEST SRC
     auto *tmp = static_cast<CVM::StoreX *>(cur_inst);
-    writeByte(tmp->reg_idx);
     writeString(tmp->name);
+    writeInt(tmp->index.size());
+    for (auto idx : tmp->index)
+    {
+        if (std::holds_alternative<int>(idx))
+        {
+            writeIntTag();
+            writeInt(std::get<int>(idx));
+        }
+        else
+        {
+            writeStringTag();
+            writeString(std::get<std::string>(idx));
+        }
+    }
+    writeByte(tmp->reg_idx);
+}
+
+void COMPILER::BytecodeWriter::writeStoreA()
+{
+    // STOREA a[1][b] = 3.14
+    auto *tmp = static_cast<CVM::StoreA *>(cur_inst);
+    writeString(tmp->name);
+    writeInt(tmp->index.size());
+    // [1][b]
+    for (auto idx : tmp->index)
+    {
+        if (std::holds_alternative<int>(idx))
+        {
+            writeIntTag();
+            writeInt(std::get<int>(idx));
+        }
+        else
+        {
+            writeStringTag();
+            writeString(std::get<std::string>(idx));
+        }
+    }
+    // 3.14
+    if (tmp->value.is<int>())
+    {
+        writeIntTag();
+        writeInt(tmp->value.as<int>());
+    }
+    else if (tmp->value.is<double>())
+    {
+        writeDoubleTag();
+        writeDouble(tmp->value.as<double>());
+    }
+    else if (tmp->value.is<std::string>())
+    {
+        writeStringTag();
+        writeString(tmp->value.as<std::string>());
+    }
 }
 
 template<typename T>
@@ -194,17 +301,17 @@ void COMPILER::BytecodeWriter::writeArg()
         // int = 0 / double = 1 / string = 2
         if (arg->value.is<int>())
         {
-            writeByte(0);
+            writeIntTag();
             writeInt(arg->value.as<int>());
         }
         else if (arg->value.is<double>())
         {
-            writeByte(1);
+            writeDoubleTag();
             writeDouble(arg->value.as<double>());
         }
         else if (arg->value.is<std::string>())
         {
-            writeByte(2);
+            writeStringTag();
             writeString(arg->value.as<std::string>());
         }
     }
@@ -244,4 +351,24 @@ void COMPILER::BytecodeWriter::writeJif()
     auto *tmp = static_cast<CVM::Jif *>(cur_inst);
     writeInt(tmp->target1);
     writeInt(tmp->target2);
+}
+
+void COMPILER::BytecodeWriter::writeIntTag()
+{
+    writeByte(0);
+}
+
+void COMPILER::BytecodeWriter::writeDoubleTag()
+{
+    writeByte(1);
+}
+
+void COMPILER::BytecodeWriter::writeStringTag()
+{
+    writeByte(2);
+}
+
+void COMPILER::BytecodeWriter::writeEmptyTag()
+{
+    writeByte(3);
 }

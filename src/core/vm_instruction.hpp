@@ -16,9 +16,30 @@ namespace CVM
         virtual std::string toString() = 0;
     };
 
+    // for LOADX. STOREX
+    using ArrIdx = std::variant<std::string, int>;
+
     struct Load : VMInstruction
     {
         int reg_idx{ -1 };
+    };
+
+    struct LoadA : Load
+    {
+        LoadA()
+        {
+            opcode = Opcode::LOADA;
+        }
+        std::vector<CYX::Value> array;
+        std::string toString() override
+        {
+            std::string str = "LOADA %" + std::to_string(reg_idx) + " [";
+            for (int i = 0; i < array.size(); i++)
+            {
+                str += array[i].as<std::string>() + (i != array.size() - 1 ? "," : "");
+            }
+            return str + "]";
+        }
     };
 
     struct LoadX : Load
@@ -29,9 +50,34 @@ namespace CVM
         }
         std::string toString() override
         {
-            return "LOADX %" + std::to_string(reg_idx) + " " + name;
+            std::string str = "LOADX %" + std::to_string(reg_idx) + " " + name;
+            for (int i = 0; i < index.size(); i++)
+            {
+                str += "[";
+                if (std::holds_alternative<int>(index[i]))
+                    str += std::to_string(std::get<int>(index[i]));
+                else
+                    str += std::get<std::string>(index[i]);
+                str += "]";
+            }
+            return str;
         }
         std::string name;
+        std::vector<ArrIdx> index;
+    };
+
+    struct LoadXA : Load
+    {
+        LoadXA()
+        {
+            opcode = Opcode::LOADXA;
+        }
+        std::string toString() override
+        {
+            return "LOADXA %" + std::to_string(reg_idx) + "," + std::to_string(index) + " " + name;
+        }
+        std::string name;
+        int index;
     };
 
 #define LOAD_INST(X, OP, TYPE)                                                                                         \
@@ -62,6 +108,30 @@ namespace CVM
         std::string name;
     };
 
+    struct StoreA : Store
+    {
+        StoreA()
+        {
+            opcode = Opcode::STOREA;
+        }
+        std::vector<CVM::ArrIdx> index;
+        std::string toString() override
+        {
+            std::string str = "STOREA " + name;
+            for (int i = 0; i < index.size(); i++)
+            {
+                str += "[";
+                if (std::holds_alternative<int>(index[i]))
+                    str += std::to_string(std::get<int>(index[i]));
+                else
+                    str += std::get<std::string>(index[i]);
+                str += "] " + value.as<std::string>();
+            }
+            return str;
+        }
+        CYX::Value value;
+    };
+
     struct StoreX : Store
     {
         StoreX()
@@ -70,9 +140,20 @@ namespace CVM
         }
         std::string toString() override
         {
-            return "STOREX " + name + " %" + std::to_string(reg_idx);
+            std::string str = "STOREX " + name;
+            for (int i = 0; i < index.size(); i++)
+            {
+                str += "[";
+                if (std::holds_alternative<int>(index[i]))
+                    str += std::to_string(std::get<int>(index[i]));
+                else
+                    str += std::get<std::string>(index[i]);
+                str += "]";
+            }
+            return str + " %" + std::to_string(reg_idx);
         }
         int reg_idx{ -1 };
+        std::vector<ArrIdx> index;
     };
 
 #define STORE_INST(X, OP, TYPE)                                                                                        \

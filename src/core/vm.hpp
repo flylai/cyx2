@@ -27,6 +27,7 @@ namespace CVM
         void binary();
         //
         void loadX();
+        void loadXA();
         void load();
         //
         void storeX();

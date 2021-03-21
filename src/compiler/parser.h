@@ -29,6 +29,8 @@ namespace COMPILER
 
         Expr *parsePrimaryExpr();
         Expr *parseUnaryExpr();
+        ArrayExpr *parseArrayExpr();
+        ArrayIdExpr *parseArrayIdExpr();
 
         template<typename... U>
         COMPILER::Expr *parseBinaryExpr(Expr *lhs, int priority, U... args);

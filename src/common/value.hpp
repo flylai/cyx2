@@ -3,6 +3,7 @@
 
 #include "../utility/log.h"
 
+#include <list>
 #include <string>
 #include <utility>
 #include <variant>
@@ -309,6 +310,17 @@ namespace CYX
                 return std::to_string(value<int>());
             else if (is<double>())
                 return std::to_string(value<double>());
+            else if (is<std::vector<Value>>())
+            {
+                std::string str = "[";
+                auto arr        = asArray();
+                for (int i = 0; i < arr->size(); i++)
+                {
+                    str += (*arr)[i].as<std::string>();
+                    if (i != arr->size() - 1) str += ",";
+                }
+                return str + "]";
+            }
             else
                 return "";
         }

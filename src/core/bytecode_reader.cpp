@@ -41,6 +41,8 @@ void CVM::BytecodeReader::readInsts()
             case CVM::Opcode::LAND: readBinary(); break;
             case CVM::Opcode::LNOT:
             case CVM::Opcode::BNOT: break;
+            case CVM::Opcode::LOADA: readLoadA(); break;
+            case CVM::Opcode::LOADXA: readLoadXA(); break;
             case CVM::Opcode::LOADI: readLoad<int>(); break;
             case CVM::Opcode::STOREI: readStore<int>(); break;
             case CVM::Opcode::LOADD: readLoad<double>(); break;
@@ -49,6 +51,7 @@ void CVM::BytecodeReader::readInsts()
             case CVM::Opcode::STORES: readStore<std::string>(); break;
             case CVM::Opcode::LOADX: readLoadX(); break;
             case CVM::Opcode::STOREX: readStoreX(); break;
+            case CVM::Opcode::STOREA: readStoreA(); break;
             case CVM::Opcode::CALL: readCall(); break;
             case CVM::Opcode::FUNC: readFunc(); break;
             case CVM::Opcode::ARG: readArg(); break;
@@ -147,6 +150,54 @@ void CVM::BytecodeReader::readLoadX()
     auto *inst    = new LoadX;
     inst->reg_idx = readByte();
     inst->name    = readString();
+    std::vector<CVM::ArrIdx> arr;
+    auto arr_size = readInt();
+    for (int i = 0; i < arr_size; i++)
+    {
+        const auto type = readByte();
+        if (type == 0)
+        {
+            arr.emplace_back((int) readInt());
+        }
+        else if (type == 2)
+        {
+            arr.emplace_back(readString());
+        }
+        else
+            UNREACHABLE();
+    }
+    inst->index = std::move(arr);
+    vm_insts.push_back(inst);
+}
+
+void CVM::BytecodeReader::readLoadA()
+{
+    auto *inst    = new LoadA;
+    inst->reg_idx = readByte();
+    int idx_size  = readInt();
+    std::vector<CYX::Value> arr;
+    for (int i = 0; i < idx_size; i++)
+    {
+        const auto type = readByte();
+        if (type == 0)
+            arr.emplace_back((int) readInt());
+        else if (type == 1)
+            arr.emplace_back(readDouble());
+        else if (type == 2)
+            arr.emplace_back(readString());
+        else if (type == 3)
+            arr.emplace_back();
+    }
+    inst->array = std::move(arr);
+    vm_insts.push_back(inst);
+}
+
+void CVM::BytecodeReader::readLoadXA()
+{
+    auto *inst    = new LoadXA;
+    inst->reg_idx = readByte();
+    inst->index   = readInt();
+    inst->name    = readString();
     vm_insts.push_back(inst);
 }
 
@@ -181,8 +232,49 @@ void CVM::BytecodeReader::readLoad()
 void CVM::BytecodeReader::readStoreX()
 {
     auto *inst    = new StoreX;
-    inst->reg_idx = readByte();
     inst->name    = readString();
+    auto arr_size = readInt();
+    std::vector<ArrIdx> arr;
+    for (int i = 0; i < arr_size; i++)
+    {
+        auto type = readByte();
+        if (type == 0)
+            arr.emplace_back((int) readInt());
+        else if (type == 2)
+            arr.emplace_back(readString());
+        else
+            UNREACHABLE();
+    }
+    inst->reg_idx = readByte();
+    inst->index   = std::move(arr);
+    vm_insts.push_back(inst);
+}
+
+void CVM::BytecodeReader::readStoreA()
+{
+    auto *inst    = new StoreA;
+    inst->name    = readString();
+    auto arr_size = readInt();
+    std::vector<ArrIdx> arr;
+    for (int i = 0; i < arr_size; i++)
+    {
+        auto idx_type = readByte();
+        if (idx_type == 0)
+        {
+            arr.emplace_back((int) readInt());
+        }
+        else if (idx_type == 2)
+        {
+            arr.emplace_back(readString());
+        }
+    }
+    auto val_type = readByte();
+    if (val_type == 0)
+        inst->value = (int) readInt();
+    else if (val_type == 1)
+        inst->value = readDouble();
+    else if (val_type == 2)
+        inst->value = readString();
     vm_insts.push_back(inst);
 }
 

@@ -30,11 +30,14 @@ void CVM::VM::run()
             case Opcode::BNOT: break; // todo
             case Opcode::LOADI:
             case Opcode::LOADD:
+            case Opcode::LOADA:
             case Opcode::LOADS: load(); break;
             case Opcode::LOADX: loadX(); break;
+            case Opcode::LOADXA: loadXA(); break;
             case Opcode::STOREI:
             case Opcode::STORED:
-            case Opcode::STORES: store(); break;
+            case Opcode::STORES:
+            case Opcode::STOREA: store(); break;
             case Opcode::STOREX: storeX(); break;
             case Opcode::CALL: call(); break;
             case Opcode::FUNC: break;
@@ -99,6 +102,12 @@ void CVM::VM::binary()
     }
 }
 
+void CVM::VM::loadXA()
+{
+    auto *inst                      = static_cast<LoadXA *>(cur_inst);
+    reg[inst->reg_idx][inst->index] = frame.back().symbols[inst->name];
+}
+
 void CVM::VM::loadX()
 {
     auto *inst         = static_cast<LoadX *>(cur_inst);
@@ -123,14 +132,31 @@ void CVM::VM::load()
         auto *inst         = static_cast<LoadS *>(cur_inst);
         reg[inst->reg_idx] = inst->val;
     }
+    else if (op == Opcode::LOADA)
+    {
+        auto *inst         = static_cast<LoadA *>(cur_inst);
+        reg[inst->reg_idx] = inst->array;
+    }
     else
         UNREACHABLE();
 }
 
 void CVM::VM::storeX()
 {
-    auto *inst                       = static_cast<StoreX *>(cur_inst);
-    frame.back().symbols[inst->name] = reg[inst->reg_idx];
+    auto *inst  = static_cast<StoreX *>(cur_inst);
+    auto target = &frame.back().symbols[inst->name];
+    // MAGIC, DO NOT TOUCH...
+    for (auto idx : inst->index)
+    {
+        if (std::holds_alternative<int>(idx))
+            target = &target->asArray()->at(std::get<int>(idx));
+        else
+        {
+            const auto i = frame.back().symbols[std::get<std::string>(idx)].as<int>();
+            target       = &target->asArray()->at(i);
+        }
+    }
+    *target = reg[inst->reg_idx];
 }
 
 void CVM::VM::store()
@@ -150,6 +176,22 @@ void CVM::VM::store()
     {
         auto *inst                       = static_cast<StoreS *>(cur_inst);
         frame.back().symbols[inst->name] = inst->val;
+    }
+    else if (op == Opcode::STOREA)
+    {
+        auto *inst  = static_cast<StoreA *>(cur_inst);
+        auto target = &frame.back().symbols[inst->name];
+        for (auto idx : inst->index)
+        {
+            if (std::holds_alternative<int>(idx))
+                target = &target->asArray()->at(std::get<int>(idx));
+            else
+            {
+                const auto i = frame.back().symbols[std::get<std::string>(idx)].as<int>();
+                target       = &target->asArray()->at(i);
+            }
+        }
+        *target = inst->value;
     }
     else
         UNREACHABLE();

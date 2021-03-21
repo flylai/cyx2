@@ -40,6 +40,8 @@ namespace COMPILER
     class AssignExpr;
     class IdentifierExpr;
     class FuncCallExpr;
+    class ArrayExpr;
+    class ArrayIdExpr;
 
     // Stmt
     class Stmt;
