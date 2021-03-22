@@ -274,6 +274,11 @@ void COMPILER::IRGenerator::visitIfStmt(COMPILER::IfStmt *ptr)
     branch->block       = cond_block;
     branch->cond        = consumeVariable();
     cond_block->addInst(branch);
+    // jump to the out block after executed true block instructions.
+    auto *true_jmp   = new IRJump;
+    true_jmp->block  = true_block;
+    true_jmp->target = out_block;
+    true_block->addInst(true_jmp);
 }
 
 void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
@@ -590,8 +595,8 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
     for (const auto &x : first_scan_vars)
     {
         Symbol symbol;
-        symbol.type = Symbol::Type::VAR;
-
+        symbol.type     = Symbol::Type::VAR;
+        cur_basic_block = global_var_decl;
         x.second->rhs->visit(this);
         auto *var_def = new IRVar;
         var_def->name = x.first;
@@ -655,6 +660,7 @@ COMPILER::IRGenerator::~IRGenerator()
 {
     // TODO
 }
+
 COMPILER::BasicBlock *COMPILER::IRGenerator::newBasicBlock(const std::string &name)
 {
     auto *bb = name.empty() ? new BasicBlock(newLabel()) : new BasicBlock(name);

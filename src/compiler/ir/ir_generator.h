@@ -80,11 +80,10 @@ namespace COMPILER
         IRFunction *cur_func{ nullptr };
         BasicBlock *cur_basic_block{ nullptr };
         SymbolTable *cur_symbol{ nullptr };
-        //
-        BasicBlock *global_var_decl{ nullptr };
 
       public:
         std::vector<IRFunction *> funcs;
+        BasicBlock *global_var_decl{ nullptr };
 
       private:
         // AST first scan.
