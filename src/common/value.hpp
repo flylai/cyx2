@@ -19,6 +19,12 @@ namespace CYX
         explicit Value(T value) : _value(value)
         {
         }
+        explicit operator bool()
+        {
+            if (is<int>() || is<double>()) return as<double>() != 0;
+            if (is<std::string>()) return as<std::string>().size() > 0;
+            UNREACHABLE();
+        }
         template<typename T>
         Value &operator=(const T &rhs)
         {
@@ -132,6 +138,14 @@ namespace CYX
             if (is<int>() && rhs.is<int>())
             {
                 return Value(as<int>() & rhs.as<int>());
+            }
+            UNREACHABLE();
+        }
+        bool operator&&(Value &rhs)
+        {
+            if (is<int>() && rhs.is<int>())
+            {
+                return as<int>() != 0 && rhs.as<int>() != 0;
             }
             UNREACHABLE();
         }
