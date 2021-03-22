@@ -21,6 +21,7 @@ namespace COMPILER
         void ir2VmInst();
         std::vector<IRFunction *> funcs;
         std::vector<CVM::VMInstruction *> vm_insts;
+        BasicBlock *global_vars{ nullptr };
         std::string vmInstStr();
 
       private:
@@ -50,9 +51,12 @@ namespace COMPILER
         void genStoreX(const std::string &name, int reg_idx, const std::vector<CVM::ArrIdx> &idx);
         //
         void parseVarArr(IRVar *var, std::vector<CVM::ArrIdx> &arr_idx);
+        //
+        void genGlobalVarDecl();
 
       public:
         int entry{ -1 };
+        int global_var_len{ -1 };
 
       private:
         std::unordered_map<std::string, int> block_table;

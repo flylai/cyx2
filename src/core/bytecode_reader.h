@@ -53,6 +53,7 @@ namespace CVM
 
       public:
         int entry{ -1 };
+        int global_var_len{ -1 };
         std::vector<VMInstruction *> vm_insts;
 
       private:

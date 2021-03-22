@@ -11,6 +11,8 @@ COMPILER::BytecodeGenerator::BytecodeGenerator()
 
 void COMPILER::BytecodeGenerator::ir2VmInst()
 {
+    genGlobalVarDecl();
+    global_var_len = vm_insts.size();
     for (auto *func : funcs)
     {
         block_table.clear();
@@ -59,7 +61,12 @@ void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
 {
     if (auto *lhs = as<IRVar, IR::Tag::VAR>(ptr->lhs); lhs != nullptr)
     {
-        genLoadX(1, lhs->ssaName());
+        std::vector<CVM::ArrIdx> arr_idx;
+        parseVarArr(lhs, arr_idx);
+        if (lhs->is_array)
+            genLoadX(1, lhs->ssaName(), arr_idx);
+        else
+            genLoadX(1, lhs->ssaName());
     }
     else if (auto *lhs = as<IRConstant, IR::Tag::CONST>(ptr->lhs); lhs != nullptr)
     {
@@ -248,7 +255,11 @@ void COMPILER::BytecodeGenerator::genAssign(COMPILER::IRAssign *ptr)
     if (auto *binary = as<IRBinary, IR::Tag::BINARY>(ptr->src()); binary != nullptr)
     {
         genBinary(binary);
-        genStoreX(lhs, 1);
+        if (inOr(binary->opcode, IROpcode::IR_LE, IROpcode::IR_LT, IROpcode::IR_GE, IROpcode::IR_GT, IROpcode::IR_LAND,
+                 IROpcode::IR_LOR, IROpcode::IR_EQ, IROpcode::IR_NE))
+            genStoreX(lhs, 0);
+        else
+            genStoreX(lhs, 1);
     }
     else if (auto *constant = as<IRConstant, IR::Tag::CONST>(ptr->src()); constant != nullptr)
     {
@@ -489,5 +500,15 @@ void COMPILER::BytecodeGenerator::parseVarArr(COMPILER::IRVar *var, std::vector<
         }
         else
             UNREACHABLE();
+    }
+}
+
+void COMPILER::BytecodeGenerator::genGlobalVarDecl()
+{
+    for (auto inst : global_vars->insts)
+    {
+        auto *tmp = as<IRAssign, IR::Tag::ASSIGN>(inst);
+        if (tmp == nullptr) continue;
+        genAssign(tmp);
     }
 }

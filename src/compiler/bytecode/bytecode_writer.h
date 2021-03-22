@@ -21,7 +21,7 @@ namespace COMPILER
         void writeToFile();
 
       private:
-        void writeHeader(long long entry);
+        void writeHeader();
         void writeByte(unsigned char val);
         void writeInt(long long val);
         void writeDouble(double val);
@@ -64,6 +64,7 @@ namespace COMPILER
 
       public:
         int entry{ -1 };
+        int global_var_len{ -1 };
         std::vector<CVM::VMInstruction *> vm_insts;
     };
 } // namespace COMPILER

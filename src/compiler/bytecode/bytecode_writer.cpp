@@ -2,7 +2,7 @@
 
 void COMPILER::BytecodeWriter::writeInsts()
 {
-    writeHeader(entry);
+    writeHeader();
     for (auto *inst : vm_insts)
     {
         writeOpcode(inst->opcode);
@@ -53,7 +53,7 @@ void COMPILER::BytecodeWriter::writeInsts()
     }
 }
 
-void COMPILER::BytecodeWriter::writeHeader(long long int entry)
+void COMPILER::BytecodeWriter::writeHeader()
 {
     // magic number
     writeByte(0xc2);
@@ -61,6 +61,7 @@ void COMPILER::BytecodeWriter::writeHeader(long long int entry)
     writeByte(0x01);
     // entry point
     writeInt(entry);
+    writeInt(global_var_len);
 }
 
 void COMPILER::BytecodeWriter::writeByte(unsigned char val)

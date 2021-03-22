@@ -58,10 +58,11 @@ void readBytecode(CVM::BytecodeReader &bytecode_reader)
     bytecode_reader.readInsts();
 }
 
-void runVM(CVM::VM &vm, const std::vector<CVM::VMInstruction *> &insts, int entry)
+void runVM(CVM::VM &vm, const std::vector<CVM::VMInstruction *> &insts, int entry, int global_init_len)
 {
     vm.setInsts(insts);
     vm.setEntry(entry);
+    vm.setGlobalInitLen(global_init_len);
     vm.run();
 }
 
@@ -147,7 +148,7 @@ int main(int argc, char *argv[])
         CVM::BytecodeReader bytecode_reader(bytecode_input);
         CVM::VM vm;
         readBytecode(bytecode_reader);
-        runVM(vm, bytecode_reader.vm_insts, bytecode_reader.entry);
+        runVM(vm, bytecode_reader.vm_insts, bytecode_reader.entry, bytecode_reader.global_var_len);
         return 0;
     }
 
@@ -169,7 +170,8 @@ int main(int argc, char *argv[])
     if (!NO_SSA) cfg.transformToSSA();
     // vm instruction builder
     COMPILER::BytecodeGenerator bytecode_generator;
-    bytecode_generator.funcs = cfg.funcs;
+    bytecode_generator.funcs       = cfg.funcs;
+    bytecode_generator.global_vars = ir_generator.global_var_decl;
     bytecode_generator.ir2VmInst();
 
     // dump debug str
@@ -207,13 +209,14 @@ int main(int argc, char *argv[])
     if (!bytecode_output.empty())
     {
         COMPILER::BytecodeWriter bytecode_writer(bytecode_output);
-        bytecode_writer.entry    = bytecode_generator.entry;
-        bytecode_writer.vm_insts = bytecode_generator.vm_insts;
+        bytecode_writer.entry             = bytecode_generator.entry;
+        bytecode_generator.global_var_len = bytecode_generator.global_var_len;
+        bytecode_writer.vm_insts          = bytecode_generator.vm_insts;
         bytecode_writer.writeInsts();
         bytecode_writer.writeToFile();
     }
 
     CVM::VM vm;
-    runVM(vm, bytecode_generator.vm_insts, bytecode_generator.entry);
+    runVM(vm, bytecode_generator.vm_insts, bytecode_generator.entry, bytecode_generator.global_var_len);
     return 0;
 }
