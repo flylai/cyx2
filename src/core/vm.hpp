@@ -19,9 +19,6 @@ namespace CVM
       public:
         void run();
 
-        //
-        int pc = 0;
-
       private:
         bool fetch();
         void binary();
@@ -41,17 +38,31 @@ namespace CVM
         void ret();
         void jmp();
         void jif();
+        //
+        CYX::Value *findSymbol(const std::string &name);
 
       private:
+        enum class Mode
+        {
+            INIT,
+            MAIN
+        };
         std::array<CYX::Value, 12> reg;
         std::vector<CVM::Frame> frame{ Frame() };
-        bool state = false; // if stmt state
+        //
+        CYX::Value &state = reg[0]; // if stmt state
         std::vector<VMInstruction *> vm_insts;
         VMInstruction *cur_inst{ nullptr };
+        //
+        Mode mode = Mode::INIT;
+        int entry{ 0 };               // main function position
+        int pc{ 0 };                  // program counter
+        int global_var_init_len{ 0 }; // global data initialize instruction length
 
       public:
         void setInsts(const std::vector<VMInstruction *> &insts);
         void setEntry(int i);
+        void setGlobalInitLen(int i);
     };
 } // namespace CVM
 

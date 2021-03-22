@@ -25,7 +25,6 @@ void CVM::VM::run()
             case Opcode::GT:
             case Opcode::GE:
             case Opcode::LAND: binary(); break;
-
             case Opcode::LNOT: break; // todo
             case Opcode::BNOT: break; // todo
             case Opcode::LOADI:
@@ -59,11 +58,22 @@ void CVM::VM::setInsts(const std::vector<VMInstruction *> &insts)
 
 void CVM::VM::setEntry(int i)
 {
-    pc = i;
+    entry = i;
+}
+void CVM::VM::setGlobalInitLen(int i)
+{
+    global_var_init_len = i;
 }
 
 bool CVM::VM::fetch()
 {
+    if (pc == global_var_init_len && mode == Mode::INIT)
+    {
+        pc   = entry;
+        mode = Mode::MAIN;
+        // frame[0] is global var decl table
+        frame.emplace_back();
+    }
     if (pc < vm_insts.size())
     {
         cur_inst = vm_insts[pc];
@@ -91,7 +101,7 @@ void CVM::VM::binary()
         case Opcode::SHL: reg[reg_idx1] = reg[reg_idx1] << reg[reg_idx2]; break;
         case Opcode::SHR: reg[reg_idx1] = reg[reg_idx1] >> reg[reg_idx2]; break;
         case Opcode::LOR: /*TODO*/ break;
-        case Opcode::LAND: /*TODO*/ break;
+        case Opcode::LAND: state = reg[reg_idx1] && reg[reg_idx2]; break;
         case Opcode::NE: state = reg[reg_idx1] != reg[reg_idx2]; break;
         case Opcode::EQ: state = reg[reg_idx1] == reg[reg_idx2]; break;
         case Opcode::LT: state = reg[reg_idx1] < reg[reg_idx2]; break;
@@ -105,13 +115,25 @@ void CVM::VM::binary()
 void CVM::VM::loadXA()
 {
     auto *inst                      = static_cast<LoadXA *>(cur_inst);
-    reg[inst->reg_idx][inst->index] = frame.back().symbols[inst->name];
+    reg[inst->reg_idx][inst->index] = *findSymbol(inst->name);
 }
 
 void CVM::VM::loadX()
 {
-    auto *inst         = static_cast<LoadX *>(cur_inst);
-    reg[inst->reg_idx] = frame.back().symbols[inst->name];
+    auto *inst  = static_cast<LoadX *>(cur_inst);
+    auto target = findSymbol(inst->name);
+    // MAGIC, DO NOT TOUCH...
+    for (auto idx : inst->index)
+    {
+        if (std::holds_alternative<int>(idx))
+            target = &target->asArray()->at(std::get<int>(idx));
+        else
+        {
+            const auto i = findSymbol(std::get<std::string>(idx))->as<int>();
+            target       = &target->asArray()->at(i);
+        }
+    }
+    reg[inst->reg_idx] = *target;
 }
 
 void CVM::VM::load()
@@ -144,7 +166,7 @@ void CVM::VM::load()
 void CVM::VM::storeX()
 {
     auto *inst  = static_cast<StoreX *>(cur_inst);
-    auto target = &frame.back().symbols[inst->name];
+    auto target = findSymbol(inst->name);
     // MAGIC, DO NOT TOUCH...
     for (auto idx : inst->index)
     {
@@ -152,7 +174,7 @@ void CVM::VM::storeX()
             target = &target->asArray()->at(std::get<int>(idx));
         else
         {
-            const auto i = frame.back().symbols[std::get<std::string>(idx)].as<int>();
+            const auto i = findSymbol(std::get<std::string>(idx))->as<int>();
             target       = &target->asArray()->at(i);
         }
     }
@@ -180,14 +202,14 @@ void CVM::VM::store()
     else if (op == Opcode::STOREA)
     {
         auto *inst  = static_cast<StoreA *>(cur_inst);
-        auto target = &frame.back().symbols[inst->name];
+        auto target = findSymbol(inst->name);
         for (auto idx : inst->index)
         {
             if (std::holds_alternative<int>(idx))
                 target = &target->asArray()->at(std::get<int>(idx));
             else
             {
-                const auto i = frame.back().symbols[std::get<std::string>(idx)].as<int>();
+                const auto i = findSymbol(std::get<std::string>(idx))->as<int>();
                 target       = &target->asArray()->at(i);
             }
         }
@@ -226,7 +248,7 @@ void CVM::VM::callBuildin()
         auto *arg = static_cast<Arg *>(vm_insts[pc]);
         if (arg->type == Arg::Type::MAP)
         {
-            buildin_func(&frame.back().symbols[arg->name]);
+            buildin_func(findSymbol(arg->name));
         }
         else if (arg->type == Arg::Type::RAW)
         {
@@ -265,7 +287,7 @@ void CVM::VM::param()
 void CVM::VM::ret()
 {
     frame.pop_back();
-    pc = frame.back().pc;
+    if (frame.size() > 1) pc = frame.back().pc;
 }
 
 void CVM::VM::jmp()
@@ -282,4 +304,11 @@ void CVM::VM::jif()
     else
         pc = inst->target2 - 1;
     state = false;
+}
+
+CYX::Value *CVM::VM::findSymbol(const std::string &name)
+{
+    if (frame.back().symbols.find(name) != frame.back().symbols.end()) return &frame.back().symbols[name];
+    if (frame[0].symbols.find(name) == frame[0].symbols.end()) return &frame.back().symbols[name];
+    return &frame[0].symbols[name];
 }
