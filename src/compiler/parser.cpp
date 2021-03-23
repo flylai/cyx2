@@ -89,6 +89,10 @@ COMPILER::Expr *COMPILER::Parser::parsePrimaryExpr()
         eat(Keyword::STRING);
         return string_expr;
     }
+    else if (cur_token.keyword == Keyword::LPAREN)
+    {
+        return parseGroupingExpr();
+    }
     return nullptr;
 }
 
@@ -113,6 +117,8 @@ COMPILER::Expr *COMPILER::Parser::parseUnaryExpr()
     }
     else if (inOr(cur_token.keyword, Keyword::IDENTIFIER, Keyword::INTEGER, Keyword::DOUBLE, Keyword::STRING))
         return parsePrimaryExpr();
+    else if (cur_token.keyword == Keyword::LPAREN)
+        return parsePrimaryExpr();
 
     return nullptr;
 }
@@ -122,6 +128,10 @@ COMPILER::Expr *COMPILER::Parser::parseBinaryExpr(COMPILER::Expr *lhs, int prior
 {
     while (inOr(cur_token.keyword, args...))
     {
+        if (cur_token.keyword == Keyword::LPAREN)
+        {
+            return parseGroupingExpr();
+        }
         if (priority > opcodePriority(cur_token.keyword)) return lhs;
         auto *binary_expr = cur_token.keyword == Keyword::ASSIGN ? new AssignExpr(pre_token.row, pre_token.column) :
                                                                    new BinaryExpr(pre_token.row, pre_token.column);
@@ -137,12 +147,6 @@ COMPILER::Expr *COMPILER::Parser::parseBinaryExpr(COMPILER::Expr *lhs, int prior
 COMPILER::Expr *COMPILER::Parser::parseExpr(int priority)
 {
     auto *lhs = parseUnaryExpr();
-
-    if (cur_token.keyword == Keyword::LPAREN)
-    {
-        eat(Keyword::LPAREN);
-        return parseGroupingExpr();
-    }
 
     if (cur_token.keyword == Keyword::LBRACKET)
     {
@@ -228,6 +232,7 @@ inline constexpr int COMPILER::Parser::opcodePriority(COMPILER::Keyword keyword)
 
 COMPILER::Expr *COMPILER::Parser::parseGroupingExpr()
 {
+    eat(Keyword::LPAREN);
     auto *retval = parseExpr();
     if (!eat(Keyword::RPAREN)) ERROR("should not reach here");
     return retval;
@@ -329,8 +334,7 @@ std::vector<COMPILER::Stmt *> COMPILER::Parser::parseArgListStmt()
 {
     std::vector<Stmt *> args;
     eat(Keyword::LPAREN);
-    while (inOr(cur_token.keyword, Keyword::COMMA, Keyword::IDENTIFIER, Keyword::INTEGER, Keyword::DOUBLE,
-                Keyword::STRING))
+    while (cur_token.keyword != Keyword::RPAREN)
     {
         if (cur_token.keyword == Keyword::COMMA)
             eat();
