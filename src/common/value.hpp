@@ -91,7 +91,7 @@ namespace CYX
                 else
                 {
                     str = as<std::string>();
-                    len = as<int>();
+                    len = rhs.as<int>();
                 }
                 for (int i = 0; i < len; i++)
                 {
