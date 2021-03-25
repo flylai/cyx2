@@ -7,7 +7,6 @@
 void COMPILER::IRGenerator::visitUnaryExpr(COMPILER::UnaryExpr *ptr)
 {
     auto *assign = new IRAssign;
-    auto *binary = new IRBinary;
 
     assign->block = cur_basic_block;
 
@@ -17,6 +16,7 @@ void COMPILER::IRGenerator::visitUnaryExpr(COMPILER::UnaryExpr *ptr)
 
     if (inOr(ptr->op.keyword, SELFADD_PREFIX, SELFSUB_PREFIX, SELFADD_SUFFIX, SELFSUB_SUFFIX))
     {
+        auto *binary    = new IRBinary;
         auto *self      = consumeVariable();
         auto *constant  = new IRConstant;
         constant->value = 1;
@@ -42,11 +42,37 @@ void COMPILER::IRGenerator::visitUnaryExpr(COMPILER::UnaryExpr *ptr)
     }
     else
     {
-        binary->opcode = token2IROp(ptr->op.keyword);
-        binary->rhs    = consumeVariable();
+        if (cur_value.hasValue())
+        {
+            if (ptr->op.keyword == Keyword::SUB)
+                cur_value = -cur_value;
+            else if (ptr->op.keyword == Keyword::LNOT)
+                cur_value = !cur_value;
+            else if (ptr->op.keyword == Keyword::BNOT)
+                cur_value = ~cur_value;
+            else
+                UNREACHABLE();
 
+            auto *constant  = new IRConstant;
+            constant->value = cur_value;
+            cur_value.reset();
+            assign->setSrc(constant);
+        }
+        else
+        {
+            auto binary = new IRBinary;
+            if (ptr->op.keyword == Keyword::SUB)
+            {
+                auto *constant  = new IRConstant;
+                constant->value = 0;
+                binary->lhs     = constant;
+            }
+
+            binary->opcode = token2IROp(ptr->op.keyword);
+            binary->rhs    = consumeVariable();
+            assign->setSrc(binary);
+        }
         assign->setDest(newVariable());
-        assign->setSrc(binary);
     }
     cur_basic_block->addInst(assign);
 }

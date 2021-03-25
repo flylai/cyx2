@@ -74,7 +74,8 @@ void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
     }
     else
     {
-        UNREACHABLE();
+        // there is noting to do.
+        // unary expr will reach here
     }
     //
     if (auto *rhs = as<IRVar, IR::Tag::VAR>(ptr->rhs); rhs != nullptr)

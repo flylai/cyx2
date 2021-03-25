@@ -72,6 +72,21 @@ namespace CYX
             }
             UNREACHABLE();
         }
+        Value operator-()
+        {
+            if (is<double>())
+            {
+                _value = -as<double>();
+                return *this;
+            }
+            else if (is<int>())
+            {
+                _value = -as<int>();
+                return *this;
+            }
+            else
+                UNREACHABLE();
+        }
         Value operator*(Value &rhs)
         {
             if (is<std::string>() && rhs.is<std::string>()) // "a" * "b"
