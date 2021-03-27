@@ -21,6 +21,7 @@ namespace CVM
 
       private:
         bool fetch();
+        void unary();
         void binary();
         //
         void loadX();

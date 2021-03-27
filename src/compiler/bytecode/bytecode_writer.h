@@ -66,6 +66,7 @@ namespace COMPILER
         int entry{ -1 };
         int global_var_len{ -1 };
         std::vector<CVM::VMInstruction *> vm_insts;
+        void writeUnary();
     };
 } // namespace COMPILER
 

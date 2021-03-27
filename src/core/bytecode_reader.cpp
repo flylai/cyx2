@@ -40,7 +40,7 @@ void CVM::BytecodeReader::readInsts()
             case CVM::Opcode::GE:
             case CVM::Opcode::LAND: readBinary(); break;
             case CVM::Opcode::LNOT:
-            case CVM::Opcode::BNOT: break;
+            case CVM::Opcode::BNOT: readUnary(); break;
             case CVM::Opcode::LOADA: readLoadA(); break;
             case CVM::Opcode::LOADXA: readLoadXA(); break;
             case CVM::Opcode::LOADI: readLoad<int>(); break;
@@ -113,6 +113,30 @@ std::string CVM::BytecodeReader::readString()
 CVM::Opcode CVM::BytecodeReader::readOpcode()
 {
     return CVM::uchar2Opcode(readByte());
+}
+
+void CVM::BytecodeReader::readUnary()
+{
+    auto type = readByte();
+    Unary *inst{ nullptr };
+    if (cur_opcode == Opcode::LNOT)
+        inst = new Lnot;
+    else
+        inst = new Bnot;
+
+    // type tag. only string and int
+    inst->reg_idx = readByte();
+    if (type == 0)
+    {
+        inst->type  = ArgType::RAW;
+        inst->value = (int) readInt();
+    }
+    else if (type == 2)
+    {
+        inst->type = ArgType::MAP;
+        inst->name = readString();
+    }
+    vm_insts.push_back(inst);
 }
 
 void CVM::BytecodeReader::readBinary()
@@ -310,8 +334,8 @@ void CVM::BytecodeReader::readStore()
 void CVM::BytecodeReader::readArg()
 {
     auto *inst = new Arg;
-    inst->type = readByte() == 0 ? Arg::Type::MAP : Arg::Type::RAW;
-    if (inst->type == CVM::Arg::Type::RAW)
+    inst->type = readByte() == 0 ? ArgType::MAP : ArgType::RAW;
+    if (inst->type == CVM::ArgType::RAW)
     {
         auto type = readByte();
         if (type == 0)
@@ -327,7 +351,7 @@ void CVM::BytecodeReader::readArg()
             inst->value = readString();
         }
     }
-    else if (inst->type == CVM::Arg::Type::MAP)
+    else if (inst->type == CVM::ArgType::MAP)
     {
         inst->name = readString();
     }

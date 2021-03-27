@@ -62,6 +62,7 @@ namespace CVM
         int pos{ 0 };
         int size{ 0 };
         unsigned char *buffer{ nullptr };
+        void readUnary();
     };
 } // namespace CVM
 

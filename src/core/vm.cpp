@@ -25,8 +25,8 @@ void CVM::VM::run()
             case Opcode::GT:
             case Opcode::GE:
             case Opcode::LAND: binary(); break;
-            case Opcode::LNOT: break; // todo
-            case Opcode::BNOT: break; // todo
+            case Opcode::LNOT:
+            case Opcode::BNOT: unary(); break;
             case Opcode::LOADI:
             case Opcode::LOADD:
             case Opcode::LOADA:
@@ -80,6 +80,16 @@ bool CVM::VM::fetch()
         return true;
     }
     return false;
+}
+
+void CVM::VM::unary()
+{
+    auto *inst   = static_cast<Unary *>(cur_inst);
+    auto &target = reg[inst->reg_idx];
+    if (inst->opcode == Opcode::LNOT)
+        target = !target;
+    else // bnot
+        target = ~target;
 }
 
 void CVM::VM::binary()
@@ -246,11 +256,11 @@ void CVM::VM::callBuildin()
     {
         pc++;
         auto *arg = static_cast<Arg *>(vm_insts[pc]);
-        if (arg->type == Arg::Type::MAP)
+        if (arg->type == ArgType::MAP)
         {
             buildin_func(findSymbol(arg->name));
         }
-        else if (arg->type == Arg::Type::RAW)
+        else if (arg->type == ArgType::RAW)
         {
             buildin_func(&arg->value);
         }
@@ -272,11 +282,11 @@ void CVM::VM::param()
     auto *inst      = static_cast<Param *>(cur_inst);
     auto *pre_frame = &frame[frame.size() - 2];
     auto *arg       = static_cast<Arg *>(vm_insts[++pre_frame->pc]);
-    if (arg->type == Arg::Type::MAP)
+    if (arg->type == ArgType::MAP)
     {
         frame.back().symbols[inst->name] = pre_frame->symbols[arg->name];
     }
-    else if (arg->type == Arg::Type::RAW)
+    else if (arg->type == ArgType::RAW)
     {
         frame.back().symbols[inst->name] = arg->value;
     }

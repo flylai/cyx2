@@ -10,6 +10,12 @@
 
 namespace CVM
 {
+    enum class ArgType
+    {
+        MAP, // 0
+        RAW  // 1
+    };
+
     struct VMInstruction
     {
         Opcode opcode{ 0xff };
@@ -185,16 +191,12 @@ namespace CVM
         {
             opcode = Opcode::ARG;
         }
-        enum class Type
-        {
-            RAW,
-            MAP
-        } type{ Type::RAW };
+        ArgType type{ ArgType::RAW };
         std::string name;
         CYX::Value value;
         std::string toString() override
         {
-            return type == Type::RAW ? "RAW " + value.as<std::string>() : "MAP " + name;
+            return type == ArgType::RAW ? "RAW " + value.as<std::string>() : "MAP " + name;
         }
     };
 
@@ -358,6 +360,10 @@ namespace CVM
 
     struct Unary : VMInstruction
     {
+        int reg_idx{ -2 };
+        ArgType type;
+        CYX::Value value;
+        std::string name;
     };
 
 #define UNARY_INST(X, OP)                                                                                              \
@@ -366,6 +372,10 @@ namespace CVM
         X()                                                                                                            \
         {                                                                                                              \
             opcode = Opcode::OP;                                                                                       \
+        }                                                                                                              \
+        std::string toString() override                                                                                \
+        {                                                                                                              \
+            return #OP;                                                                                                \
         }                                                                                                              \
     };
 

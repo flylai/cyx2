@@ -59,6 +59,8 @@ void COMPILER::BytecodeGenerator::ir2VmInst()
 
 void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
 {
+    // a = b + c
+    // load b to register %?
     if (auto *lhs = as<IRVar, IR::Tag::VAR>(ptr->lhs); lhs != nullptr)
     {
         std::vector<CVM::ArrIdx> arr_idx;
@@ -77,10 +79,26 @@ void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
         // there is noting to do.
         // unary expr will reach here
     }
-    //
+    // load c to register %?
     if (auto *rhs = as<IRVar, IR::Tag::VAR>(ptr->rhs); rhs != nullptr)
     {
-        genLoadX(2, rhs->ssaName());
+        if (ptr->lhs == nullptr) // unary expr, ~a
+        {
+            if (ptr->opcode == IROpcode::IR_BNOT)
+            {
+                genLoadX(1, rhs->ssaName());
+                auto *inst    = new CVM::Bnot;
+                inst->reg_idx = 1;
+                inst->name    = rhs->ssaName();
+                inst->type    = CVM::ArgType::MAP;
+                vm_insts.push_back(inst);
+                return;
+            }
+        }
+        else
+        {
+            genLoadX(2, rhs->ssaName());
+        }
     }
     else if (auto *rhs = as<IRConstant, IR::Tag::CONST>(ptr->rhs); rhs != nullptr)
     {
@@ -123,8 +141,6 @@ void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
     ELSE_CASE_OPCODE(Lt, LT)
     ELSE_CASE_OPCODE(Ge, GE)
     ELSE_CASE_OPCODE(Gt, GT)
-
-    // TODO: unary opcode
 
 #undef ELSE_CASE_OPCODE
 #undef CASE_OPCODE
@@ -204,12 +220,12 @@ void COMPILER::BytecodeGenerator::genCall(COMPILER::IRCall *ptr)
         auto x = new CVM::Arg;
         if (auto var = as<IRVar, IR::Tag::VAR>(arg); var != nullptr)
         {
-            x->type = CVM::Arg::Type::MAP;
+            x->type = CVM::ArgType::MAP;
             x->name = var->ssaName();
         }
         else if (auto constant = as<IRConstant, IR::Tag::CONST>(arg); arg != nullptr)
         {
-            x->type  = CVM::Arg::Type::RAW;
+            x->type  = CVM::ArgType::RAW;
             x->value = constant->value;
         }
         vm_insts.push_back(x);

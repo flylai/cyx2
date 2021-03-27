@@ -29,7 +29,7 @@ void COMPILER::BytecodeWriter::writeInsts()
             case CVM::Opcode::GE:
             case CVM::Opcode::LAND: writeBinary(); break;
             case CVM::Opcode::LNOT:
-            case CVM::Opcode::BNOT: break;
+            case CVM::Opcode::BNOT: writeUnary(); break;
             case CVM::Opcode::LOADA: writeLoadA(); break;
             case CVM::Opcode::LOADXA: writeLoadXA(); break;
             case CVM::Opcode::LOADI: writeLoad<int>(); break;
@@ -115,6 +115,24 @@ void COMPILER::BytecodeWriter::writeBinary()
     auto *tmp = static_cast<CVM::Binary *>(cur_inst);
     writeByte(tmp->reg_idx1);
     writeByte(tmp->reg_idx2);
+}
+
+void COMPILER::BytecodeWriter::writeUnary()
+{
+    auto *tmp = static_cast<CVM::Unary *>(cur_inst);
+    writeByte(tmp->reg_idx);
+    if (tmp->type == CVM::ArgType::MAP)
+    {
+        writeStringTag();
+        writeString(tmp->name);
+    }
+    else
+    {
+        // bnot int only
+        // todo: lnot.
+        writeIntTag();
+        writeInt(tmp->value.as<int>());
+    }
 }
 
 void COMPILER::BytecodeWriter::writeLoadA()
@@ -291,12 +309,12 @@ void COMPILER::BytecodeWriter::writeArg()
 {
     auto *arg = static_cast<CVM::Arg *>(cur_inst);
     // write target type
-    if (arg->type == CVM::Arg::Type::MAP)
+    if (arg->type == CVM::ArgType::MAP)
     {
         writeByte(0);
         writeString(arg->name);
     }
-    else if (arg->type == CVM::Arg::Type::RAW)
+    else if (arg->type == CVM::ArgType::RAW)
     {
         writeByte(1);
         // int = 0 / double = 1 / string = 2
