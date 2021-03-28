@@ -703,10 +703,6 @@ COMPILER::BasicBlock *COMPILER::IRGenerator::newBasicBlock(const std::string &na
 
 void COMPILER::IRGenerator::simplifyIR()
 {
-    /* remove redundant ir like
-     * t0 = 1 + 2
-     * t1 = t0
-     */
     for (auto *func : funcs)
     {
         for (auto *block : func->blocks)
@@ -717,6 +713,10 @@ void COMPILER::IRGenerator::simplifyIR()
                 auto *tmp_cur  = *it;
                 auto *tmp_next = ++it != block->insts.end() ? *it : nullptr; // next inst iterator
                 if (tmp_next == nullptr) break;
+                /* remove redundant ir like
+                 * t0 = 1 + 2
+                 * t1 = t0
+                 */
                 // two insts must be IRAssign
                 // MAGIC
                 if (tmp_cur->tag == IR::Tag::ASSIGN && tmp_next->tag == IR::Tag::ASSIGN)
@@ -732,6 +732,26 @@ void COMPILER::IRGenerator::simplifyIR()
                             it = block->insts.erase(--it); // it is pointing to `next` before --it.
                         }
                     }
+                }
+                else if (tmp_cur->tag == IR::Tag::JMP && tmp_next->tag == IR::Tag::JMP)
+                {
+                    // remove two identical IRJump stmt
+                    /**
+                     * jmp L1
+                     * jmp L1 (should be removed)
+                     */
+                    auto *cur  = static_cast<IRJump *>(tmp_cur);
+                    auto *next = static_cast<IRJump *>(tmp_next);
+                    if (cur->target == next->target)
+                    {
+                        it = block->insts.erase(--it);
+                    }
+                    // todo: some stmts after jmp stmt should be removed.
+                    /**
+                     * jmp L1 (following stmt should be removed)
+                     * a = 1
+                     * b = 2
+                     */
                 }
             }
         }
