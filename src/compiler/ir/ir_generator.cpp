@@ -449,7 +449,8 @@ void COMPILER::IRGenerator::visitBreakStmt(COMPILER::BreakStmt *ptr)
     if (loop_stack.empty()) ERROR("unexpected BreakStmt");
     auto *inst   = new IRJump;
     inst->target = loop_stack.back();
-    fix_continue_wait_list.push_back(inst);
+    fix_break_wait_list.push_back(inst);
+    inst->block = cur_basic_block;
     cur_basic_block->addInst(inst);
 }
 
@@ -458,6 +459,8 @@ void COMPILER::IRGenerator::visitContinueStmt(COMPILER::ContinueStmt *ptr)
     if (loop_stack.empty()) ERROR("unexpected ContinueStmt");
     auto *inst   = new IRJump;
     inst->target = loop_stack.back();
+    fix_continue_wait_list.push_back(inst);
+    inst->block = cur_basic_block;
     cur_basic_block->addInst(inst);
 }
 
@@ -678,6 +681,7 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
         x.second->block->visit(this);
         exitScope();
         // fix continue stmt, when visit continue stmt, we cant known the out block of the loop
+        fixBreakTarget();
         fixContinueTarget();
     }
 }
@@ -737,7 +741,7 @@ void COMPILER::IRGenerator::simplifyIR()
 void COMPILER::IRGenerator::removeUnusedVarDef()
 {
     // TODO: `branch` inst may use value
-    // TODO: fixContinueTarget() may cause some errors(i guess)
+    // TODO: fixBreakTarget() may cause some errors(i guess)
     for (auto *func : funcs)
     {
         // reverse traversal
@@ -787,9 +791,9 @@ void COMPILER::IRGenerator::removeUnusedVarDef()
     }
 }
 
-void COMPILER::IRGenerator::fixContinueTarget()
+void COMPILER::IRGenerator::fixBreakTarget()
 {
-    for (auto *inst : fix_continue_wait_list)
+    for (auto *inst : fix_break_wait_list)
     {
         auto *candidate_block = inst->target->loop_end;
         // if loop out block is empty block, it will be removed at CFG.simplifyCFG(), so we need find a not empty
@@ -805,6 +809,14 @@ void COMPILER::IRGenerator::fixContinueTarget()
                 ERROR("loop out block has two or more succs, it impossible!");
         }
         inst->target = candidate_block;
+    }
+}
+
+void COMPILER::IRGenerator::fixContinueTarget()
+{
+    for (auto *inst : fix_continue_wait_list)
+    {
+        inst->target = *inst->block->succs.begin();
     }
 }
 
