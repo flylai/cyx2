@@ -39,6 +39,16 @@ void COMPILER::IRGenerator::visitUnaryExpr(COMPILER::UnaryExpr *ptr)
             assign2->setSrc(binary2);
             cur_basic_block->addInst(assign2);
         }
+        else
+        {
+            // must add a `use` to tmp_vars
+            // irSimplify() will remove redundant var
+            auto *use = new IRVar;
+            use->name = self->name;
+            use->def  = self;
+            self->addUse(use);
+            tmp_vars.push(use);
+        }
     }
     else
     {

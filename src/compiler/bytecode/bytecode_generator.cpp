@@ -69,6 +69,8 @@ void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
             genLoadX(1, lhs->ssaName(), arr_idx);
         else
             genLoadX(1, lhs->ssaName());
+        // self add / sub
+        if (ptr->rhs == nullptr) return;
     }
     else if (auto *lhs = as<IRConstant, IR::Tag::CONST>(ptr->lhs); lhs != nullptr)
     {
