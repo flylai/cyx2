@@ -684,6 +684,7 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
         fixBreakTarget();
         fixContinueTarget();
     }
+    fixEdges();
 }
 
 COMPILER::IRGenerator::~IRGenerator()
@@ -901,6 +902,37 @@ void COMPILER::IRGenerator::visitArrayIdExpr(COMPILER::ArrayIdExpr *ptr)
         }
     }
     tmp_vars.push(var);
+}
+
+void COMPILER::IRGenerator::fixEdges()
+{
+    // remove some edges that shouldn't be there
+    for (auto *func : funcs)
+    {
+        // direct erase causes iterator to fail.
+        // std::erase_if supported at c++2a
+        std::vector<std::pair<BasicBlock *, BasicBlock *>> remove_list;
+        for (auto *block : func->blocks)
+        {
+            for (auto *pre : block->pres)
+            {
+                if (pre->insts.empty()) continue;
+                auto *tmp = as<IRJump, IR::Tag::JMP>(pre->insts.back());
+                if (tmp == nullptr || tmp->target == block) continue;
+                // add to list
+                remove_list.emplace_back(pre, block);
+            }
+        }
+        for (const auto &x : remove_list)
+        {
+            // delete edge
+            x.first->succs.erase(x.second);
+            x.second->pres.erase(x.first);
+            // add new edge
+            auto *tmp = as<IRJump, IR::Tag::JMP>(x.first->insts.back());
+            LINK(tmp->block, tmp->target);
+        }
+    }
 }
 
 #undef LINK

@@ -64,6 +64,8 @@ namespace COMPILER
         //
         void fixBreakTarget();
         void fixContinueTarget();
+        //
+        void fixEdges();
 
       private:
         std::vector<BasicBlock *> loop_stack;
