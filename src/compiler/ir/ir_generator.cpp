@@ -310,6 +310,8 @@ void COMPILER::IRGenerator::visitIfStmt(COMPILER::IfStmt *ptr)
     branch->block       = cond_block;
     branch->cond        = consumeVariable();
     cond_block->addInst(branch);
+
+    if (inOr(true_block->insts.back()->tag, IR::Tag::RETURN, IR::Tag::JMP)) return;
     // jump to the out block after executed true block instructions.
     auto *true_jmp   = new IRJump;
     true_jmp->block  = true_block;
@@ -927,8 +929,9 @@ void COMPILER::IRGenerator::fixEdges()
             for (auto *pre : block->pres)
             {
                 if (pre->insts.empty()) continue;
-                auto *tmp = as<IRJump, IR::Tag::JMP>(pre->insts.back());
-                if (tmp == nullptr || tmp->target == block) continue;
+                auto *jmp = as<IRJump, IR::Tag::JMP>(pre->insts.back());
+                auto *ret = as<IRReturn, IR::Tag::RETURN>(pre->insts.back());
+                if ((jmp == nullptr || jmp->target == block) && ret == nullptr) continue;
                 // add to list
                 remove_list.emplace_back(pre, block);
             }
@@ -940,7 +943,10 @@ void COMPILER::IRGenerator::fixEdges()
             x.second->pres.erase(x.first);
             // add new edge
             auto *tmp = as<IRJump, IR::Tag::JMP>(x.first->insts.back());
-            LINK(tmp->block, tmp->target);
+            if (tmp != nullptr)
+            {
+                LINK(tmp->block, tmp->target);
+            }
         }
     }
 }
