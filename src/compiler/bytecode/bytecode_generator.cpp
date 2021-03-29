@@ -99,7 +99,12 @@ void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
         }
         else
         {
-            genLoadX(2, rhs->ssaName());
+            std::vector<CVM::ArrIdx> arr_idx;
+            parseVarArr(rhs, arr_idx);
+            if (rhs->is_array)
+                genLoadX(2, rhs->ssaName(), arr_idx);
+            else
+                genLoadX(2, rhs->ssaName());
         }
     }
     else if (auto *rhs = as<IRConstant, IR::Tag::CONST>(ptr->rhs); rhs != nullptr)
@@ -339,7 +344,10 @@ void COMPILER::BytecodeGenerator::genAssign(COMPILER::IRAssign *ptr)
     else if (auto *call = as<IRCall, IR::Tag::CALL>(ptr->src()); call != nullptr)
     {
         genCall(call);
-        genStoreX(lhs, 1);
+        if (arr_idx.empty())
+            genStoreX(lhs, 1);
+        else
+            genStoreX(lhs, 1, arr_idx);
     }
     else
     {
