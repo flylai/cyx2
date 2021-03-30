@@ -177,21 +177,7 @@ void CVM::BytecodeReader::readLoadX()
     inst->reg_idx = readByte();
     inst->name    = readString();
     std::vector<CVM::ArrIdx> arr;
-    auto arr_size = readInt();
-    for (int i = 0; i < arr_size; i++)
-    {
-        const auto type = readByte();
-        if (type == 0)
-        {
-            arr.emplace_back((int) readInt());
-        }
-        else if (type == 2)
-        {
-            arr.emplace_back(readString());
-        }
-        else
-            UNREACHABLE();
-    }
+    readArrIdx(arr);
     inst->index = std::move(arr);
     vm_insts.push_back(inst);
 }
@@ -257,20 +243,10 @@ void CVM::BytecodeReader::readLoad()
 
 void CVM::BytecodeReader::readStoreX()
 {
-    auto *inst    = new StoreX;
-    inst->name    = readString();
-    auto arr_size = readInt();
+    auto *inst = new StoreX;
+    inst->name = readString();
     std::vector<ArrIdx> arr;
-    for (int i = 0; i < arr_size; i++)
-    {
-        auto type = readByte();
-        if (type == 0)
-            arr.emplace_back((int) readInt());
-        else if (type == 2)
-            arr.emplace_back(readString());
-        else
-            UNREACHABLE();
-    }
+    readArrIdx(arr);
     inst->reg_idx = readByte();
     inst->index   = std::move(arr);
     vm_insts.push_back(inst);
@@ -278,22 +254,11 @@ void CVM::BytecodeReader::readStoreX()
 
 void CVM::BytecodeReader::readStoreA()
 {
-    auto *inst    = new StoreA;
-    inst->name    = readString();
-    auto arr_size = readInt();
+    auto *inst = new StoreA;
+    inst->name = readString();
     std::vector<ArrIdx> arr;
-    for (int i = 0; i < arr_size; i++)
-    {
-        auto idx_type = readByte();
-        if (idx_type == 0)
-        {
-            arr.emplace_back((int) readInt());
-        }
-        else if (idx_type == 2)
-        {
-            arr.emplace_back(readString());
-        }
-    }
+    readArrIdx(arr);
+    inst->index   = std::move(arr);
     auto val_type = readByte();
     if (val_type == 0)
         inst->value = (int) readInt();
@@ -355,6 +320,9 @@ void CVM::BytecodeReader::readArg()
     else if (inst->type == CVM::ArgType::MAP)
     {
         inst->name = readString();
+        std::vector<ArrIdx> arr_idx;
+        readArrIdx(arr_idx);
+        inst->index = std::move(arr_idx);
     }
     vm_insts.push_back(inst);
 }
@@ -399,6 +367,25 @@ void CVM::BytecodeReader::readJif()
     inst->target1 = readInt();
     inst->target2 = readInt();
     vm_insts.push_back(inst);
+}
+
+void CVM::BytecodeReader::readArrIdx(std::vector<ArrIdx> &arr_idx)
+{
+    auto arr_size = readInt();
+    for (int i = 0; i < arr_size; i++)
+    {
+        const auto type = readByte();
+        if (type == 0)
+        {
+            arr_idx.emplace_back((int) readInt());
+        }
+        else if (type == 2)
+        {
+            arr_idx.emplace_back(readString());
+        }
+        else
+            UNREACHABLE();
+    }
 }
 
 std::string CVM::BytecodeReader::vmInstStr()

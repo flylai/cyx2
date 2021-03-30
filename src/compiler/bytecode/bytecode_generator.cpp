@@ -88,7 +88,9 @@ void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
         {
             if (ptr->opcode == IROpcode::IR_BNOT)
             {
-                genLoadX(1, rhs->ssaName());
+                std::vector<CVM::ArrIdx> arr_idx;
+                parseVarArr(rhs, arr_idx);
+                genLoadX(1, rhs->ssaName(), arr_idx);
                 auto *inst    = new CVM::Bnot;
                 inst->reg_idx = 1;
                 inst->name    = rhs->ssaName();
@@ -190,7 +192,9 @@ void COMPILER::BytecodeGenerator::genReturn(COMPILER::IRReturn *ptr)
         }
         else if (var != nullptr)
         {
-            genLoadX(1, var->ssaName());
+            std::vector<CVM::ArrIdx> arr_idx;
+            parseVarArr(var, arr_idx);
+            genLoadX(1, var->ssaName(), arr_idx);
         }
         // if has more retval.....unsupported now.
         ret->ret_size = 1;
@@ -224,8 +228,11 @@ void COMPILER::BytecodeGenerator::genCall(COMPILER::IRCall *ptr)
         auto x = new CVM::Arg;
         if (auto var = as<IRVar, IR::Tag::VAR>(arg); var != nullptr)
         {
-            x->type = CVM::ArgType::MAP;
-            x->name = var->ssaName();
+            std::vector<CVM::ArrIdx> arr_idx;
+            parseVarArr(var, arr_idx);
+            x->index = arr_idx;
+            x->type  = CVM::ArgType::MAP;
+            x->name  = var->ssaName();
         }
         else if (auto constant = as<IRConstant, IR::Tag::CONST>(arg); arg != nullptr)
         {

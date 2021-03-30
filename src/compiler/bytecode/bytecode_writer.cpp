@@ -181,20 +181,7 @@ void COMPILER::BytecodeWriter::writeLoadX()
     auto *tmp = static_cast<CVM::LoadX *>(cur_inst);
     writeByte(tmp->reg_idx);
     writeString(tmp->name);
-    writeInt(tmp->index.size());
-    for (auto idx : tmp->index)
-    {
-        if (std::holds_alternative<int>(idx))
-        {
-            writeIntTag();
-            writeInt(std::get<int>(idx));
-        }
-        else
-        {
-            writeStringTag();
-            writeString(std::get<std::string>(idx));
-        }
-    }
+    writeArrIdx(tmp->index);
 }
 
 template<typename T>
@@ -249,21 +236,8 @@ void COMPILER::BytecodeWriter::writeStoreA()
     // STOREA a[1][b] = 3.14
     auto *tmp = static_cast<CVM::StoreA *>(cur_inst);
     writeString(tmp->name);
-    writeInt(tmp->index.size());
     // [1][b]
-    for (auto idx : tmp->index)
-    {
-        if (std::holds_alternative<int>(idx))
-        {
-            writeIntTag();
-            writeInt(std::get<int>(idx));
-        }
-        else
-        {
-            writeStringTag();
-            writeString(std::get<std::string>(idx));
-        }
-    }
+    writeArrIdx(tmp->index);
     // 3.14
     if (tmp->value.is<int>())
     {
@@ -315,6 +289,7 @@ void COMPILER::BytecodeWriter::writeArg()
     {
         writeByte(0);
         writeString(arg->name);
+        writeArrIdx(arg->index);
     }
     else if (arg->type == CVM::ArgType::RAW)
     {
@@ -392,4 +367,22 @@ void COMPILER::BytecodeWriter::writeStringTag()
 void COMPILER::BytecodeWriter::writeEmptyTag()
 {
     writeByte(3);
+}
+
+void COMPILER::BytecodeWriter::writeArrIdx(const std::vector<CVM::ArrIdx> &arr_idx)
+{
+    writeInt(arr_idx.size());
+    for (auto idx : arr_idx)
+    {
+        if (std::holds_alternative<int>(idx))
+        {
+            writeIntTag();
+            writeInt(std::get<int>(idx));
+        }
+        else
+        {
+            writeStringTag();
+            writeString(std::get<std::string>(idx));
+        }
+    }
 }

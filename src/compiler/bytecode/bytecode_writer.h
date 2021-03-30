@@ -53,6 +53,7 @@ namespace COMPILER
         void writeDoubleTag();
         void writeStringTag();
         void writeEmptyTag();
+        void writeArrIdx(const std::vector<CVM::ArrIdx> &arr_idx);
 
       private:
         CVM::VMInstruction *cur_inst{ nullptr };

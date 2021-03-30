@@ -265,7 +265,22 @@ void CVM::VM::callBuildin()
         auto *arg = static_cast<Arg *>(vm_insts[pc]);
         if (arg->type == ArgType::MAP)
         {
-            buildin_func(findSymbol(arg->name));
+            auto target = findSymbol(arg->name);
+            if (!arg->index.empty())
+            {
+                // MAGIC, DO NOT TOUCH...
+                for (auto idx : arg->index)
+                {
+                    if (std::holds_alternative<int>(idx))
+                        target = &target->asArray()->at(std::get<int>(idx));
+                    else
+                    {
+                        const auto i = findSymbol(std::get<std::string>(idx))->as<int>();
+                        target       = &target->asArray()->at(i);
+                    }
+                }
+            }
+            buildin_func(target);
         }
         else if (arg->type == ArgType::RAW)
         {
@@ -291,6 +306,9 @@ void CVM::VM::param()
     auto *arg       = static_cast<Arg *>(vm_insts[++pre_frame->pc]);
     if (arg->type == ArgType::MAP)
     {
+        if (!arg->index.empty())
+        {
+        }
         frame.back().symbols[inst->name] = pre_frame->symbols[arg->name];
     }
     else if (arg->type == ArgType::RAW)

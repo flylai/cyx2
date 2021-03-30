@@ -50,6 +50,8 @@ namespace CVM
         void readRet();
         void readJmp();
         void readJif();
+        //
+        void readArrIdx(std::vector<ArrIdx> &arr_idx);
 
       public:
         int entry{ -1 };

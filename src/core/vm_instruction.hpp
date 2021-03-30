@@ -194,9 +194,20 @@ namespace CVM
         ArgType type{ ArgType::RAW };
         std::string name;
         CYX::Value value;
+        std::vector<ArrIdx> index;
         std::string toString() override
         {
-            return type == ArgType::RAW ? "RAW " + value.as<std::string>() : "MAP " + name;
+            std::string str = type == ArgType::RAW ? "RAW " + value.as<std::string>() : "MAP " + name;
+            for (int i = 0; i < index.size(); i++)
+            {
+                str += "[";
+                if (std::holds_alternative<int>(index[i]))
+                    str += std::to_string(std::get<int>(index[i]));
+                else
+                    str += std::get<std::string>(index[i]);
+                str += "]";
+            }
+            return str;
         }
     };
 
