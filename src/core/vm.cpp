@@ -60,6 +60,12 @@ void CVM::VM::setEntry(int i)
 {
     entry = i;
 }
+
+void CVM::VM::setEntryEnd(int i)
+{
+    entry_end = i;
+}
+
 void CVM::VM::setGlobalInitLen(int i)
 {
     global_var_init_len = i;
@@ -74,6 +80,7 @@ bool CVM::VM::fetch()
         // frame[0] is global var decl table
         frame.emplace_back();
     }
+    if (pc == entry_end) return false;
     if (pc < vm_insts.size())
     {
         cur_inst = vm_insts[pc];

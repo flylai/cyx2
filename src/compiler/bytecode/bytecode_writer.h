@@ -58,12 +58,12 @@ namespace COMPILER
         CVM::VMInstruction *cur_inst{ nullptr };
 
         std::string filename;
-        int pos{ 0 };
         int size{ 0 };
         std::vector<unsigned char> buffer;
 
       public:
         int entry{ -1 };
+        int entry_end{ -1 };
         int global_var_len{ -1 };
         std::vector<CVM::VMInstruction *> vm_insts;
         void writeUnary();

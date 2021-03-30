@@ -53,8 +53,11 @@ void COMPILER::BytecodeGenerator::ir2VmInst()
                 }
             }
         }
+        // set main function size.
+        if (func->name == ENTRY_FUNC) entry_end = vm_insts.size() - 1;
         fixJmp(start, vm_insts.size());
     }
+    fixCall();
 }
 
 void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
@@ -492,11 +495,16 @@ void COMPILER::BytecodeGenerator::fixJmp(int start, int end)
             tmp->target1 = block_table[tmp->basic_block_name1];
             tmp->target2 = block_table[tmp->basic_block_name2];
         }
-        else if (inst->opcode == CVM::Opcode::CALL)
-        {
-            auto *tmp   = static_cast<CVM::Call *>(inst);
-            tmp->target = funcs_table[tmp->name];
-        }
+    }
+}
+
+void COMPILER::BytecodeGenerator::fixCall()
+{
+    for (auto *inst : vm_insts)
+    {
+        if (inst->opcode != CVM::Opcode::CALL) continue;
+        auto *tmp   = static_cast<CVM::Call *>(inst);
+        tmp->target = funcs_table[tmp->name];
     }
 }
 

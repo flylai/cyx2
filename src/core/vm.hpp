@@ -57,6 +57,7 @@ namespace CVM
         //
         Mode mode = Mode::INIT;
         int entry{ 0 };               // main function position
+        int entry_end{ 0 };           // main function end
         int pc{ 0 };                  // program counter
         int global_var_init_len{ 0 }; // global data initialize instruction length
 
@@ -64,6 +65,7 @@ namespace CVM
         void setInsts(const std::vector<VMInstruction *> &insts);
         void setEntry(int i);
         void setGlobalInitLen(int i);
+        void setEntryEnd(int i);
     };
 } // namespace CVM
 

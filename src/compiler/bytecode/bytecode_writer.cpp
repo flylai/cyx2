@@ -61,6 +61,8 @@ void COMPILER::BytecodeWriter::writeHeader()
     writeByte(0x01);
     // entry point
     writeInt(entry);
+    // main end
+    writeInt(entry_end);
     writeInt(global_var_len);
 }
 

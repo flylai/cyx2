@@ -58,10 +58,11 @@ void readBytecode(CVM::BytecodeReader &bytecode_reader)
     bytecode_reader.readInsts();
 }
 
-void runVM(CVM::VM &vm, const std::vector<CVM::VMInstruction *> &insts, int entry, int global_init_len)
+void runVM(CVM::VM &vm, const std::vector<CVM::VMInstruction *> &insts, int entry, int entry_end, int global_init_len)
 {
     vm.setInsts(insts);
     vm.setEntry(entry);
+    vm.setEntryEnd(entry_end);
     vm.setGlobalInitLen(global_init_len);
     vm.run();
 }
@@ -148,7 +149,8 @@ int main(int argc, char *argv[])
         CVM::BytecodeReader bytecode_reader(bytecode_input);
         CVM::VM vm;
         readBytecode(bytecode_reader);
-        runVM(vm, bytecode_reader.vm_insts, bytecode_reader.entry, bytecode_reader.global_var_len);
+        runVM(vm, bytecode_reader.vm_insts, bytecode_reader.entry, bytecode_reader.entry_end,
+              bytecode_reader.global_var_len);
         return 0;
     }
 
@@ -217,6 +219,7 @@ int main(int argc, char *argv[])
     }
 
     CVM::VM vm;
-    runVM(vm, bytecode_generator.vm_insts, bytecode_generator.entry, bytecode_generator.global_var_len);
+    runVM(vm, bytecode_generator.vm_insts, bytecode_generator.entry, bytecode_generator.entry_end,
+          bytecode_generator.global_var_len);
     return 0;
 }

@@ -26,6 +26,7 @@ namespace COMPILER
 
       private:
         void fixJmp(int start, int end);
+        void fixCall();
         void genBinary(IRBinary *ptr);
         void genLoadConst(CYX::Value &val, int reg_idx);
         void genStoreConst(CYX::Value &val, const std::string &name);
@@ -56,6 +57,7 @@ namespace COMPILER
 
       public:
         int entry{ -1 };
+        int entry_end{ -1 };
         int global_var_len{ -1 };
 
       private:
