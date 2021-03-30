@@ -96,8 +96,16 @@ long long CVM::BytecodeReader::readInt()
 
 double CVM::BytecodeReader::readDouble()
 {
-    auto x = readInt();
-    return reinterpret_cast<double &>(x);
+    unsigned long long ret = 0;
+    int i                  = 0;
+    int base               = 256;
+    while (i < 8)
+    {
+        auto byte = readByte();
+        if (byte != 0) ret += byte * std::pow(base, i);
+        i++;
+    }
+    return reinterpret_cast<double &>(ret);
 }
 
 std::string CVM::BytecodeReader::readString()
