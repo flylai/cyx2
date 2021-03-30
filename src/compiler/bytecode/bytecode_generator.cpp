@@ -68,10 +68,7 @@ void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
     {
         std::vector<CVM::ArrIdx> arr_idx;
         parseVarArr(lhs, arr_idx);
-        if (lhs->is_array)
-            genLoadX(1, lhs->ssaName(), arr_idx);
-        else
-            genLoadX(1, lhs->ssaName());
+        genLoadX(1, lhs->ssaName(), arr_idx);
         // self add / sub
         if (ptr->rhs == nullptr) return;
     }
@@ -104,10 +101,7 @@ void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
         {
             std::vector<CVM::ArrIdx> arr_idx;
             parseVarArr(rhs, arr_idx);
-            if (rhs->is_array)
-                genLoadX(2, rhs->ssaName(), arr_idx);
-            else
-                genLoadX(2, rhs->ssaName());
+            genLoadX(2, rhs->ssaName(), arr_idx);
         }
     }
     else if (auto *rhs = as<IRConstant, IR::Tag::CONST>(ptr->rhs); rhs != nullptr)
@@ -284,9 +278,9 @@ void COMPILER::BytecodeGenerator::genAssign(COMPILER::IRAssign *ptr)
         genBinary(binary);
         if (inOr(binary->opcode, IROpcode::IR_LE, IROpcode::IR_LT, IROpcode::IR_GE, IROpcode::IR_GT, IROpcode::IR_LAND,
                  IROpcode::IR_LOR, IROpcode::IR_EQ, IROpcode::IR_NE))
-            genStoreX(lhs, 0);
+            genStoreX(lhs, 0, arr_idx);
         else
-            genStoreX(lhs, 1);
+            genStoreX(lhs, 1, arr_idx);
     }
     else if (auto *constant = as<IRConstant, IR::Tag::CONST>(ptr->src()); constant != nullptr)
     {
@@ -300,16 +294,7 @@ void COMPILER::BytecodeGenerator::genAssign(COMPILER::IRAssign *ptr)
         std::vector<CVM::ArrIdx> src_idx;
         parseVarArr(var, src_idx);
 
-        if (!var->is_array)
-        {
-            // b = a
-            genLoadX(1, var->ssaName());
-        }
-        else
-        {
-            // b = a[0]
-            genLoadX(1, var->ssaName(), src_idx);
-        }
+        genLoadX(1, var->ssaName(), src_idx);
         genStoreX(lhs, 1, arr_idx);
     }
     else if (auto *arr = as<IRArray, IR::Tag::ARRAY>(ptr->src()); arr != nullptr)
@@ -339,18 +324,12 @@ void COMPILER::BytecodeGenerator::genAssign(COMPILER::IRAssign *ptr)
         }
         genLoadA(2, value);
         genLoadXA(2, idx);
-        if (ptr->dest()->is_array)
-            genStoreX(lhs, 2, arr_idx);
-        else
-            genStoreX(lhs, 2);
+        genStoreX(lhs, 2, arr_idx);
     }
     else if (auto *call = as<IRCall, IR::Tag::CALL>(ptr->src()); call != nullptr)
     {
         genCall(call);
-        if (arr_idx.empty())
-            genStoreX(lhs, 1);
-        else
-            genStoreX(lhs, 1, arr_idx);
+        genStoreX(lhs, 1, arr_idx);
     }
     else
     {
@@ -399,6 +378,7 @@ void COMPILER::BytecodeGenerator::genLoadX(int reg_idx, const std::string &name)
 void COMPILER::BytecodeGenerator::genLoadX(int reg_idx, const std::string &name, const std::vector<CVM::ArrIdx> &idx)
 {
     genLoadX(reg_idx, name);
+    if (idx.empty()) return;
     auto *inst  = static_cast<CVM::LoadX *>(vm_insts.back());
     inst->index = idx;
 }
@@ -474,6 +454,7 @@ void COMPILER::BytecodeGenerator::genStoreX(const std::string &name, int reg_idx
 void COMPILER::BytecodeGenerator::genStoreX(const std::string &name, int reg_idx, const std::vector<CVM::ArrIdx> &idx)
 {
     genStoreX(name, reg_idx);
+    if (idx.empty()) return;
     auto *inst  = static_cast<CVM::StoreX *>(vm_insts.back());
     inst->index = idx;
 }
