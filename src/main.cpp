@@ -211,9 +211,10 @@ int main(int argc, char *argv[])
     if (!bytecode_output.empty())
     {
         COMPILER::BytecodeWriter bytecode_writer(bytecode_output);
-        bytecode_writer.entry             = bytecode_generator.entry;
-        bytecode_generator.global_var_len = bytecode_generator.global_var_len;
-        bytecode_writer.vm_insts          = bytecode_generator.vm_insts;
+        bytecode_writer.entry          = bytecode_generator.entry;
+        bytecode_writer.entry_end      = bytecode_generator.entry_end;
+        bytecode_writer.global_var_len = bytecode_generator.global_var_len;
+        bytecode_writer.vm_insts       = bytecode_generator.vm_insts;
         bytecode_writer.writeInsts();
         bytecode_writer.writeToFile();
     }
