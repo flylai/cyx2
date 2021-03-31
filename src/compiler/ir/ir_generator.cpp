@@ -277,6 +277,7 @@ void COMPILER::IRGenerator::visitFuncCallExpr(COMPILER::FuncCallExpr *ptr)
 
 void COMPILER::IRGenerator::visitExprStmt(COMPILER::ExprStmt *ptr)
 {
+    if (ptr->expr == nullptr) return;
     ptr->expr->visit(this);
 }
 
@@ -487,7 +488,7 @@ void COMPILER::IRGenerator::visitReturnStmt(COMPILER::ReturnStmt *ptr)
         cur_value.reset();
         inst->ret = constant;
     }
-    else if (ptr->retval != nullptr)
+    else if (ptr->retval->expr != nullptr)
     {
         auto *var = consumeVariable();
         inst->ret = var;
