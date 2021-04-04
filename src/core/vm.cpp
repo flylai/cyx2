@@ -142,11 +142,11 @@ void CVM::VM::loadX()
     // MAGIC, DO NOT TOUCH...
     for (auto idx : inst->index)
     {
-        if (std::holds_alternative<int>(idx))
-            target = &target->asArray()->at(std::get<int>(idx));
+        if (std::holds_alternative<long long>(idx))
+            target = &target->asArray()->at(std::get<long long>(idx));
         else
         {
-            const auto i = findSymbol(std::get<std::string>(idx))->as<int>();
+            const auto i = findSymbol(std::get<std::string>(idx))->as<long long>();
             target       = &target->asArray()->at(i);
         }
     }
@@ -187,11 +187,11 @@ void CVM::VM::storeX()
     // MAGIC, DO NOT TOUCH...
     for (auto idx : inst->index)
     {
-        if (std::holds_alternative<int>(idx))
-            target = &target->asArray()->at(std::get<int>(idx));
+        if (std::holds_alternative<long long>(idx))
+            target = &target->asArray()->at(std::get<long long>(idx));
         else
         {
-            const auto i = findSymbol(std::get<std::string>(idx))->as<int>();
+            const auto i = findSymbol(std::get<std::string>(idx))->as<long long>();
             target       = &target->asArray()->at(i);
         }
     }
@@ -222,11 +222,11 @@ void CVM::VM::store()
         auto target = findSymbol(inst->name);
         for (auto idx : inst->index)
         {
-            if (std::holds_alternative<int>(idx))
-                target = &target->asArray()->at(std::get<int>(idx));
+            if (std::holds_alternative<long long>(idx))
+                target = &target->asArray()->at(std::get<long long>(idx));
             else
             {
-                const auto i = findSymbol(std::get<std::string>(idx))->as<int>();
+                const auto i = findSymbol(std::get<std::string>(idx))->as<long long>();
                 target       = &target->asArray()->at(i);
             }
         }
@@ -271,11 +271,11 @@ void CVM::VM::callBuildin()
                 // MAGIC, DO NOT TOUCH...
                 for (auto idx : arg->index)
                 {
-                    if (std::holds_alternative<int>(idx))
-                        target = &target->asArray()->at(std::get<int>(idx));
+                    if (std::holds_alternative<long long>(idx))
+                        target = &target->asArray()->at(std::get<long long>(idx));
                     else
                     {
-                        const auto i = findSymbol(std::get<std::string>(idx))->as<int>();
+                        const auto i = findSymbol(std::get<std::string>(idx))->as<long long>();
                         target       = &target->asArray()->at(i);
                     }
                 }

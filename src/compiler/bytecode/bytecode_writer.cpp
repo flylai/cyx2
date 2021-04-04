@@ -32,8 +32,8 @@ void COMPILER::BytecodeWriter::writeInsts()
             case CVM::Opcode::BNOT: writeUnary(); break;
             case CVM::Opcode::LOADA: writeLoadA(); break;
             case CVM::Opcode::LOADXA: writeLoadXA(); break;
-            case CVM::Opcode::LOADI: writeLoad<int>(); break;
-            case CVM::Opcode::STOREI: writeStore<int>(); break;
+            case CVM::Opcode::LOADI: writeLoad<long long>(); break;
+            case CVM::Opcode::STOREI: writeStore<long long>(); break;
             case CVM::Opcode::LOADD: writeLoad<double>(); break;
             case CVM::Opcode::STORED: writeStore<double>(); break;
             case CVM::Opcode::LOADS: writeLoad<std::string>(); break;
@@ -133,7 +133,7 @@ void COMPILER::BytecodeWriter::writeUnary()
         // bnot int only
         // todo: lnot.
         writeIntTag();
-        writeInt(tmp->value.as<int>());
+        writeInt(tmp->value.as<long long>());
     }
 }
 
@@ -149,10 +149,10 @@ void COMPILER::BytecodeWriter::writeLoadA()
             writeEmptyTag();
             continue;
         }
-        if (value.is<int>())
+        if (value.is<long long>())
         {
             writeIntTag();
-            writeInt(value.as<int>());
+            writeInt(value.as<long long>());
         }
         else if (value.is<double>())
         {
@@ -187,7 +187,7 @@ void COMPILER::BytecodeWriter::writeLoadX()
 template<typename T>
 void COMPILER::BytecodeWriter::writeLoad()
 {
-    if constexpr (std::is_same<T, int>())
+    if constexpr (std::is_same<T, long long>())
     {
         auto *tmp = static_cast<CVM::LoadI *>(cur_inst);
         writeByte(tmp->reg_idx);
@@ -217,10 +217,10 @@ void COMPILER::BytecodeWriter::writeStoreX()
     writeInt(tmp->index.size());
     for (auto idx : tmp->index)
     {
-        if (std::holds_alternative<int>(idx))
+        if (std::holds_alternative<long long>(idx))
         {
             writeIntTag();
-            writeInt(std::get<int>(idx));
+            writeInt(std::get<long long>(idx));
         }
         else
         {
@@ -239,10 +239,10 @@ void COMPILER::BytecodeWriter::writeStoreA()
     // [1][b]
     writeArrIdx(tmp->index);
     // 3.14
-    if (tmp->value.is<int>())
+    if (tmp->value.is<long long>())
     {
         writeIntTag();
-        writeInt(tmp->value.as<int>());
+        writeInt(tmp->value.as<long long>());
     }
     else if (tmp->value.is<double>())
     {
@@ -259,7 +259,7 @@ void COMPILER::BytecodeWriter::writeStoreA()
 template<typename T>
 void COMPILER::BytecodeWriter::writeStore()
 {
-    if constexpr (std::is_same<T, int>())
+    if constexpr (std::is_same<T, long long>())
     {
         auto *tmp = static_cast<CVM::StoreI *>(cur_inst);
         writeString(tmp->name);
@@ -295,10 +295,10 @@ void COMPILER::BytecodeWriter::writeArg()
     {
         writeByte(1);
         // int = 0 / double = 1 / string = 2
-        if (arg->value.is<int>())
+        if (arg->value.is<long long>())
         {
             writeIntTag();
-            writeInt(arg->value.as<int>());
+            writeInt(arg->value.as<long long>());
         }
         else if (arg->value.is<double>())
         {
@@ -374,10 +374,10 @@ void COMPILER::BytecodeWriter::writeArrIdx(const std::vector<CVM::ArrIdx> &arr_i
     writeInt(arr_idx.size());
     for (auto idx : arr_idx)
     {
-        if (std::holds_alternative<int>(idx))
+        if (std::holds_alternative<long long>(idx))
         {
             writeIntTag();
-            writeInt(std::get<int>(idx));
+            writeInt(std::get<long long>(idx));
         }
         else
         {

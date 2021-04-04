@@ -21,7 +21,7 @@ namespace CYX
         }
         explicit operator bool()
         {
-            if (is<int>() || is<double>()) return as<double>() != 0;
+            if (is<long long>() || is<double>()) return as<double>() != 0;
             if (is<std::string>()) return as<std::string>().size() > 0;
             UNREACHABLE();
         }
@@ -41,9 +41,9 @@ namespace CYX
         //
         Value operator+(Value &rhs)
         {
-            if (is<int>() && rhs.is<int>()) // 1 + 2
+            if (is<long long>() && rhs.is<long long>()) // 1 + 2
             {
-                return Value(as<int>() + rhs.as<int>());
+                return Value(as<long long>() + rhs.as<long long>());
             }
             else if (!is<std::string>() && !rhs.is<std::string>() &&
                      (is<double>() || rhs.is<double>())) // 1 + 2.0 || 2.0 + 1
@@ -53,6 +53,13 @@ namespace CYX
             else if (is<std::string>() || rhs.is<std::string>()) // "a" + 1 || 1 + "a"
             {
                 return Value(as<std::string>() + rhs.as<std::string>());
+            }
+            else if (isArray() || rhs.isArray())
+            {
+                auto &target    = isArray() ? *this : rhs;
+                const auto &add = isArray() ? rhs : *this;
+                target.asArray()->push_back(add);
+                return target;
             }
             UNREACHABLE();
         }
@@ -66,9 +73,9 @@ namespace CYX
             {
                 return Value(as<double>() - rhs.as<double>());
             }
-            else if (is<int>() && rhs.is<int>())
+            else if (is<long long>() && rhs.is<long long>())
             {
-                return Value(as<int>() - rhs.as<int>());
+                return Value(as<long long>() - rhs.as<long long>());
             }
             UNREACHABLE();
         }
@@ -79,9 +86,9 @@ namespace CYX
                 _value = -as<double>();
                 return *this;
             }
-            else if (is<int>())
+            else if (is<long long>())
             {
-                _value = -as<int>();
+                _value = -as<long long>();
                 return *this;
             }
             else
@@ -93,20 +100,21 @@ namespace CYX
             {
                 UNREACHABLE();
             }
-            if ((is<std::string>() || rhs.is<std::string>()) && (is<int>() || rhs.is<int>())) // "a" * 3 || 3 * "a"
+            if ((is<std::string>() || rhs.is<std::string>()) &&
+                (is<long long>() || rhs.is<long long>())) // "a" * 3 || 3 * "a"
             {
                 std::string ret;
                 std::string str;
                 int len;
-                if (is<int>())
+                if (is<long long>())
                 {
                     str = rhs.as<std::string>();
-                    len = as<int>();
+                    len = as<long long>();
                 }
                 else
                 {
                     str = as<std::string>();
-                    len = rhs.as<int>();
+                    len = rhs.as<long long>();
                 }
                 for (int i = 0; i < len; i++)
                 {
@@ -118,9 +126,9 @@ namespace CYX
             {
                 return Value(as<double>() * rhs.as<double>());
             }
-            else if (is<int>() && rhs.is<int>()) // 3 * 3
+            else if (is<long long>() && rhs.is<long long>()) // 3 * 3
             {
-                return Value(as<int>() * rhs.as<int>());
+                return Value(as<long long>() * rhs.as<long long>());
             }
             UNREACHABLE();
         }
@@ -134,65 +142,65 @@ namespace CYX
             {
                 return Value(as<double>() / rhs.as<double>());
             }
-            else if (is<int>() && rhs.is<int>()) // 1 * 1
+            else if (is<long long>() && rhs.is<long long>()) // 1 * 1
             {
-                return Value(as<int>() / rhs.as<int>());
+                return Value(as<long long>() / rhs.as<long long>());
             }
             UNREACHABLE();
         }
         Value operator%(Value &rhs)
         {
-            if (is<int>() && rhs.is<int>())
+            if (is<long long>() && rhs.is<long long>())
             {
-                return Value(as<int>() % rhs.as<int>());
+                return Value(as<long long>() % rhs.as<long long>());
             }
             UNREACHABLE();
         }
         Value operator&(Value &rhs)
         {
-            if (is<int>() && rhs.is<int>())
+            if (is<long long>() && rhs.is<long long>())
             {
-                return Value(as<int>() & rhs.as<int>());
+                return Value(as<long long>() & rhs.as<long long>());
             }
             UNREACHABLE();
         }
         bool operator&&(Value &rhs)
         {
-            if (is<int>() && rhs.is<int>())
+            if (is<long long>() && rhs.is<long long>())
             {
-                return as<int>() != 0 && rhs.as<int>() != 0;
+                return as<long long>() != 0 && rhs.as<long long>() != 0;
             }
             UNREACHABLE();
         }
         Value operator|(Value &rhs)
         {
-            if (is<int>() && rhs.is<int>())
+            if (is<long long>() && rhs.is<long long>())
             {
-                return Value(as<int>() | rhs.as<int>());
+                return Value(as<long long>() | rhs.as<long long>());
             }
             UNREACHABLE();
         }
         Value operator^(Value &rhs)
         {
-            if (is<int>() && rhs.is<int>())
+            if (is<long long>() && rhs.is<long long>())
             {
-                return Value(as<int>() ^ rhs.as<int>());
+                return Value(as<long long>() ^ rhs.as<long long>());
             }
             UNREACHABLE();
         }
         Value operator>>(Value &rhs)
         {
-            if (is<int>() && rhs.is<int>())
+            if (is<long long>() && rhs.is<long long>())
             {
-                return Value(as<int>() >> rhs.as<int>());
+                return Value(as<long long>() >> rhs.as<long long>());
             }
             UNREACHABLE();
         }
         Value operator<<(Value &rhs)
         {
-            if (is<int>() && rhs.is<int>())
+            if (is<long long>() && rhs.is<long long>())
             {
-                return Value(as<int>() << rhs.as<int>());
+                return Value(as<long long>() << rhs.as<long long>());
             }
             UNREACHABLE();
         }
@@ -278,17 +286,17 @@ namespace CYX
         //
         Value operator~()
         {
-            if (is<int>())
+            if (is<long long>())
             {
-                return Value(~as<int>());
+                return Value(~as<long long>());
             }
             UNREACHABLE();
         }
         Value operator!()
         {
-            if (is<int>())
+            if (is<long long>())
             {
-                return Value(!as<int>());
+                return Value(!as<long long>());
             }
             UNREACHABLE();
         }
@@ -320,7 +328,7 @@ namespace CYX
         {
             if (is<T>()) return value<T>();
             if constexpr (std::is_same<T, std::string>::value) return asString();
-            if constexpr (std::is_same<T, int>::value) return asInt();
+            if constexpr (std::is_same<T, long long>::value) return asInt();
             if constexpr (std::is_same<T, double>::value) return asDouble();
         }
         bool hasValue()
@@ -335,8 +343,8 @@ namespace CYX
       private:
         std::string asString()
         {
-            if (is<int>())
-                return std::to_string(value<int>());
+            if (is<long long>())
+                return std::to_string(value<long long>());
             else if (is<double>())
                 return std::to_string(value<double>());
             else if (is<std::vector<Value>>())
@@ -358,13 +366,13 @@ namespace CYX
         {
             if (is<double>())
             {
-                return static_cast<int>(value<double>());
+                return static_cast<long long>(value<double>());
             }
             else if (is<std::string>())
             {
                 try
                 {
-                    return std::stoi(as<std::string>());
+                    return std::stoll(as<std::string>());
                 }
                 catch (const std::exception &)
                 {
@@ -378,9 +386,9 @@ namespace CYX
         }
         double asDouble()
         {
-            if (is<int>())
+            if (is<long long>())
             {
-                return static_cast<double>(value<int>());
+                return static_cast<double>(value<long long>());
             }
             else if (is<std::string>())
             {
@@ -423,7 +431,7 @@ namespace CYX
         }
 
       private:
-        std::variant<std::monostate, int, double, std::string, std::vector<Value>> _value;
+        std::variant<std::monostate, long long, double, std::string, std::vector<Value>> _value;
     };
 
 } // namespace CYX

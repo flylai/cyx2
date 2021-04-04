@@ -194,7 +194,7 @@ namespace COMPILER
         std::string toString() override
         {
             std::string retval = value.as<std::string>() + "(";
-            if (value.is<int>())
+            if (value.is<long long>())
                 retval += "int";
             else if (value.is<double>())
                 retval += "double";

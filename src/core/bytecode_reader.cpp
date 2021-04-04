@@ -43,8 +43,8 @@ void CVM::BytecodeReader::readInsts()
             case CVM::Opcode::BNOT: readUnary(); break;
             case CVM::Opcode::LOADA: readLoadA(); break;
             case CVM::Opcode::LOADXA: readLoadXA(); break;
-            case CVM::Opcode::LOADI: readLoad<int>(); break;
-            case CVM::Opcode::STOREI: readStore<int>(); break;
+            case CVM::Opcode::LOADI: readLoad<long long>(); break;
+            case CVM::Opcode::STOREI: readStore<long long>(); break;
             case CVM::Opcode::LOADD: readLoad<double>(); break;
             case CVM::Opcode::STORED: readStore<double>(); break;
             case CVM::Opcode::LOADS: readLoad<std::string>(); break;
@@ -224,7 +224,7 @@ void CVM::BytecodeReader::readLoadXA()
 template<typename T>
 void CVM::BytecodeReader::readLoad()
 {
-    if constexpr (std::is_same<T, int>())
+    if constexpr (std::is_same<T, long long>())
     {
         auto *inst    = new LoadI;
         inst->reg_idx = readByte();
@@ -280,7 +280,7 @@ void CVM::BytecodeReader::readStoreA()
 template<typename T>
 void CVM::BytecodeReader::readStore()
 {
-    if constexpr (std::is_same<T, int>())
+    if constexpr (std::is_same<T, long long>())
     {
         auto *inst = new StoreI;
         inst->name = readString();

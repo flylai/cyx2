@@ -23,7 +23,7 @@ namespace CVM
     };
 
     // for LOADX. STOREX
-    using ArrIdx = std::variant<std::string, int>;
+    using ArrIdx = std::variant<std::string, long long>;
 
     struct Load : VMInstruction
     {
@@ -60,8 +60,8 @@ namespace CVM
             for (int i = 0; i < index.size(); i++)
             {
                 str += "[";
-                if (std::holds_alternative<int>(index[i]))
-                    str += std::to_string(std::get<int>(index[i]));
+                if (std::holds_alternative<long long>(index[i]))
+                    str += std::to_string(std::get<long long>(index[i]));
                 else
                     str += std::get<std::string>(index[i]);
                 str += "]";
@@ -127,8 +127,8 @@ namespace CVM
             for (int i = 0; i < index.size(); i++)
             {
                 str += "[";
-                if (std::holds_alternative<int>(index[i]))
-                    str += std::to_string(std::get<int>(index[i]));
+                if (std::holds_alternative<long long>(index[i]))
+                    str += std::to_string(std::get<long long>(index[i]));
                 else
                     str += std::get<std::string>(index[i]);
                 str += "] " + value.as<std::string>();
@@ -150,8 +150,8 @@ namespace CVM
             for (int i = 0; i < index.size(); i++)
             {
                 str += "[";
-                if (std::holds_alternative<int>(index[i]))
-                    str += std::to_string(std::get<int>(index[i]));
+                if (std::holds_alternative<long long>(index[i]))
+                    str += std::to_string(std::get<long long>(index[i]));
                 else
                     str += std::get<std::string>(index[i]);
                 str += "]";
@@ -201,8 +201,8 @@ namespace CVM
             for (int i = 0; i < index.size(); i++)
             {
                 str += "[";
-                if (std::holds_alternative<int>(index[i]))
-                    str += std::to_string(std::get<int>(index[i]));
+                if (std::holds_alternative<long long>(index[i]))
+                    str += std::to_string(std::get<long long>(index[i]));
                 else
                     str += std::get<std::string>(index[i]);
                 str += "]";

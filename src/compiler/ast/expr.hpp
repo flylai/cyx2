@@ -15,7 +15,7 @@ namespace COMPILER
     {
       public:
         using Expr::Expr;
-        int value;
+        long long value;
 
         void visit(ASTVisitor *visitor) override
         {

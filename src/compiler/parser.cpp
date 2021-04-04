@@ -71,7 +71,7 @@ COMPILER::Expr *COMPILER::Parser::parsePrimaryExpr()
     else if (cur_token.keyword == Keyword::INTEGER)
     {
         auto *int_expr  = new IntExpr(cur_token.row, cur_token.column);
-        int_expr->value = std::stoi(cur_token.value);
+        int_expr->value = std::stoll(cur_token.value);
         eat(Keyword::INTEGER);
         return int_expr;
     }

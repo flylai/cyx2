@@ -154,8 +154,8 @@ void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
 
 void COMPILER::BytecodeGenerator::genLoadConst(CYX::Value &val, int reg_idx)
 {
-    if (val.is<int>())
-        genLoad(reg_idx, val.as<int>());
+    if (val.is<long long>())
+        genLoad(reg_idx, val.as<long long>());
     else if (val.is<double>())
         genLoad(reg_idx, val.as<double>());
     else if (val.is<std::string>())
@@ -164,8 +164,8 @@ void COMPILER::BytecodeGenerator::genLoadConst(CYX::Value &val, int reg_idx)
 
 void COMPILER::BytecodeGenerator::genStoreConst(CYX::Value &val, const std::string &name)
 {
-    if (val.is<int>())
-        genStore(name, val.as<int>());
+    if (val.is<long long>())
+        genStore(name, val.as<long long>());
     else if (val.is<double>())
         genStore(name, val.as<double>());
     else if (val.is<std::string>())
@@ -183,8 +183,8 @@ void COMPILER::BytecodeGenerator::genReturn(COMPILER::IRReturn *ptr)
         auto *var      = as<IRVar, IR::Tag::VAR>(ptr->ret);
         if (constant != nullptr)
         {
-            if (constant->value.is<int>())
-                genLoad(1, constant->value.as<int>());
+            if (constant->value.is<long long>())
+                genLoad(1, constant->value.as<long long>());
             else if (constant->value.is<double>())
                 genLoad(1, constant->value.as<double>());
             else if (constant->value.is<std::string>())
@@ -347,7 +347,7 @@ void COMPILER::BytecodeGenerator::genAssign(COMPILER::IRAssign *ptr)
 template<typename T>
 void COMPILER::BytecodeGenerator::genLoad(int reg_idx, T val)
 {
-    if constexpr (std::is_same<T, int>())
+    if constexpr (std::is_same<T, long long>())
     {
         auto *load_i    = new CVM::LoadI;
         load_i->val     = val;
@@ -423,7 +423,7 @@ void COMPILER::BytecodeGenerator::genStoreA(const std::string &name, CYX::Value 
 template<typename T>
 void COMPILER::BytecodeGenerator::genStore(const std::string &name, T val)
 {
-    if constexpr (std::is_same<T, int>())
+    if constexpr (std::is_same<T, long long>())
     {
         auto *store_i = new CVM::StoreI;
         store_i->val  = val;
@@ -515,7 +515,7 @@ void COMPILER::BytecodeGenerator::parseVarArr(COMPILER::IRVar *var, std::vector<
         auto *idx_var   = as<IRVar, IR::Tag::VAR>(x);
         if (idx_const != nullptr)
         {
-            arr_idx.emplace_back(idx_const->value.as<int>());
+            arr_idx.emplace_back(idx_const->value.as<long long>());
         }
         else if (idx_var != nullptr)
         {

@@ -27,7 +27,7 @@ static CYX::Value *buildin_read(CYX::Value *target)
 
 static CYX::Value *buildin_int(CYX::Value *target)
 {
-    *target = target->as<int>();
+    *target = target->as<long long>();
     return nullptr;
 }
 
