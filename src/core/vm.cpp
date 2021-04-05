@@ -159,7 +159,7 @@ void CVM::VM::load()
     if (op == Opcode::LOADI)
     {
         auto *inst         = static_cast<LoadI *>(cur_inst);
-        reg[inst->reg_idx] = (int) inst->val;
+        reg[inst->reg_idx] = inst->val;
     }
     else if (op == Opcode::LOADD)
     {
@@ -204,7 +204,7 @@ void CVM::VM::store()
     if (op == Opcode::STOREI)
     {
         auto *inst                       = static_cast<StoreI *>(cur_inst);
-        frame.back().symbols[inst->name] = (int) inst->val;
+        frame.back().symbols[inst->name] = inst->val;
     }
     else if (op == Opcode::STORED)
     {

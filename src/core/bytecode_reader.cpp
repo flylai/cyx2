@@ -138,7 +138,7 @@ void CVM::BytecodeReader::readUnary()
     if (type == 0)
     {
         inst->type  = ArgType::RAW;
-        inst->value = (int) readInt();
+        inst->value = readInt();
     }
     else if (type == 2)
     {
@@ -200,7 +200,7 @@ void CVM::BytecodeReader::readLoadA()
     {
         const auto type = readByte();
         if (type == 0)
-            arr.emplace_back((int) readInt());
+            arr.emplace_back(readInt());
         else if (type == 1)
             arr.emplace_back(readDouble());
         else if (type == 2)
@@ -269,7 +269,7 @@ void CVM::BytecodeReader::readStoreA()
     inst->index   = std::move(arr);
     auto val_type = readByte();
     if (val_type == 0)
-        inst->value = (int) readInt();
+        inst->value = readInt();
     else if (val_type == 1)
         inst->value = readDouble();
     else if (val_type == 2)
@@ -314,7 +314,7 @@ void CVM::BytecodeReader::readArg()
         auto type = readByte();
         if (type == 0)
         {
-            inst->value = (int) readInt();
+            inst->value = readInt();
         }
         else if (type == 1)
         {
@@ -385,7 +385,7 @@ void CVM::BytecodeReader::readArrIdx(std::vector<ArrIdx> &arr_idx)
         const auto type = readByte();
         if (type == 0)
         {
-            arr_idx.emplace_back((int) readInt());
+            arr_idx.emplace_back(readInt());
         }
         else if (type == 2)
         {
