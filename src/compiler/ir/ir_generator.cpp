@@ -21,7 +21,14 @@ void COMPILER::IRGenerator::visitUnaryExpr(COMPILER::UnaryExpr *ptr)
         auto *constant  = new IRConstant;
         constant->value = 1;
 
-        binary->lhs    = self;
+        // make a copy
+        auto *self_copy        = new IRVar;
+        self_copy->def         = self;
+        self_copy->name        = self->name;
+        self_copy->belong_inst = assign;
+        self->addUse(self_copy);
+
+        binary->lhs    = self_copy;
         binary->opcode = token2IROp(ptr->op.keyword);
         binary->rhs    = constant;
         assign->setDest(self);

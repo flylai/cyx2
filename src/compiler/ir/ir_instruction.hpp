@@ -336,7 +336,7 @@ namespace COMPILER
         }
         std::string ssaName()
         {
-            return NO_SSA ? name : name + std::to_string(ssa_index);
+            return NO_SSA || is_ir_gen ? name : name + std::to_string(ssa_index);
         }
         std::string toString() override
         {
