@@ -1,21 +1,10 @@
 #include "bytecode_reader.h"
 
-void CVM::BytecodeReader::readFile()
-{
-    std::ifstream in;
-    in.open(filename, std::ios::in | std::ios::binary | std::ios::ate);
-    size = in.tellg();
-    in.seekg(0);
-    buffer = new unsigned char[size];
-    in.read((char *) buffer, size);
-    in.close();
-    pos = 0;
-}
-
 void CVM::BytecodeReader::readInsts()
 {
+    in.open(filename, std::ios::in | std::ios::binary);
     readHeader();
-    while (pos < size)
+    while (in.peek() != EOF)
     {
         cur_opcode = readOpcode();
         switch (cur_opcode)
@@ -76,46 +65,33 @@ void CVM::BytecodeReader::readHeader()
 
 unsigned char CVM::BytecodeReader::readByte()
 {
-    if (pos < size) return buffer[pos++];
-    ERROR("out of range.");
+    unsigned char tmp;
+    in.read((char *) &tmp, sizeof tmp);
+    return tmp;
 }
 
 long long CVM::BytecodeReader::readInt()
 {
-    unsigned long long ret = 0;
-    int base               = 256;
-    int k                  = 1;
-    for (int i = 0; i < 8; i++)
-    {
-        auto byte = readByte();
-        if (byte != 0) ret += byte * k;
-        k *= base;
-    }
-    return reinterpret_cast<long long &>(ret);
+    long long tmp;
+    in.read((char *) &tmp, sizeof tmp);
+    return tmp;
 }
 
 double CVM::BytecodeReader::readDouble()
 {
-    unsigned long long ret = 0;
-    int i                  = 0;
-    int base               = 256;
-    while (i < 8)
-    {
-        auto byte = readByte();
-        if (byte != 0) ret += byte * std::pow(base, i);
-        i++;
-    }
-    return reinterpret_cast<double &>(ret);
+    double tmp;
+    in.read((char *) &tmp, sizeof tmp);
+    return tmp;
 }
 
 std::string CVM::BytecodeReader::readString()
 {
     auto str_len = readInt();
-    std::string ret;
-    for (int i = 0; i < str_len; i++)
-    {
-        ret.push_back((char) readByte());
-    }
+    char *tmp    = new char[str_len + 1];
+    tmp[str_len] = '\0';
+    in.read(tmp, str_len);
+    std::string ret(tmp);
+    delete[] tmp;
     return ret;
 }
 

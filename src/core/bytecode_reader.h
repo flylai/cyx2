@@ -18,7 +18,6 @@ namespace CVM
         explicit BytecodeReader(std::string filename) : filename(std::move(filename))
         {
         }
-        void readFile();
         void readInsts();
         std::string vmInstStr();
 
@@ -31,6 +30,7 @@ namespace CVM
         //
         CVM::Opcode readOpcode();
         //
+        void readUnary();
         void readBinary();
         //
         void readLoadX();
@@ -63,10 +63,7 @@ namespace CVM
       private:
         Opcode cur_opcode;
         std::string filename;
-        int pos{ 0 };
-        int size{ 0 };
-        unsigned char *buffer{ nullptr };
-        void readUnary();
+        std::ifstream in;
     };
 } // namespace CVM
 

@@ -1,5 +1,4 @@
 #include "common/config.h"
-#include "compiler/ast/ast.hpp"
 #include "compiler/ast/ast_visualize.h"
 #include "compiler/bytecode/bytecode_generator.h"
 #include "compiler/bytecode/bytecode_writer.h"
@@ -54,7 +53,6 @@ void showHelp()
 
 void readBytecode(CVM::BytecodeReader &bytecode_reader)
 {
-    bytecode_reader.readFile();
     bytecode_reader.readInsts();
 }
 
@@ -217,6 +215,7 @@ int main(int argc, char *argv[])
         bytecode_writer.vm_insts       = bytecode_generator.vm_insts;
         bytecode_writer.writeInsts();
         bytecode_writer.writeToFile();
+        return 0;
     }
 
     CVM::VM vm;

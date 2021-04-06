@@ -57,10 +57,8 @@ namespace COMPILER
 
       private:
         CVM::VMInstruction *cur_inst{ nullptr };
-
         std::string filename;
-        int size{ 0 };
-        std::vector<unsigned char> buffer;
+        std::ofstream out;
 
       public:
         int entry{ -1 };

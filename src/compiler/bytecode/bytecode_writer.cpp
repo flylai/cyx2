@@ -55,6 +55,7 @@ void COMPILER::BytecodeWriter::writeInsts()
 
 void COMPILER::BytecodeWriter::writeHeader()
 {
+    out.open(filename, std::ios::out | std::ios::binary);
     // magic number
     writeByte(0xc2);
     // version
@@ -68,41 +69,27 @@ void COMPILER::BytecodeWriter::writeHeader()
 
 void COMPILER::BytecodeWriter::writeByte(unsigned char val)
 {
-    buffer.push_back(val);
+    out.write((char *) &val, sizeof val);
 }
 
 void COMPILER::BytecodeWriter::writeInt(long long val)
 {
-    auto x = reinterpret_cast<unsigned long long &>(val);
-    for (int i = 0; i < 8; i++)
-    {
-        writeByte(x & 0xff);
-        x >>= 8;
-    }
+    out.write((char *) &val, sizeof val);
 }
 
 void COMPILER::BytecodeWriter::writeDouble(double val)
 {
-    writeInt(reinterpret_cast<long long &>(val));
+    out.write((char *) &val, sizeof val);
 }
 
 void COMPILER::BytecodeWriter::writeString(const std::string &val)
 {
     writeInt(val.size());
-    for (auto x : val)
-    {
-        writeByte(x);
-    }
+    out.write(val.c_str(), val.size());
 }
 
 void COMPILER::BytecodeWriter::writeToFile()
 {
-    std::ofstream out;
-    out.open(filename, std::ios::out | std::ios::binary);
-    for (auto x : buffer)
-    {
-        out << x;
-    }
     out.flush();
     out.close();
 }
