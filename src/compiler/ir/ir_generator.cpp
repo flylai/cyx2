@@ -287,6 +287,7 @@ void COMPILER::IRGenerator::visitIfStmt(COMPILER::IfStmt *ptr)
     LINK(cur_basic_block, cond_block);
     cur_basic_block = cond_block;
     ptr->cond->visit(this);
+    auto *cond = consumeVariable();
     //
     auto *true_block = newBasicBlock();
     LINK(cond_block, true_block);
@@ -309,7 +310,7 @@ void COMPILER::IRGenerator::visitIfStmt(COMPILER::IfStmt *ptr)
     branch->true_block  = true_block;
     branch->false_block = false_block;
     branch->block       = cond_block;
-    branch->cond        = consumeVariable();
+    branch->cond        = cond;
     cond_block->addInst(branch);
 
     if (inOr(true_block->insts.back()->tag, IR::Tag::RETURN, IR::Tag::JMP)) return;
