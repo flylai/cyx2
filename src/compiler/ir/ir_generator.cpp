@@ -37,13 +37,17 @@ void COMPILER::IRGenerator::visitUnaryExpr(COMPILER::UnaryExpr *ptr)
         if (inOr(ptr->op.keyword, SELFSUB_SUFFIX, SELFADD_SUFFIX))
         {
             auto *assign2  = new IRAssign;
-            auto *binary2  = new IRBinary;
             assign2->block = cur_basic_block;
 
-            binary2->lhs    = self;
-            binary2->opcode = token2IROp(ptr->op.keyword);
+            // make a copy
+            auto *self_copy2        = new IRVar;
+            self_copy2->def         = self;
+            self_copy2->name        = self->name;
+            self_copy2->belong_inst = assign2;
+            self->addUse(self_copy2);
+
             assign2->setDest(newVariable());
-            assign2->setSrc(binary2);
+            assign2->setSrc(self_copy2);
             cur_basic_block->addInst(assign2);
         }
         else
