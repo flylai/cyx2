@@ -48,7 +48,7 @@ namespace COMPILER
         void destroyPhiNode(COMPILER::IRAssign *assign);
         void phiElimination(COMPILER::IRFunction *func);
         // rename
-        void tryRename();
+        void tryRename(COMPILER::IRFunction *func);
         void rename(BasicBlock *block);
         void renameIrArgs(IR *inst);
         void renameFuncCall(IRCall *inst);

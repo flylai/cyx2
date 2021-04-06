@@ -197,7 +197,7 @@ void COMPILER::CFG::transformToSSA()
         var_block_map.clear();
         collectVarAssign(func);
         insertPhiNode();
-        tryRename();
+        tryRename(func);
         removeUnusedPhis(func);
         removeTrivialPhi(func);
         if (CONSTANT_FOLDING)
@@ -280,6 +280,9 @@ void COMPILER::CFG::removeTrivialPhi(COMPILER::IRFunction *func)
             auto *phi          = as<IRPhi, IR::Tag::PHI>(assign->src());
             int pre_idx        = -1;
             int same_idx_count = 1;
+            //
+            IRVar *def{ nullptr };
+            int def_ssa_index = -1;
             for (auto *tmp : phi->args)
             {
                 auto *var = as<IRVar, IR::Tag::VAR>(tmp);
@@ -289,13 +292,28 @@ void COMPILER::CFG::removeTrivialPhi(COMPILER::IRFunction *func)
                     continue;
                 }
                 if (var->ssa_index == pre_idx)
+                {
                     same_idx_count++;
+                    def           = var->def;
+                    def_ssa_index = var->ssa_index;
+                }
                 else
                     break;
             }
             // if found phi(x1, x1, x1, x1....), remove it~
             if (same_idx_count == phi->args.size())
             {
+                // replace uses to x1
+                for (auto use_it = assign->dest()->use.begin(); use_it != assign->dest()->use.end();)
+                {
+                    auto *use      = *use_it;
+                    use->def       = def;
+                    use->name      = def->name;
+                    use->ssa_index = def_ssa_index;
+                    def->addUse(use);
+                    use_it = assign->dest()->use.erase(use_it);
+                }
+                // remove
                 it = block->phis.erase(it);
                 destroyPhiNode(assign);
             }
@@ -540,22 +558,22 @@ void COMPILER::CFG::phiElimination(COMPILER::IRFunction *func)
     }
 }
 
-void COMPILER::CFG::tryRename()
+void COMPILER::CFG::tryRename(COMPILER::IRFunction *func)
 {
     for (const auto &p : var_block_map)
     {
         counter[p.first] = 0;
     }
-    rename(entry);
+    rename(func->blocks.front());
 }
 
 void COMPILER::CFG::rename(COMPILER::BasicBlock *block)
 {
     for (auto *phi : block->phis)
     {
-        auto *lhs                                               = phi->dest();
-        lhs->ssa_index                                          = newId(lhs->name, lhs);
-        ssa_def_map[lhs->name + std::to_string(lhs->ssa_index)] = lhs;
+        auto *lhs                   = phi->dest();
+        lhs->ssa_index              = newId(lhs->name, lhs);
+        ssa_def_map[lhs->ssaName()] = lhs;
     }
     for (auto *inst : block->insts)
     {
@@ -637,7 +655,7 @@ void COMPILER::CFG::renameIrArgs(COMPILER::IR *inst)
     // rename dest
     if (assign->dest()->def == nullptr && assign->dest()->is_ir_gen) return;
     assign->dest()->ssa_index = newId(assign->dest()->name, assign->dest());
-    auto dest_name            = assign->dest()->name + std::to_string(assign->dest()->ssa_index);
+    auto dest_name            = assign->dest()->ssaName();
     ssa_def_map[dest_name]    = assign->dest();
     assign->dest()->use.clear();
     assign->dest()->def = nullptr;
@@ -653,11 +671,11 @@ void COMPILER::CFG::renameFuncCall(COMPILER::IRCall *inst)
 
 void COMPILER::CFG::renameVar(COMPILER::IRVar *var)
 {
-    if (var == nullptr) return;
+    if (var == nullptr || var->is_ir_gen) return;
     auto [id, def] = getId(var->name);
     var->ssa_index = id;
     // def-use chains update
-    auto def_name = var->name + std::to_string(id);
+    auto def_name = var->ssaName();
     if (ssa_def_map.find(def_name) != ssa_def_map.end())
     {
         var->def = ssa_def_map[def_name];
