@@ -94,7 +94,7 @@ void COMPILER::CFG::buildDominateTree(COMPILER::IRFunction *func)
 {
     clear();
     init(func);
-    dfs(entry);
+    dfs(func->blocks.front());
     tarjan();
     calcDominanceFrontier(func);
 }
@@ -207,6 +207,8 @@ void COMPILER::CFG::transformToSSA()
             removeUnusedPhis(func);
         }
         phiElimination(func);
+        logX(cfgStr());
+        deadCodeElimination(func);
     }
 }
 
@@ -555,6 +557,71 @@ void COMPILER::CFG::phiElimination(COMPILER::IRFunction *func)
         }
         // remove all phi functions.
         block->phis.clear();
+    }
+}
+
+void COMPILER::CFG::deadCodeElimination(COMPILER::IRFunction *func)
+{
+    return;
+    // MAGIC
+    for (auto block_it = func->blocks.crbegin(); block_it != func->blocks.crend(); block_it++)
+    {
+        auto *block = *block_it;
+        for (auto inst_it = block->insts.rbegin(); inst_it != block->insts.rend();)
+        {
+            auto *tmp    = *inst_it;
+            auto *assign = as<IRAssign, IR::Tag::ASSIGN>(tmp);
+            // a = b + c
+            // no user! remove this instruction!
+            if (assign != nullptr && assign->dest()->use.empty())
+            {
+                if (assign->dest()->def != nullptr && assign->dest()->def->ssaName() == assign->dest()->ssaName())
+                {
+                    inst_it++;
+                    continue;
+                }
+                // call
+                auto *call = as<IRCall, IR::Tag::CALL>(assign->src());
+                if (call != nullptr)
+                {
+                    // non-retval. remove temp var.
+                    delete tmp;
+                    *inst_it = call;
+                    inst_it++;
+                    continue;
+                }
+                auto *var = as<IRVar, IR::Tag::VAR>(assign->src());
+                if (var != nullptr)
+                {
+                    var->def->killUse(var);
+                    delete var;
+                }
+                //
+                auto *binary = as<IRBinary, IR::Tag::BINARY>(assign->src());
+                if (binary != nullptr)
+                {
+                    auto *lhs_var   = as<IRVar, IR::Tag::VAR>(binary->lhs);
+                    auto *lhs_const = as<IRConstant, IR::Tag::CONST>(binary->lhs);
+                    auto *rhs_var   = as<IRVar, IR::Tag::VAR>(binary->rhs);
+                    auto *rhs_const = as<IRConstant, IR::Tag::CONST>(binary->rhs);
+                    if (lhs_var != nullptr) lhs_var->def->killUse(lhs_var);
+                    if (rhs_var != nullptr) rhs_var->def->killUse(rhs_var);
+                    //
+                    delete lhs_var;
+                    delete rhs_var;
+                    delete lhs_const;
+                    delete rhs_const;
+                    delete binary;
+                }
+                delete assign;
+                // remove it from list
+                block->insts.erase(--inst_it.base());
+            }
+            else
+            {
+                inst_it++;
+            }
+        }
     }
 }
 
