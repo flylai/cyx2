@@ -9,18 +9,24 @@ COMPILER::BytecodeGenerator::BytecodeGenerator()
     }
 }
 
+void COMPILER::BytecodeGenerator::addInst(CVM::VMInstruction *inst)
+{
+    bytecode_basicblocks.back()->vm_insts.push_back(inst);
+}
+
 void COMPILER::BytecodeGenerator::ir2VmInst()
 {
+    bytecode_basicblocks.push_back(new BytecodeBasicBlock("global_var_decl"));
     genGlobalVarDecl();
-    global_var_len = vm_insts.size();
+    global_var_len = bytecode_basicblocks.back()->vm_insts.size();
     for (auto *func : funcs)
     {
+        bytecode_basicblocks.push_back(new BytecodeBasicBlock(func->name));
         block_table.clear();
         genFunc(func);
-        int start = vm_insts.size();
         for (auto *block : func->blocks)
         {
-            block_table[block->name] = vm_insts.size();
+            bytecode_basicblocks.push_back(new BytecodeBasicBlock(block->name));
             for (auto *inst : block->insts)
             {
                 if (auto *ptr = as<IRAssign, IR::Tag::ASSIGN>(inst); ptr != nullptr)
@@ -53,11 +59,8 @@ void COMPILER::BytecodeGenerator::ir2VmInst()
                 }
             }
         }
-        // set main function size.
-        if (func->name == ENTRY_FUNC) entry_end = vm_insts.size() - 1;
-        fixJmp(start, vm_insts.size());
+        if (func->name == ENTRY_FUNC) entry_end_block_name = func->blocks.back()->name;
     }
-    fixCall();
 }
 
 void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
@@ -95,7 +98,7 @@ void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
                 inst->reg_idx = 1;
                 inst->name    = rhs->ssaName();
                 inst->type    = CVM::ArgType::MAP;
-                vm_insts.push_back(inst);
+                addInst(inst);
                 return;
             }
         }
@@ -121,7 +124,7 @@ void COMPILER::BytecodeGenerator::genBinary(COMPILER::IRBinary *ptr)
         auto *inst     = new CVM::VM_OPCODE;                                                                           \
         inst->reg_idx1 = 1;                                                                                            \
         inst->reg_idx2 = 2;                                                                                            \
-        vm_insts.push_back(inst);                                                                                      \
+        addInst(inst);                                                                                                 \
     }
 
 #define ELSE_CASE_OPCODE(VM_OPCODE, IR_OPCODE) else CASE_OPCODE(VM_OPCODE, IR_OPCODE)
@@ -200,14 +203,14 @@ void COMPILER::BytecodeGenerator::genReturn(COMPILER::IRReturn *ptr)
         ret->ret_size = 1;
         ret->ret_regs.push_back(1);
     }
-    vm_insts.push_back(ret);
+    addInst(ret);
 }
 
 void COMPILER::BytecodeGenerator::genJump(COMPILER::IRJump *ptr)
 {
     auto *jmp             = new CVM::Jmp;
     jmp->basic_block_name = ptr->target->name;
-    vm_insts.push_back(jmp);
+    addInst(jmp);
 }
 
 void COMPILER::BytecodeGenerator::genJif(BasicBlock *target1, BasicBlock *target2)
@@ -215,14 +218,14 @@ void COMPILER::BytecodeGenerator::genJif(BasicBlock *target1, BasicBlock *target
     auto *jif              = new CVM::Jif;
     jif->basic_block_name1 = target1->name;
     jif->basic_block_name2 = target2->name;
-    vm_insts.push_back(jif);
+    addInst(jif);
 }
 
 void COMPILER::BytecodeGenerator::genCall(COMPILER::IRCall *ptr)
 {
     auto *call = new CVM::Call;
     call->name = ptr->name;
-    vm_insts.push_back(call);
+    addInst(call);
     for (auto *arg : ptr->args)
     {
         auto x = new CVM::Arg;
@@ -239,24 +242,22 @@ void COMPILER::BytecodeGenerator::genCall(COMPILER::IRCall *ptr)
             x->type  = CVM::ArgType::RAW;
             x->value = constant->value;
         }
-        vm_insts.push_back(x);
+        addInst(x);
     }
 }
 
 void COMPILER::BytecodeGenerator::genFunc(COMPILER::IRFunction *ptr)
 {
-    if (ptr->name == ENTRY_FUNC) entry = vm_insts.size();
-    funcs_table[ptr->name] = vm_insts.size();
     auto *func_inst        = new CVM::Func();
     func_inst->name        = ptr->name;
     func_inst->param_count = ptr->params.size();
-    vm_insts.push_back(func_inst);
+    addInst(func_inst);
     // Param
     for (auto param : ptr->params)
     {
         auto *p = new CVM::Param();
         p->name = param->ssaName();
-        vm_insts.push_back(p);
+        addInst(p);
     }
 }
 
@@ -352,21 +353,21 @@ void COMPILER::BytecodeGenerator::genLoad(int reg_idx, T val)
         auto *load_i    = new CVM::LoadI;
         load_i->val     = val;
         load_i->reg_idx = reg_idx;
-        vm_insts.push_back(load_i);
+        addInst(load_i);
     }
     else if constexpr (std::is_same<T, double>())
     {
         auto *load_d    = new CVM::LoadD;
         load_d->val     = val;
         load_d->reg_idx = reg_idx;
-        vm_insts.push_back(load_d);
+        addInst(load_d);
     }
     else if constexpr (std::is_same<T, std::string>())
     {
         auto *load_d    = new CVM::LoadS;
         load_d->val     = val;
         load_d->reg_idx = reg_idx;
-        vm_insts.push_back(load_d);
+        addInst(load_d);
     }
     else
     {
@@ -379,14 +380,14 @@ void COMPILER::BytecodeGenerator::genLoadX(int reg_idx, const std::string &name)
     auto *load_x    = new CVM::LoadX;
     load_x->name    = name;
     load_x->reg_idx = reg_idx;
-    vm_insts.push_back(load_x);
+    addInst(load_x);
 }
 
 void COMPILER::BytecodeGenerator::genLoadX(int reg_idx, const std::string &name, const std::vector<CVM::ArrIdx> &idx)
 {
     genLoadX(reg_idx, name);
     if (idx.empty()) return;
-    auto *inst  = static_cast<CVM::LoadX *>(vm_insts.back());
+    auto *inst  = static_cast<CVM::LoadX *>(bytecode_basicblocks.back()->vm_insts.back());
     inst->index = idx;
 }
 
@@ -398,7 +399,7 @@ void COMPILER::BytecodeGenerator::genLoadXA(int reg_idx, const std::vector<std::
         load_xa->name    = x.first;
         load_xa->reg_idx = reg_idx;
         load_xa->index   = x.second;
-        vm_insts.push_back(load_xa);
+        addInst(load_xa);
     }
 }
 
@@ -407,7 +408,7 @@ void COMPILER::BytecodeGenerator::genLoadA(int reg_idx, const std::vector<CYX::V
     auto *load_a    = new CVM::LoadA;
     load_a->reg_idx = reg_idx;
     load_a->array   = index;
-    vm_insts.push_back(load_a);
+    addInst(load_a);
 }
 
 void COMPILER::BytecodeGenerator::genStoreA(const std::string &name, CYX::Value &val,
@@ -417,7 +418,7 @@ void COMPILER::BytecodeGenerator::genStoreA(const std::string &name, CYX::Value 
     store_a->name  = name;
     store_a->value = val;
     store_a->index = idx;
-    vm_insts.push_back(store_a);
+    addInst(store_a);
 }
 
 template<typename T>
@@ -428,21 +429,21 @@ void COMPILER::BytecodeGenerator::genStore(const std::string &name, T val)
         auto *store_i = new CVM::StoreI;
         store_i->val  = val;
         store_i->name = name;
-        vm_insts.push_back(store_i);
+        addInst(store_i);
     }
     else if constexpr (std::is_same<T, double>())
     {
         auto *store_d = new CVM::StoreD;
         store_d->val  = val;
         store_d->name = name;
-        vm_insts.push_back(store_d);
+        addInst(store_d);
     }
     else if constexpr (std::is_same<T, std::string>())
     {
         auto *store_d = new CVM::StoreS;
         store_d->val  = val;
         store_d->name = name;
-        vm_insts.push_back(store_d);
+        addInst(store_d);
     }
     else
     {
@@ -455,53 +456,98 @@ void COMPILER::BytecodeGenerator::genStoreX(const std::string &name, int reg_idx
     auto *store_x    = new CVM::StoreX;
     store_x->name    = name;
     store_x->reg_idx = reg_idx;
-    vm_insts.push_back(store_x);
+    addInst(store_x);
 }
 
 void COMPILER::BytecodeGenerator::genStoreX(const std::string &name, int reg_idx, const std::vector<CVM::ArrIdx> &idx)
 {
     genStoreX(name, reg_idx);
     if (idx.empty()) return;
-    auto *inst  = static_cast<CVM::StoreX *>(vm_insts.back());
+    auto *inst  = static_cast<CVM::StoreX *>(bytecode_basicblocks.back()->vm_insts.back());
     inst->index = idx;
 }
 
-void COMPILER::BytecodeGenerator::fixJmp(int start, int end)
+void COMPILER::BytecodeGenerator::collectBlockMap()
 {
-    for (int i = start; i < end; i++)
+    int cnt = bytecode_basicblocks[0]->vm_insts.size();
+    for (int i = 1; i < bytecode_basicblocks.size(); i++)
     {
-        auto *inst = vm_insts[i];
-        if (!inOr(inst->opcode, CVM::Opcode::JMP, CVM::Opcode::JIF, CVM::Opcode::CALL)) continue;
-        if (inst->opcode == CVM::Opcode::JMP)
+        if (bytecode_basicblocks[i]->vm_insts.empty()) continue;
+        bool is_func = bytecode_basicblocks[i]->vm_insts.front()->opcode == CVM::Opcode::FUNC;
+        if (is_func)
+            funcs_table[bytecode_basicblocks[i]->name] = cnt;
+        else
+            block_table[bytecode_basicblocks[i]->name] = cnt;
+        //
+        cnt += bytecode_basicblocks[i]->vm_insts.size();
+    }
+}
+
+void COMPILER::BytecodeGenerator::fixJmp()
+{
+    for (int i = 1; i < bytecode_basicblocks.size(); i++)
+    {
+        for (auto inst : bytecode_basicblocks[i]->vm_insts)
         {
-            auto *tmp   = static_cast<CVM::Jmp *>(inst);
-            tmp->target = block_table[tmp->basic_block_name];
-        }
-        else if (inst->opcode == CVM::Opcode::JIF)
-        {
-            auto *tmp    = static_cast<CVM::Jif *>(inst);
-            tmp->target1 = block_table[tmp->basic_block_name1];
-            tmp->target2 = block_table[tmp->basic_block_name2];
+            if (!inOr(inst->opcode, CVM::Opcode::JMP, CVM::Opcode::JIF, CVM::Opcode::CALL)) continue;
+            if (inst->opcode == CVM::Opcode::JMP)
+            {
+                auto *tmp   = static_cast<CVM::Jmp *>(inst);
+                tmp->target = block_table[tmp->basic_block_name];
+            }
+            else if (inst->opcode == CVM::Opcode::JIF)
+            {
+                auto *tmp    = static_cast<CVM::Jif *>(inst);
+                tmp->target1 = block_table[tmp->basic_block_name1];
+                tmp->target2 = block_table[tmp->basic_block_name2];
+            }
         }
     }
 }
 
 void COMPILER::BytecodeGenerator::fixCall()
 {
-    for (auto *inst : vm_insts)
+    for (int i = 1; i < bytecode_basicblocks.size(); i++)
     {
-        if (inst->opcode != CVM::Opcode::CALL) continue;
-        auto *tmp   = static_cast<CVM::Call *>(inst);
-        tmp->target = funcs_table[tmp->name];
+        for (auto inst : bytecode_basicblocks[i]->vm_insts)
+        {
+            if (inst->opcode != CVM::Opcode::CALL) continue;
+            auto *tmp   = static_cast<CVM::Call *>(inst);
+            tmp->target = funcs_table[tmp->name];
+        }
+    }
+}
+
+void COMPILER::BytecodeGenerator::relocation()
+{
+    // we need to adjust the target where jmp or call will jump
+    // and transform to vector at the end
+    collectBlockMap();
+    fixJmp();
+    fixCall();
+    for (auto block : bytecode_basicblocks)
+    {
+        if (block->name == ENTRY_FUNC) entry = vm_insts.size();
+        for (auto inst : block->vm_insts)
+        {
+            vm_insts.push_back(inst);
+        }
+        if (block->name == entry_end_block_name) entry_end = vm_insts.size() - 1;
     }
 }
 
 std::string COMPILER::BytecodeGenerator::vmInstStr()
 {
     std::string str;
-    for (auto *inst : vm_insts)
+    for (auto *block : bytecode_basicblocks)
     {
-        str += inst->toString() + "\n";
+        for (auto inst : block->vm_insts)
+        {
+            if (inst == nullptr)
+                str += "(optimized)\n";
+            else
+                str += inst->toString() + "\n";
+        }
     }
     return str;
 }

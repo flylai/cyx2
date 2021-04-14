@@ -7,6 +7,7 @@
 #include "../../core/vm_instruction.hpp"
 #include "../../utility/utility.hpp"
 #include "../ir/ir_instruction.hpp"
+#include "bytecode_basicblock.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -19,14 +20,16 @@ namespace COMPILER
       public:
         BytecodeGenerator();
         void ir2VmInst();
-        std::vector<IRFunction *> funcs;
-        std::vector<CVM::VMInstruction *> vm_insts;
-        BasicBlock *global_vars{ nullptr };
+        void relocation();
         std::string vmInstStr();
 
       private:
-        void fixJmp(int start, int end);
+        void addInst(CVM::VMInstruction *inst);
+        //
+        void collectBlockMap();
+        void fixJmp();
         void fixCall();
+        //
         void genBinary(IRBinary *ptr);
         void genLoadConst(CYX::Value &val, int reg_idx);
         void genStoreConst(CYX::Value &val, const std::string &name);
@@ -59,8 +62,13 @@ namespace COMPILER
         int entry{ -1 };
         int entry_end{ -1 };
         int global_var_len{ -1 };
+        std::vector<IRFunction *> funcs;
+        std::vector<CVM::VMInstruction *> vm_insts;
+        std::vector<BytecodeBasicBlock *> bytecode_basicblocks;
+        BasicBlock *global_vars{ nullptr };
 
       private:
+        std::string entry_end_block_name;
         std::unordered_map<std::string, int> block_table;
         std::unordered_map<std::string, int> funcs_table;
     };
