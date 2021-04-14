@@ -207,7 +207,6 @@ void COMPILER::CFG::transformToSSA()
             removeUnusedPhis(func);
         }
         phiElimination(func);
-        logX(cfgStr());
         deadCodeElimination(func);
     }
 }
