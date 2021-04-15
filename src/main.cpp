@@ -2,6 +2,7 @@
 #include "compiler/ast/ast_visualize.h"
 #include "compiler/bytecode/bytecode_generator.h"
 #include "compiler/bytecode/bytecode_writer.h"
+#include "compiler/bytecode/peephole_optimization.h"
 #include "compiler/ir/basicblock.hpp"
 #include "compiler/ir/cfg.h"
 #include "compiler/ir/ir_generator.h"
@@ -27,6 +28,7 @@ void showHelp()
         { "-no-code-simplify", "disable clearing temporary variables(after normal ir construction). " }, //
         { "-no-cfg-simplify", "disable clearing redundant basicblocks(empty and useless basicblocks)" }, //
         { "-remove-unused-code", "remove unused variable definitions(aggressively)" },                   //
+        { "-peephole", "enable peephole optimization(base on bytecode)" },                               //
         { "-dump-cfg", "dump CFG(Graphviz), dump to stdout if `-dump-as-file` is not set" },             //
         { "-dump-ir", "dump IR, dump to stdout if `-dump-as-file` is not set" },                         //
         { "-dump-ast", "dump AST(Graphviz), dump to stdout if `-dump-as-file` is not set" },             //
@@ -102,6 +104,7 @@ int main(int argc, char *argv[])
         CASE_TRUE("-no-code-simplify", NO_CODE_SIMPLIFY)
         CASE_TRUE("-no-cfg-simplify", NO_CFG_SIMPLIFY)
         CASE_TRUE("-remove-unused-code", REMOVE_UNUSED_DEFINE)
+        CASE_TRUE("-peephole", PEEPHOLE)
         CASE_TRUE("-dump-cfg", DUMP_CFG_STR)
         CASE_TRUE("-dump-ir", DUMP_IR_STR)
         CASE_TRUE("-dump-ast", DUMP_AST_STR)
@@ -173,6 +176,14 @@ int main(int argc, char *argv[])
     bytecode_generator.funcs       = cfg.funcs;
     bytecode_generator.global_vars = ir_generator.global_var_decl;
     bytecode_generator.ir2VmInst();
+    // peephole
+    if (PEEPHOLE)
+    {
+        COMPILER::PeepholeOptimization peephole;
+        peephole.block_list = &bytecode_generator.bytecode_basicblocks;
+        peephole.doPeepholeOptimization();
+    }
+    bytecode_generator.relocation();
 
     // dump debug str
     if (DUMP_AST_STR)

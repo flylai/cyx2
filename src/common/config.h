@@ -4,12 +4,13 @@
 #include <string>
 
 extern const std::string ENTRY_FUNC;
-extern bool volatile NO_SSA;
+extern bool NO_SSA;
 extern bool NO_CODE_SIMPLIFY;
 extern bool NO_CFG_SIMPLIFY;
 extern bool CONSTANT_FOLDING;
 extern bool CONSTANT_PROPAGATION;
 extern bool REMOVE_UNUSED_DEFINE;
+extern bool PEEPHOLE;
 //
 extern const int STATE_REGISTER;
 // debug output

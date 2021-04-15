@@ -18,6 +18,8 @@ namespace CVM
 
     struct VMInstruction
     {
+        virtual ~VMInstruction() = default;
+        //
         Opcode opcode{ 0xff };
         virtual std::string toString() = 0;
     };
