@@ -7,6 +7,7 @@ bool NO_CFG_SIMPLIFY         = false;
 bool CONSTANT_FOLDING        = false;
 bool CONSTANT_PROPAGATION    = false;
 bool REMOVE_UNUSED_DEFINE    = false;
+bool DEAD_CODE_ELIMINATION   = false;
 bool PEEPHOLE                = false;
 //
 const int STATE_REGISTER = 0;
