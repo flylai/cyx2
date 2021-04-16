@@ -209,7 +209,6 @@ void COMPILER::IRGenerator::visitIdentifierExpr(COMPILER::IdentifierExpr *ptr)
         auto *var = new IRVar;
         var->name = ptr->value;
         var->def  = upval.var;
-        upval.var->addUse(var);
 
         tmp_vars.push(var);
     }
@@ -563,7 +562,7 @@ std::string COMPILER::IRGenerator::newLabel()
 
 COMPILER::IRVar *COMPILER::IRGenerator::consumeVariable(bool force_IRVar)
 {
-    auto *tmp = tmp_vars.top();
+    auto *tmp   = tmp_vars.top();
     tmp_vars.pop();
     if (!force_IRVar || tmp->is_array)
     {
@@ -787,7 +786,6 @@ void COMPILER::IRGenerator::simplifyIR()
 void COMPILER::IRGenerator::removeUnusedVarDef()
 {
     // TODO: `branch` inst may use value
-    // TODO: fixBreakTarget() may cause some errors(i guess)
     for (auto *func : funcs)
     {
         // reverse traversal
@@ -798,39 +796,45 @@ void COMPILER::IRGenerator::removeUnusedVarDef()
             {
                 auto *inst = *inst_it;
                 if (inst->tag != IR::Tag::ASSIGN) return;
-                auto *assign = static_cast<IRAssign *>(inst);
-                if (assign->dest()->def == nullptr && assign->dest()->use.empty())
+                if (auto *assign = as<IRAssign, IR::Tag::ASSIGN>(inst);
+                    !assign->dest()->is_array && assign->dest()->def == nullptr && assign->dest()->use.empty())
                 {
-                    block->insts.erase(--inst_it.base());
-                    if (assign->src()->tag == IR::Tag::BINARY)
+                    if (auto *binary = as<IRBinary, IR::Tag::BINARY>(assign->src()); binary != nullptr)
                     {
-                        auto *binary = static_cast<IRBinary *>(assign->src());
-                        auto *lhs    = binary->lhs;
-                        auto *rhs    = binary->rhs;
-                        if (lhs->tag == IR::Tag::VAR)
+                        auto *lhs = binary->lhs;
+                        auto *rhs = binary->rhs;
+                        if (auto *lhs_var = as<IRVar, IR::Tag::VAR>(lhs); lhs_var != nullptr)
                         {
-                            auto *tmp = static_cast<IRVar *>(lhs);
-                            if (tmp->def != nullptr) tmp->def->killUse(tmp);
+                            if (lhs_var->def != nullptr) lhs_var->def->killUse(lhs_var);
                         }
-                        if (rhs->tag == IR::Tag::VAR)
+                        if (auto *rhs_var = as<IRVar, IR::Tag::VAR>(lhs); rhs_var != nullptr)
                         {
-                            auto *tmp = static_cast<IRVar *>(rhs);
-                            if (tmp->def != nullptr) tmp->def->killUse(tmp);
+                            if (rhs_var->def != nullptr) rhs_var->def->killUse(rhs_var);
                         }
-
                         delete lhs;
                         delete rhs;
                         delete binary;
                     }
-                    else if (assign->src()->tag == IR::Tag::CONST)
+                    else if (auto *constant = as<IRConstant, IR::Tag::CONST>(assign->src()); constant != nullptr)
                     {
+                        delete constant;
+                    }
+                    else if (auto *var = as<IRVar, IR::Tag::VAR>(assign->src()); var != nullptr)
+                    {
+                        if (var->def != nullptr) var->def->killUse(var);
                         delete assign->src();
                     }
+                    else if (assign->src()->tag == IR::Tag::CALL)
+                    {
+                        inst_it++;
+                        continue;
+                    }
                     delete assign;
+                    block->insts.erase(--inst_it.base());
                 }
                 else
                 {
-                    inst_it--;
+                    inst_it++;
                 }
             }
         }
