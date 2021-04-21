@@ -238,13 +238,14 @@ void COMPILER::IRGenerator::visitFuncCallExpr(COMPILER::FuncCallExpr *ptr)
 
     bool is_buildin = buildin_functions.find("buildin_" + ptr->func_name) != buildin_functions.end();
 
-    if (first_scan_funcs.find(ptr->func_name) == first_scan_funcs.end() && !is_buildin)
-    {
-        ERROR("can't find function definition of " + ptr->func_name);
-    }
     if (!is_buildin)
     {
-        inst->func = first_scan_funcs[ptr->func_name]->ir_func;
+        inst->name += "#" + std::to_string(ptr->args.size());
+        inst->func = first_scan_funcs[inst->name]->ir_func;
+    }
+    if (first_scan_funcs.find(inst->name) == first_scan_funcs.end() && !is_buildin)
+    {
+        ERROR("can't find function definition of " + inst->name);
     }
 
     int arg_cnt = 0;
@@ -461,11 +462,15 @@ void COMPILER::IRGenerator::visitFuncDeclStmt(COMPILER::FuncDeclStmt *ptr)
         func->params.push_back(var);
     }
 
-    if (first_scan_vars.find(func->name) != first_scan_vars.end())
+    if (first_scan_vars.find(func->toString()) != first_scan_vars.end())
     {
         ERROR("twice defined! previous " + func->name + " defined is variable!!");
     }
-    first_scan_funcs[func->name] = func;
+    if (first_scan_funcs.find(func->toString()) != first_scan_funcs.end())
+    {
+        ERROR("twice defined! previous " + func->name + " has same signature!!");
+    }
+    first_scan_funcs[func->name == ENTRY_FUNC ? func->name : func->toString()] = func;
 }
 
 void COMPILER::IRGenerator::visitBreakStmt(COMPILER::BreakStmt *ptr)
@@ -562,7 +567,7 @@ std::string COMPILER::IRGenerator::newLabel()
 
 COMPILER::IRVar *COMPILER::IRGenerator::consumeVariable(bool force_IRVar)
 {
-    auto *tmp   = tmp_vars.top();
+    auto *tmp = tmp_vars.top();
     tmp_vars.pop();
     if (!force_IRVar || tmp->is_array)
     {
@@ -675,12 +680,13 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
         cur_symbol->upsert(x.first, symbol);
         global_var_decl->addInst(assign);
     }
-    for (const auto &x : first_scan_funcs)
+    // func_name is only used to verify if the current func-name is ENTRY_FUNC
+    for (const auto &[func_name, func_pointer] : first_scan_funcs)
     {
         loop_stack.clear();
 
-        auto *func = x.second->ir_func;
-        func->name = x.first;
+        auto *func = func_pointer->ir_func;
+        func->name = func_name != ENTRY_FUNC ? func_pointer->toString() : func_name;
         Symbol symbol;
         symbol.type = Symbol::Type::FUNC;
         symbol.func = func;
@@ -692,7 +698,7 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
         cur_basic_block = newBasicBlock();
 
         enterNewScope();
-        for (auto param : x.second->params)
+        for (auto param : func_pointer->params)
         {
             Symbol param_symbol_table;
             param_symbol_table.type = Symbol::Type::VAR;
@@ -702,7 +708,7 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
             func->params.push_back(param);
         }
 
-        x.second->block->visit(this);
+        func_pointer->block->visit(this);
         exitScope();
         // fix continue stmt, when visit continue stmt, we cant known the out block of the loop
         fixBreakTarget();

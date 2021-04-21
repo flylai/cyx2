@@ -98,6 +98,10 @@ namespace COMPILER
             IRFunction *ir_func{ nullptr };
             std::vector<IRVar *> params;
             BlockStmt *block{ nullptr }; // ast body
+            std::string toString() const
+            {
+                return name + "#" + std::to_string(params.size());
+            }
         };
 
         class HIRVar
