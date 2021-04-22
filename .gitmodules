@@ -1,0 +1,6 @@
+[submodule "src/3rdparty/dbg-macro"]
+	path = src/3rdparty/dbg-macro
+	url = https://github.com/sharkdp/dbg-macro.git
+[submodule "src/3rdparty/googletest"]
+	path = src/3rdparty/googletest
+	url = https://github.com/google/googletest.git
