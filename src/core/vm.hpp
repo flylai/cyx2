@@ -7,6 +7,7 @@
 #include "opcode.hpp"
 #include "vm_instruction.hpp"
 
+#include <array>
 #include <dbg.h>
 #include <memory>
 #include <string>

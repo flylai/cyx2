@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <string>
+#include <unordered_map>
 
 static CYX::Value *buildin_print(CYX::Value *arg)
 {
