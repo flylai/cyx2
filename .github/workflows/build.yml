@@ -31,9 +31,10 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      - name: Check out the source
+        uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
       # =========================================================================================================
       - name: Install MSVC compiler
         if: matrix.platform == 'windows-latest'
@@ -70,10 +71,6 @@ jobs:
         if: matrix.platform == 'ubuntu-20.04'
         shell: bash
         run: |
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key 2>/dev/null | sudo apt-key add -
-          sudo add-apt-repository 'deb https://apt.llvm.org/focal/ llvm-toolchain-focal-12 main' -y
-          sudo apt-get update -q
-          sudo apt-get install -y clang-12 lld-12 libc++-12-dev libc++abi-12-dev clang-tools-12
           mkdir build
           cd build
           cmake ..
