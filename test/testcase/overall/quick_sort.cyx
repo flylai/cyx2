@@ -1,0 +1,39 @@
+arr = [0,0,0,0,0,0,0,0,0,0]
+
+def main() {
+    times = read()
+    int(times)
+    while (times-- > 0) {
+        n = read()
+        int(n)
+        for (i = 0; i < n; i++) {
+            tmp = read()
+            int(tmp)
+            arr[i] = tmp
+        }
+        qsort(0, n - 1)
+        println(arr)
+    }
+}
+
+def qsort(left, right) {
+    if (left >= right) {
+        return 0
+    }
+    pivot = arr[left]
+    l = left
+    r = right
+    while (l < r) {
+        while (l < r && pivot <= arr[r]) { r-- }
+        while (l < r && pivot >= arr[l]) { l++ }
+        if (l < r) {
+            tmp = arr[l]
+            arr[l] = arr[r]
+            arr[r] = tmp
+        }
+    }
+    arr[left] = arr[l]
+    arr[l] = pivot
+    qsort(left, l - 1)
+    qsort(l + 1, right)
+}

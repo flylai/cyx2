@@ -1,0 +1,39 @@
+def main() {
+    a = 0
+    println(a)
+    b = a
+    a = 1.1
+    println(a)
+    println(b)
+    c = b + a
+    println(c)
+    d = 6
+    a = '5'
+    println(a * d)
+    e = a * d + a + b
+    println(e)
+    println(e + 1)
+    println(2 * e + 4)
+    println(66)
+    f = a
+    f = b
+    f = c
+    f = d
+    f = e
+    f = "666"
+    println(f)
+    a = -1
+    b = a
+    println(a + b)
+    a = 0
+    a++
+    println(a)
+    a--
+    println(a)
+    --a
+    println(a++)
+    println(a)
+    println(--a)
+    println(a++)
+    println(a)
+}

@@ -1,0 +1,12 @@
+def main() {
+    a = 1
+    b = 2
+    c = 3
+    i = 996
+    if (i > 251) {
+        a = b + c
+    } else {
+        a = c
+    }
+    println(a)
+}

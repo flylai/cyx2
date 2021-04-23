@@ -1,0 +1,15 @@
+def main() {
+    s = 100
+    e = 999
+    for (i = s; i < e; ++i) {
+        tmp = i
+        x = tmp % 10
+        tmp = tmp / 10
+        y = tmp % 10
+        tmp = tmp / 10
+        z = tmp % 10
+        if (x * x * x + y * y * y + z * z * z == i) {
+            println(i)
+        }
+    }
+}

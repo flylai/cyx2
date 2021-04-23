@@ -1,0 +1,26 @@
+def fast_pow_mod(b, p, m) {
+    ans = 1
+    base = b
+    while (p > 0) {
+        if ((p & 1) == 1) {
+            ans = ans * base % m
+        }
+        base = base * base % m
+        p = p >> 1
+    }
+    return ans % m
+}
+
+def main() {
+    times = read()
+    int(times)
+    while (times-- > 0) {
+        b = read()
+        p = read()
+        m = read()
+        int(b)
+        int(p)
+        int(m)
+        println(fast_pow_mod(b, p, m))
+    }
+}

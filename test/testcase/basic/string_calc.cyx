@@ -1,0 +1,16 @@
+def main() {
+    println("testStrtrtrtr")
+    println('testStrtrtrtr')
+    print(1)
+    println(2)
+    println('a'*3)
+    println("a"*4)
+    println(3*'b')
+    println(4*'c')
+    println(3.1415926+99-91+"STR"+'str')
+    println(9*9*9+6+6+6-9-9-9+1/3+'str'*4)
+    println("str"*2*(2+1))
+    println("s"*(3-1)+1)
+    println(3*'s'+1.5*3)
+    println("123" > "1234")
+}

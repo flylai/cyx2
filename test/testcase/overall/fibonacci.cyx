@@ -1,0 +1,14 @@
+def fib(n) {
+    if (n <= 1) { return n }
+    return fib(n - 1) + fib(n - 2)
+}
+
+def main() {
+    times = read()
+    int(times)
+    for (i = 0; i < times; i++) {
+        n = read()
+        int(n)
+        println(fib(n))
+    }
+}

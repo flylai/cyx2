@@ -1,0 +1,12 @@
+def main() {
+    a = 1
+    b = 2
+    i = 0
+    while (i < 9) {
+        println(a)
+        c = a
+        a = b
+        b = c
+        i = i + 1
+    }
+}

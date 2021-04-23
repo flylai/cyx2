@@ -5,6 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 
 option(CYX_DEBUG OFF)
 
+add_subdirectory("src/3rdparty/googletest")
+include_directories("src/3rdparty/dbg-macro" "src/3rdparty/googletest")
+SET(GTEST_ROOT "src/3rdparty/googletest/googletest")
+
 if (CYX_DEBUG)
     add_definitions(-D CYX_DEBUG)
 else ()
@@ -37,3 +41,10 @@ add_executable(${PROJECT_NAME}
         src/main.cpp
         )
 
+add_executable(${PROJECT_NAME}_test
+        test/run_test.cpp
+        )
+target_link_libraries(${PROJECT_NAME}_test
+        gtest
+        ${GTEST_LIBRARIES}
+        )

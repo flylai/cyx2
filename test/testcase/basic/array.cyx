@@ -1,0 +1,28 @@
+def main() {
+    arr = [1,2,3,4,5,6,7]
+    b = arr
+    println(arr)
+    arr[0] = "1.11"
+    println(arr)
+    println(b)
+    b[0] = arr
+    println(b)
+    b[0] = b[3]
+    b[3] = b[2]
+    println(b)
+    arr[0] = [3,2,4]
+    println(arr)
+    arr[0][1] = [666,666]
+    arr[0][1][0] = 777.666
+    println(arr)
+    arr[1] = ["?", "324", '#', 3.14, 666]
+    println(arr)
+    arr = [1,2.33,'4','$',["3*",6.7]]
+    println(arr)
+    a = 1
+    arr[a] = a
+    println(arr)
+    a = [666,777,888,999]
+    arr[0] = a
+    println(arr)
+}

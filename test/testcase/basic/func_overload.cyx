@@ -1,0 +1,23 @@
+def f() {
+    println("f()")
+}
+
+def f(a) {
+    print("f(")
+    print(a)
+    println(")")
+}
+
+def f(a, b) {
+    print("f(")
+    print(a)
+    print(",")
+    print(b)
+    println(")")
+}
+
+def main() {
+    f()
+    f(1)
+    f(2,3)
+}
