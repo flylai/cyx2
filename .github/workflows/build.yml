@@ -1,0 +1,86 @@
+name: CYX2
+
+on: [ push, pull_request ]
+
+jobs:
+  check_commit_msg:
+    outputs:
+      commit_message: ${{ steps.get_message.outputs.message }}
+    name: Check if the workflow has been disabled.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checking out sources
+        uses: actions/checkout@v2
+      - name: Get commit message
+        id: get_message
+        run: |
+          echo "::set-output name=message::$(git log --format=%B -n 1 ${{ github.event.after }} | tr '\n' ' ')"
+          echo "message=\"$(git log --format=%B -n 1 ${{ github.event.after }} | tr '\n' ' ')\"" >> $GITHUB_ENV
+  build:
+    needs: check_commit_msg
+    strategy:
+      matrix:
+        platform: [ ubuntu-20.04, windows-latest ]
+        arch: [ x64 ]
+        build_type: [ Release ]
+        include:
+          - platform: windows-latest
+            arch: x64
+      fail-fast: false
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+      # =========================================================================================================
+      - name: Install MSVC compiler
+        if: matrix.platform == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          toolset: 14.2
+          arch: ${{ matrix.arch }}
+      - name: Linux Build preparation - Install Packages
+        if: matrix.platform == 'ubuntu-20.04'
+        run: |
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key 2>/dev/null | sudo apt-key add -
+          sudo add-apt-repository 'deb https://apt.llvm.org/focal/ llvm-toolchain-focal-12 main' -y
+          sudo apt-get update -q
+          sudo apt-get install -y clang-12 lld-12 libc++-12-dev libc++abi-12-dev clang-tools-12
+          export CXX=clang++-12; export CC=clang-12;
+          export LDFLAGS="-stdlib=libc++ -fuse-ld=lld";
+      # --------------------------------------------------------
+      - name: Windows Build
+        shell: bash
+        if: matrix.platform == 'windows-latest'
+        run: |
+          curl -fsSL -o LLVM12.exe https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/LLVM-12.0.0-win64.exe
+          7z x LLVM12.exe -y -o"C:/Program Files/LLVM"
+          export PATH="/c/Program Files/LLVM/bin:$PATH"
+          clang-cl --version
+          export CXX=cl && export CC=cl
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --parallel $(nproc)
+          cp -v ./*.pdb ./deployment || true
+      # --------------------------------------------------------
+      - name: Linux Build
+        if: matrix.platform == 'ubuntu-20.04'
+        shell: bash
+        run: |
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key 2>/dev/null | sudo apt-key add -
+          sudo add-apt-repository 'deb https://apt.llvm.org/focal/ llvm-toolchain-focal-12 main' -y
+          sudo apt-get update -q
+          sudo apt-get install -y clang-12 lld-12 libc++-12-dev libc++abi-12-dev clang-tools-12
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --parallel $(nproc)
+      # --------------------------------------------------------
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: cyx2
+          path: build/cyx2
