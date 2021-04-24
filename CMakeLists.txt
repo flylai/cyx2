@@ -9,6 +9,10 @@ add_subdirectory("src/3rdparty/googletest")
 include_directories("src/3rdparty/dbg-macro" "src/3rdparty/googletest")
 SET(GTEST_ROOT "src/3rdparty/googletest/googletest")
 
+if ($ENV{CI})
+    add_definitions(-D GITHUB_ACTIONS)
+endif ()
+
 if (CYX_DEBUG)
     add_definitions(-D CYX_DEBUG)
 else ()

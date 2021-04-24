@@ -36,48 +36,80 @@ jobs:
         with:
           submodules: 'recursive'
       # =========================================================================================================
-      - name: Install MSVC compiler
+      - name: Install MSVC - Windows
         if: matrix.platform == 'windows-latest'
         uses: ilammy/msvc-dev-cmd@v1
         with:
           toolset: 14.2
           arch: ${{ matrix.arch }}
-      - name: Linux Build preparation - Install Packages
+      # =========================================================================================================
+      - name: Install Clang - Windows
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          curl -fsSL -o LLVM12.exe https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/LLVM-12.0.0-win64.exe
+          7z x LLVM12.exe -y -o"C:/Program Files/LLVM"
+          export PATH="/c/Program Files/LLVM/bin:$PATH"
+      # =========================================================================================================
+      - name: Install Compiler - Linux
         if: matrix.platform == 'ubuntu-20.04'
         run: |
           wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key 2>/dev/null | sudo apt-key add -
           sudo add-apt-repository 'deb https://apt.llvm.org/focal/ llvm-toolchain-focal-12 main' -y
           sudo apt-get update -q
           sudo apt-get install -y clang-12 lld-12 libc++-12-dev libc++abi-12-dev clang-tools-12
-          export CXX=clang++-12; export CC=clang-12;
-          export LDFLAGS="-stdlib=libc++ -fuse-ld=lld";
-      # --------------------------------------------------------
-      - name: Windows Build
+      # =========================================================================================================
+      - name: Build - Windows
         shell: bash
         if: matrix.platform == 'windows-latest'
         run: |
-          curl -fsSL -o LLVM12.exe https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/LLVM-12.0.0-win64.exe
-          7z x LLVM12.exe -y -o"C:/Program Files/LLVM"
-          export PATH="/c/Program Files/LLVM/bin:$PATH"
-          clang-cl --version
-          export CXX=cl && export CC=cl
           mkdir build
           cd build
-          cmake ..
+          cmake ..  -G "NMake Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
           cmake --build . --parallel $(nproc)
           cp -v ./*.pdb ./deployment || true
-      # --------------------------------------------------------
-      - name: Linux Build
+      # =========================================================================================================
+      - name: Build - Linux
         if: matrix.platform == 'ubuntu-20.04'
         shell: bash
+        env:
+          CC: clang-12
+          CXX: clang++-12
         run: |
           mkdir build
           cd build
           cmake ..
           cmake --build . --parallel $(nproc)
-      # --------------------------------------------------------
-      - name: Upload artifact
+      # =========================================================================================================
+      - name: Upload artifact - Windows
+        if: matrix.platform == 'windows-latest'
         uses: actions/upload-artifact@master
         with:
-          name: cyx2
+          name: cyx2-${{ github.sha }}.win-${{ matrix.arch }}.exe
+          path: build/cyx2.exe
+      # =========================================================================================================
+      - name: Upload artifact - Linux
+        if: matrix.platform == 'ubuntu-20.04'
+        uses: actions/upload-artifact@master
+        with:
+          name: cyx2-${{ github.sha }}.linux-${{ matrix.arch }}
           path: build/cyx2
+      # =========================================================================================================
+      - name: Create temp folder for bytecode dump
+        shell: bash
+        run: |
+          mkdir -p cyx2/test/tmp/{basic,other,overall,ssa}
+      # =========================================================================================================
+      - name: Run Test - Windows
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          cd build
+          ./cyx2_test.exe
+      # =========================================================================================================
+      - name: Run Test - Linux
+        if: matrix.platform == 'ubuntu-20.04'
+        shell: bash
+        run: |
+          cd build
+          ./cyx2_test

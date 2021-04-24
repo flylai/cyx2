@@ -81,7 +81,13 @@ class CYXTest
     }
 
   public:
-    const fs::path root_dir        = fs::current_path().parent_path().string();
+    const fs::path build_dir = fs::current_path();
+#ifdef GITHUB_ACTIONS
+    const fs::path root_dir = build_dir.parent_path().string() + "/cyx2";
+#else
+    const fs::path root_dir           = build_dir.parent_path();
+#endif
+
     const std::string test_dir     = root_dir.string() + "/test";
     const std::string test_in_dir  = test_dir + "/in";
     const std::string test_out_dir = test_dir + "/out";
@@ -89,9 +95,9 @@ class CYXTest
     const std::string test_tmp_dir = test_dir + "/tmp";
 
 #ifdef CYX_WINDOWS
-    const std::string executable_file = root_dir.string() + "/build/cyx2.exe";
+    const std::string executable_file = build_dir.string() + "/cyx2.exe";
 #else
-    const std::string executable_file = root_dir.string() + "/build/cyx2";
+    const std::string executable_file = build_dir.string() + "/cyx2";
 #endif
 
   private:
