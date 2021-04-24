@@ -16,8 +16,12 @@ namespace CYX
         Value() = default;
         //
         template<typename T>
-        explicit Value(T value) : _value(value)
+        explicit Value(T value)
         {
+            if constexpr (std::is_same<T, int>() || std::is_same<T, bool>())
+                _value = static_cast<long long>(value);
+            else
+                _value = value;
         }
         explicit operator bool()
         {
@@ -28,7 +32,10 @@ namespace CYX
         template<typename T>
         Value &operator=(const T &rhs)
         {
-            _value = rhs;
+            if constexpr (std::is_same<T, int>() || std::is_same<T, bool>())
+                _value = static_cast<long long>(rhs);
+            else
+                _value = rhs;
 
             return *this;
         }
