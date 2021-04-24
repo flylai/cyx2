@@ -8,6 +8,7 @@
 #if (defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64))
     #define popen _popen
     #define pclose _pclose
+    #define CYX_WINDOWS
 #endif
 
 namespace fs = std::filesystem;
@@ -80,13 +81,18 @@ class CYXTest
     }
 
   public:
-    const fs::path root_dir           = fs::current_path().parent_path().string();
-    const std::string test_dir        = root_dir.string() + "/test";
-    const std::string test_in_dir     = test_dir + "/in";
-    const std::string test_out_dir    = test_dir + "/out";
-    const std::string testcase_dir    = test_dir + "/testcase";
-    const std::string test_tmp_dir    = test_dir + "/tmp";
-    const std::string executable_file = root_dir.string() + "/cmake-build-release/cyx2";
+    const fs::path root_dir        = fs::current_path().parent_path().string();
+    const std::string test_dir     = root_dir.string() + "/test";
+    const std::string test_in_dir  = test_dir + "/in";
+    const std::string test_out_dir = test_dir + "/out";
+    const std::string testcase_dir = test_dir + "/testcase";
+    const std::string test_tmp_dir = test_dir + "/tmp";
+
+#ifdef CYX_WINDOWS
+    const std::string executable_file = root_dir.string() + "/build/cyx2.exe";
+#else
+    const std::string executable_file = root_dir.string() + "/build/cyx2";
+#endif
 
   private:
     char buffer[2048]{};
