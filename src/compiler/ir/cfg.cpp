@@ -561,7 +561,6 @@ void COMPILER::CFG::phiElimination(COMPILER::IRFunction *func)
 
 void COMPILER::CFG::deadCodeElimination(COMPILER::IRFunction *func)
 {
-    return;
     // MAGIC
     for (auto block_it = func->blocks.crbegin(); block_it != func->blocks.crend(); block_it++)
     {
