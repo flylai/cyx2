@@ -173,7 +173,8 @@ COMPILER::ArrayExpr *COMPILER::Parser::parseArrayExpr()
     auto *array_expr = new ArrayExpr;
     while (true)
     {
-        array_expr->content.push_back(parseStmt());
+        auto *idx = parseStmt();
+        if (idx != nullptr) array_expr->content.push_back(idx);
         if (cur_token.keyword == Keyword::COMMA)
             eat(Keyword::COMMA);
         else
@@ -259,7 +260,7 @@ COMPILER::ExprStmt *COMPILER::Parser::parseExprStmt()
 {
     auto *expr_stmt = new ExprStmt(cur_token.row, cur_token.column);
     expr_stmt->expr = parseExpr();
-    return expr_stmt;
+    return expr_stmt->expr == nullptr ? nullptr : expr_stmt;
 }
 
 COMPILER::IfStmt *COMPILER::Parser::parseIfStmt()
