@@ -80,10 +80,15 @@ namespace COMPILER
     {
         switch (keyword)
         {
+            case Keyword::ADD_ASSIGN:
             case Keyword::ADD: return IROpcode::IR_ADD;
+            case Keyword::SUB_ASSIGN:
             case Keyword::SUB: return IROpcode::IR_SUB;
+            case Keyword::MUL_ASSIGN:
             case Keyword::MUL: return IROpcode::IR_MUL;
+            case Keyword::DIV_ASSIGN:
             case Keyword::DIV: return IROpcode::IR_DIV;
+            case Keyword::MOD_ASSIGN:
             case Keyword::MOD: return IROpcode::IR_MOD;
             case Keyword::BAND: return IROpcode::IR_BAND;
             case Keyword::BXOR: return IROpcode::IR_BXOR;

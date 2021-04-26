@@ -36,4 +36,16 @@ def main() {
     println(--a)
     println(a++)
     println(a)
+    a = 666
+    b = 666
+    a += b
+    println(a)
+    a -= b
+    println(a)
+    a *= b
+    println(a)
+    a /= b
+    println(a)
+    a %= b
+    println(a)
 }

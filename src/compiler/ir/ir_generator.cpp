@@ -109,6 +109,44 @@ void COMPILER::IRGenerator::visitBinaryExpr(COMPILER::BinaryExpr *ptr)
     check_var_exist = true;
     ptr->lhs->visit(this);
     check_var_exist = false;
+    // += -= *= /= %=
+    if (inOr(ptr->op.keyword, Keyword::ADD_ASSIGN, Keyword::SUB_ASSIGN, Keyword::MUL_ASSIGN, Keyword::DIV_ASSIGN,
+             Keyword::MOD_ASSIGN))
+    {
+        // ugly implementation, I will explain why I wrote that
+        // for example
+        // a = 1
+        // a += 1
+        // tmp_var -> [... a(origin)]
+        // after following code execute tmp_var -> [...]
+        auto *tmp = consumeVariable(false);
+        // tmp_var -> [... a(origin)]
+        tmp_vars.push(tmp);
+        // tmp_var -> [...], assign->dest has a copy of a(origin)
+        assign->setDest(consumeVariable());
+        // SAME! tmp_var -> [... a(origin)]
+        tmp_vars.push(tmp);
+        // SAME! tmp_var -> [...], binary->lhs has a copy of a(origin)
+        binary->lhs     = consumeVariable();
+        check_var_exist = true;
+        ptr->rhs->visit(this);
+        check_var_exist = false;
+        if (cur_value.hasValue())
+        {
+            auto *rhs   = new IRConstant;
+            rhs->value  = cur_value;
+            binary->rhs = rhs;
+            cur_value.reset();
+        }
+        else
+        {
+            auto *rhs   = consumeVariable();
+            binary->rhs = rhs;
+        }
+        cur_basic_block->addInst(assign);
+        return;
+    }
+    //
     if (cur_value.hasValue())
     {
         // int / double / string

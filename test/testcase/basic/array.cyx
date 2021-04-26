@@ -25,4 +25,9 @@ def main() {
     a = [666,777,888,999]
     arr[0] = a
     println(arr)
+    arr = []
+    println(arr)
+    arr = arr + 1
+    arr += 2
+    println(arr)
 }
