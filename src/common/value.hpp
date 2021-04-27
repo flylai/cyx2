@@ -48,7 +48,14 @@ namespace CYX
         //
         Value operator+(Value &rhs)
         {
-            if (is<long long>() && rhs.is<long long>()) // 1 + 2
+            if (isArray() || rhs.isArray())
+            {
+                auto &target    = isArray() ? *this : rhs;
+                const auto &add = isArray() ? rhs : *this;
+                target.asArray()->push_back(add);
+                return target;
+            }
+            else if (is<long long>() && rhs.is<long long>()) // 1 + 2
             {
                 return Value(as<long long>() + rhs.as<long long>());
             }
@@ -61,13 +68,7 @@ namespace CYX
             {
                 return Value(as<std::string>() + rhs.as<std::string>());
             }
-            else if (isArray() || rhs.isArray())
-            {
-                auto &target    = isArray() ? *this : rhs;
-                const auto &add = isArray() ? rhs : *this;
-                target.asArray()->push_back(add);
-                return target;
-            }
+
             UNREACHABLE();
         }
         Value operator-(Value &rhs)

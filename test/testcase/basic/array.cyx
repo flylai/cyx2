@@ -30,4 +30,12 @@ def main() {
     arr = arr + 1
     arr += 2
     println(arr)
+    arr = [666]
+    arr += [111,666,"'"]
+    arr[1] += '888'
+    arr += '32424'
+    arr += 3.14
+    arr += "fs"
+    arr[1] = arr[1] + arr[1]
+    println(arr)
 }
