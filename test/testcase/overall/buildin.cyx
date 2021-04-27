@@ -1,0 +1,28 @@
+def main() {
+    arr = []
+    println(len(arr))
+    arr += 1
+    arr += 2
+    arr += 3
+    println(arr)
+    println(len(arr))
+    str = "123456"
+    println(len(str))
+    str += '789456'
+    println(len(str))
+    i = 6
+    string(i)
+    println(i*3)
+    i = 1.11
+    int(i)
+    println(i)
+    i = 1.11
+    string(i)
+    println(i)
+    i = read()
+    double(i)
+    println(i + 1)
+    i = read()
+    println(i * 6)
+    print(len("666")*3)
+}

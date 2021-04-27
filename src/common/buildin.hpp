@@ -44,6 +44,21 @@ static CYX::Value *buildin_string(CYX::Value *target)
     return nullptr;
 }
 
+static CYX::Value *buildin_len(CYX::Value *target)
+{
+    long long size = 0;
+    if (target != nullptr)
+    {
+        if (target->is<std::string>())
+            size = target->as<std::string>().size();
+        else if (target->isArray())
+            size = target->asArray()->size();
+        else
+            UNREACHABLE();
+    }
+    return new CYX::Value(size);
+}
+
 #define BUILDIN_NAME(IDX, X)                                                                                           \
     {                                                                                                                  \
         #X,                                                                                                            \
@@ -64,6 +79,7 @@ static const std::unordered_map<std::string, std::pair<CYX::Value *(*) (CYX::Val
     BUILDIN_NAME(4, buildin_int),     //
     BUILDIN_NAME(5, buildin_double),  //
     BUILDIN_NAME(6, buildin_string),  //
+    BUILDIN_NAME(7, buildin_len),     //
 };
 
 static const std::unordered_map<int, CYX::Value *(*) (CYX::Value *)> buildin_functions_index = {
@@ -73,6 +89,7 @@ static const std::unordered_map<int, CYX::Value *(*) (CYX::Value *)> buildin_fun
     BUILDIN_IDX(4, buildin_int),     //
     BUILDIN_IDX(5, buildin_double),  //
     BUILDIN_IDX(6, buildin_string),  //
+    BUILDIN_IDX(7, buildin_len),     //
 };
 
 #undef BUILDIN_IDX

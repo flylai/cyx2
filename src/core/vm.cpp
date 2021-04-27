@@ -258,6 +258,7 @@ void CVM::VM::callBuildin()
 {
     auto *call         = static_cast<Call *>(cur_inst);
     auto *buildin_func = buildin_functions_index.at(-call->target);
+    CYX::Value *retval = nullptr;
     // TODO: some bugs here...
     if (vm_insts[pc + 1]->opcode == Opcode::ARG)
     {
@@ -280,18 +281,18 @@ void CVM::VM::callBuildin()
                     }
                 }
             }
-            buildin_func(target);
+            retval = buildin_func(target);
         }
         else if (arg->type == ArgType::RAW)
         {
-            buildin_func(&arg->value);
+            retval = buildin_func(&arg->value);
         }
     }
     else
     {
-        auto *retval = buildin_func(nullptr);
-        reg[1]       = *retval;
+        retval = buildin_func(nullptr);
     }
+    if (retval != nullptr) reg[1] = *retval;
 }
 
 void CVM::VM::func()

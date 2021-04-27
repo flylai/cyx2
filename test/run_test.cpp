@@ -233,6 +233,15 @@ TEST(Overall, daffodil_number)
     EXPECT_EQ(test.executeBytecode(file), test.readfile(file));
 }
 
+TEST(Overall, buildin)
+{
+    CYXTest test;
+    const std::string file = "overall/buildin";
+    EXPECT_EQ(test.execute(file, ""), test.readfile(file));
+    EXPECT_EQ(test.execute(file, "-remove-unused-code"), test.readfile(file));
+    EXPECT_EQ(test.executeBytecode(file), test.readfile(file));
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 TEST(SSA, daffodil_number)
