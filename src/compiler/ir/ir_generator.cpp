@@ -279,11 +279,10 @@ void COMPILER::IRGenerator::visitFuncCallExpr(COMPILER::FuncCallExpr *ptr)
     if (!is_buildin)
     {
         inst->name += "#" + std::to_string(ptr->args.size());
+        if (first_scan_funcs.find(inst->name) == first_scan_funcs.end())
+            ERROR("can't find function definition of " + ptr->func_name);
+
         inst->func = first_scan_funcs[inst->name]->ir_func;
-    }
-    if (first_scan_funcs.find(inst->name) == first_scan_funcs.end() && !is_buildin)
-    {
-        ERROR("can't find function definition of " + inst->name);
     }
 
     int arg_cnt = 0;
