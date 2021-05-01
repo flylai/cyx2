@@ -184,6 +184,7 @@ void COMPILER::ASTVisualize::visitFuncCallExpr(COMPILER::FuncCallExpr *ptr)
 
 std::string COMPILER::ASTVisualize::astStr()
 {
+    graph = "digraph G {\n" + graph + "}";
     return graph;
 }
 
