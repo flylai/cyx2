@@ -180,6 +180,14 @@ namespace CYX
             }
             UNREACHABLE();
         }
+        bool operator||(Value &rhs)
+        {
+            if (is<long long>() && rhs.is<long long>())
+            {
+                return as<long long>() != 0 || rhs.as<long long>() != 0;
+            }
+            UNREACHABLE();
+        }
         Value operator|(Value &rhs)
         {
             if (is<long long>() && rhs.is<long long>())
@@ -413,7 +421,6 @@ namespace CYX
             {
                 return 0;
             }
-            return 0;
         }
         // array specific
       public:
@@ -421,9 +428,6 @@ namespace CYX
         {
             if (isArray())
                 return asArray()->at(n);
-            else if (is<std::string>())
-            {
-            }
             else
             {
                 UNREACHABLE();

@@ -8,6 +8,7 @@
 #include "vm_instruction.hpp"
 
 #include <array>
+#include <cmath>
 #include <dbg.h>
 #include <memory>
 #include <string>

@@ -36,4 +36,10 @@ def main() {
     println(-9223372036854775807)
     println(-9223372036854775807-1)
     println(-9223372036854775807+1)
+    println(3**4)
+    println(1**0)
+    println(0**1)
+    println(2**10)
+    println(-1**2)
+    println(-2**-2)
 }

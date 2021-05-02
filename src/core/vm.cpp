@@ -111,13 +111,13 @@ void CVM::VM::binary()
         case Opcode::MUL: reg[reg_idx1] = reg[reg_idx1] * reg[reg_idx2]; break;
         case Opcode::DIV: reg[reg_idx1] = reg[reg_idx1] / reg[reg_idx2]; break;
         case Opcode::MOD: reg[reg_idx1] = reg[reg_idx1] % reg[reg_idx2]; break;
-        case Opcode::EXP: /*TODO*/ break;
+        case Opcode::EXP: reg[reg_idx1] = std::pow(reg[reg_idx1].as<long long>(), reg[reg_idx2].as<long long>()); break;
         case Opcode::BAND: reg[reg_idx1] = reg[reg_idx1] & reg[reg_idx2]; break;
         case Opcode::BOR: reg[reg_idx1] = reg[reg_idx1] | reg[reg_idx2]; break;
         case Opcode::BXOR: reg[reg_idx1] = reg[reg_idx1] ^ reg[reg_idx2]; break;
         case Opcode::SHL: reg[reg_idx1] = reg[reg_idx1] << reg[reg_idx2]; break;
         case Opcode::SHR: reg[reg_idx1] = reg[reg_idx1] >> reg[reg_idx2]; break;
-        case Opcode::LOR: /*TODO*/ break;
+        case Opcode::LOR: state = reg[reg_idx1] || reg[reg_idx2]; break;
         case Opcode::LAND: state = reg[reg_idx1] && reg[reg_idx2]; break;
         case Opcode::NE: state = reg[reg_idx1] != reg[reg_idx2]; break;
         case Opcode::EQ: state = reg[reg_idx1] == reg[reg_idx2]; break;
