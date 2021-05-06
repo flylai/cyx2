@@ -168,6 +168,15 @@ TEST(Basic, func_overload)
     EXPECT_EQ(test.executeBytecode(file), test.readfile(file));
 }
 
+TEST(Basic, optional_semicolon)
+{
+    CYXTest test;
+    const std::string file = "basic/optional_semicolon";
+    EXPECT_EQ(test.execute(file, ""), test.readfile(file));
+    EXPECT_EQ(test.execute(file, "-remove-unused-code"), test.readfile(file));
+    EXPECT_EQ(test.executeBytecode(file), test.readfile(file));
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 TEST(Overall, quick_sort)
