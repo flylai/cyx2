@@ -814,12 +814,59 @@ void COMPILER::IRGenerator::simplifyIR()
                     {
                         it = block->insts.erase(--it);
                     }
-                    // todo: some stmts after jmp stmt should be removed.
+                }
+                else if (tmp_cur->tag == IR::Tag::JMP)
+                {
                     /**
                      * jmp L1 (following stmt should be removed)
                      * a = 1
                      * b = 2
                      */
+                    auto removeVar = [](IRVar *var) -> bool
+                    {
+                        if (var == nullptr) return false;
+                        if (!var->use.empty())
+                        {
+                            // if this is vardef. set it uses's def to nullptr.
+                            for (auto x : var->use)
+                            {
+                                x->def = nullptr;
+                            }
+                        }
+                        if (var->def != nullptr)
+                        {
+                            var->def->killUse(var);
+                        }
+                        delete var;
+                        return true;
+                    };
+                    for (auto &after_jmp_it = it; after_jmp_it != block->insts.end();)
+                    {
+                        // all instructions will be removed.
+                        if (auto *tmp = as<IRAssign, IR::Tag::ASSIGN>(*after_jmp_it); tmp != nullptr)
+                        {
+                            removeVar(tmp->dest());
+                            auto *binary = as<IRBinary, IR::Tag::BINARY>(tmp->src());
+                            if (binary != nullptr)
+                            {
+                                // maybe lhs and rhs are not var but IRConstant.
+                                if (!removeVar(as<IRVar, IR::Tag::VAR>(binary->lhs))) delete binary->lhs;
+                                if (!removeVar(as<IRVar, IR::Tag::VAR>(binary->rhs))) delete binary->rhs;
+                                delete binary;
+                            }
+                            delete tmp;
+                        }
+                        else if (auto *tmp = as<IRBranch, IR::Tag::BRANCH>(*after_jmp_it); tmp != nullptr)
+                        {
+                            removeVar(tmp->cond);
+                            delete tmp;
+                        }
+                        else
+                        {
+                            delete *after_jmp_it;
+                        }
+                        after_jmp_it = block->insts.erase(after_jmp_it);
+                    }
                 }
             }
         }
