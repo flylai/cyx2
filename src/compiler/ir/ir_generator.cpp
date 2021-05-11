@@ -751,6 +751,7 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
         fixBreakTarget();
         fixContinueTarget();
     }
+    if (!NO_CODE_SIMPLIFY) simplifyIR();
     fixEdges();
 }
 

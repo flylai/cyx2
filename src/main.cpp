@@ -166,7 +166,9 @@ int main(int argc, char *argv[])
     // build ir
     COMPILER::IRGenerator ir_generator;
     ir_generator.visitTree(ast);
-    if (!NO_CODE_SIMPLIFY) ir_generator.simplifyIR();
+
+    // NO_CODE_SIMPLIFY is moved to the end of IRGenerator::visitTree()
+
     if (REMOVE_UNUSED_DEFINE) ir_generator.removeUnusedVarDef();
     // cfg, ssa, optimize related.
     COMPILER::CFG cfg;
