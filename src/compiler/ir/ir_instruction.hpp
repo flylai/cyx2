@@ -520,6 +520,25 @@ namespace COMPILER
         }
     };
 
+    static bool forceRemoveVar(IRVar *var)
+    {
+        if (var == nullptr) return false;
+        if (!var->use.empty())
+        {
+            // if this is vardef. set it uses's def to nullptr.
+            for (auto x : var->use)
+            {
+                x->def = nullptr;
+            }
+        }
+        if (var->def != nullptr)
+        {
+            var->def->killUse(var);
+        }
+        delete var;
+        return true;
+    };
+
 } // namespace COMPILER
 
 #endif // CVM_IR_INSTRUCTION_HPP
