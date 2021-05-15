@@ -22,7 +22,7 @@ class CYXTest
         const std::string src_file   = testcase_dir + raw_path + ".cyx";
         const std::string input_file = test_in_dir + raw_path + ".txt";
         std::string res;
-        const std::string command = executable_file + " " + options + " " + src_file +
+        const std::string command = executable_file + " " + default_option + " " + options + " " + src_file +
                                     (fs::is_regular_file(input_file) ? " < " + input_file : "");
         if (auto fp = popen(command.c_str(), "r"); fp != nullptr)
         {
@@ -93,6 +93,8 @@ class CYXTest
     const std::string test_out_dir = test_dir + "/out";
     const std::string testcase_dir = test_dir + "/testcase";
     const std::string test_tmp_dir = test_dir + "/tmp";
+    //
+    const std::string default_option = "-peephole";
 
 #ifdef CYX_WINDOWS
     const std::string executable_file = build_dir.string() + "/cyx2.exe";
