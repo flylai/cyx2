@@ -23,11 +23,12 @@ namespace COMPILER
         void collectJumpTarget();
         //
         void traversal();
-        void pass(std::deque<std::list<CVM::VMInstruction *>::iterator> window,
-                  std::list<CVM::VMInstruction *>::iterator &cur_it, std::list<CVM::VMInstruction *> &vm_insts);
+        void pass(
+            std::deque<std::pair<std::list<CVM::VMInstruction *> *, std::list<CVM::VMInstruction *>::iterator>> &window,
+            std::list<CVM::VMInstruction *>::iterator &cur_it);
 
       private:
-        bool changed     = true;
+        bool changed = true;
         std::unordered_map<std::string, int> jump_map;
     };
 }; // namespace COMPILER

@@ -20,7 +20,7 @@ void COMPILER::PeepholeOptimization::traversal()
     // store? c %1
     // load? %1 c  (remove this line)
     // store %1 c  (remove this line too)
-    std::deque<std::list<CVM::VMInstruction *>::iterator> window;
+    std::deque<std::pair<std::list<CVM::VMInstruction *> *, std::list<CVM::VMInstruction *>::iterator>> window;
     while (changed)
     {
         changed = false;
@@ -41,16 +41,16 @@ void COMPILER::PeepholeOptimization::traversal()
                     continue;
                 }
                 if (window.size() >= 2) window.pop_front();
-                window.push_back(it);
-                pass(window, it, block->vm_insts);
+                window.emplace_back(&block->vm_insts, it);
+                pass(window, it);
             }
         }
     }
 }
 
-void COMPILER::PeepholeOptimization::pass(std::deque<std::list<CVM::VMInstruction *>::iterator> window,
-                                          std::list<CVM::VMInstruction *>::iterator &cur_it,
-                                          std::list<CVM::VMInstruction *> &vm_insts)
+void COMPILER::PeepholeOptimization::pass(
+    std::deque<std::pair<std::list<CVM::VMInstruction *> *, std::list<CVM::VMInstruction *>::iterator>> &window,
+    std::list<CVM::VMInstruction *>::iterator &cur_it)
 {
     // if removed some code, `cur_it` will do nothing at the end of this function
     // else `cur_it++`
@@ -62,7 +62,7 @@ void COMPILER::PeepholeOptimization::pass(std::deque<std::list<CVM::VMInstructio
         if (tmp->opcode == CVM::Opcode::JMP) return static_cast<CVM::Jmp *>(tmp)->basic_block_name;
         return target_name;
     };
-    auto loadStorePass = [&window, &cur_it, &vm_insts]()
+    auto loadStorePass = [&window, &cur_it]()
     {
         // storex a %1
         // loadx %1 a
@@ -70,36 +70,42 @@ void COMPILER::PeepholeOptimization::pass(std::deque<std::list<CVM::VMInstructio
         // storex a %1
         // storex a %1
         if (window.size() <= 1) return false;
-        auto storex  = dynamic_cast<CVM::StoreX *>(*window[0]);
-        auto storex2 = dynamic_cast<CVM::StoreX *>(*window[1]);
-        auto loadx   = dynamic_cast<CVM::LoadX *>(*window[1]);
+        auto storex  = dynamic_cast<CVM::StoreX *>(*window[0].second);
+        auto storex2 = dynamic_cast<CVM::StoreX *>(*window[1].second);
+        auto loadx   = dynamic_cast<CVM::LoadX *>(*window[1].second);
         if (storex == nullptr || (loadx == nullptr && storex2 == nullptr)) return false;
         if ((loadx != nullptr && storex->name == loadx->name && storex->reg_idx == loadx->reg_idx &&
              storex->index.empty() && loadx->index.empty()) ||
             (storex2 != nullptr && storex->name == storex2->name && storex->reg_idx == storex2->reg_idx &&
              storex->index.empty() && storex2->index.empty()))
         {
-            delete *window[1];
-            *window[1] = nullptr;
-            cur_it     = vm_insts.erase(window[1]);
+            delete *window[1].second;
+            *window[1].second = nullptr;
+            if (cur_it == window[1].second)
+            {
+                cur_it = window[1].first->erase(cur_it);
+            }
             window.pop_back();
             return true;
         }
         return false;
     };
-    auto jmpJmpPass = [&window, &cur_it, &vm_insts]()
+    auto jmpJmpPass = [&window, &cur_it]()
     {
         // jmp 666
         // jmp 777 (no code jump to this line) or jmp 666
         if (window.size() <= 1) return false;
-        auto jmp  = dynamic_cast<CVM::Jmp *>(*window[0]);
-        auto jmp2 = dynamic_cast<CVM::Jmp *>(*window[1]);
+        auto jmp  = dynamic_cast<CVM::Jmp *>(*window[0].second);
+        auto jmp2 = dynamic_cast<CVM::Jmp *>(*window[1].second);
         if (jmp == nullptr || jmp2 == nullptr) return false;
         if (jmp->target == jmp2->target)
         {
-            delete *window[1];
-            *window[1] = nullptr;
-            cur_it     = vm_insts.erase(window[1]);
+            delete *window[1].second;
+            *window[1].second = nullptr;
+            if (cur_it == window[1].second)
+            {
+                cur_it = window[1].first->erase(cur_it);
+            }
             window.pop_back();
             return true;
         }
@@ -121,8 +127,40 @@ void COMPILER::PeepholeOptimization::pass(std::deque<std::list<CVM::VMInstructio
         };
         for (auto x : window)
         {
-            verifyTarget(*x);
+            verifyTarget(*x.second);
         }
+    };
+    auto jifSamePass = [&window, &cur_it]()
+    {
+        // jif 666 666
+        // replace it with jmp 666
+        if (window.empty()) return false;
+        bool retval = false;
+        for (auto w_it = window.begin(); w_it != window.end();)
+        {
+            auto &[vm_inst, it] = *w_it;
+            auto *jif           = dynamic_cast<CVM::Jif *>(*it);
+            if (jif == nullptr || jif->basic_block_name1 != jif->basic_block_name2)
+                return false;
+            else
+                w_it++;
+            // otherwise replace it.
+            retval |= true;
+            auto *jmp             = new CVM::Jmp;
+            jmp->basic_block_name = jif->basic_block_name1;
+            if (it == cur_it)
+            {
+                cur_it = vm_inst->erase(cur_it);
+                cur_it = vm_inst->insert(cur_it, jmp);
+            }
+            else
+            {
+                it = vm_inst->erase(it);
+                it = vm_inst->insert(it, jmp);
+            }
+            w_it = window.erase(w_it);
+        }
+        return retval;
     };
     auto jifPass = [&window, checkTarget]()
     {
@@ -142,11 +180,12 @@ void COMPILER::PeepholeOptimization::pass(std::deque<std::list<CVM::VMInstructio
         };
         for (auto x : window)
         {
-            verifyTarget(*x);
+            verifyTarget(*x.second);
         }
     };
     remove_code |= loadStorePass();
     remove_code |= jmpJmpPass();
+    remove_code |= jifSamePass();
     jmpToJmpPass();
     jifPass();
     changed |= remove_code;
