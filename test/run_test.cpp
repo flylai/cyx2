@@ -161,6 +161,15 @@ TEST(Basic, loop)
     EXPECT_EQ(test.executeBytecode(file), test.readfile(file));
 }
 
+TEST(Basic, loop2)
+{
+    CYXTest test;
+    const std::string file = "basic/loop2";
+    EXPECT_EQ(test.execute(file, ""), test.readfile(file));
+    EXPECT_EQ(test.execute(file, "-remove-unused-code"), test.readfile(file));
+    EXPECT_EQ(test.executeBytecode(file), test.readfile(file));
+}
+
 TEST(Basic, func_overload)
 {
     CYXTest test;

@@ -927,7 +927,10 @@ void COMPILER::IRGenerator::fixBreakTarget()
         // succ block.
         while (candidate_block->insts.empty())
         {
+            if (candidate_block->succs.empty()) break;
+
             candidate_block = *candidate_block->succs.begin();
+
             if (!candidate_block->insts.empty())
             {
                 break;
