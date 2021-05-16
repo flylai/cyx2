@@ -24,7 +24,6 @@ namespace COMPILER
         };
         Tree *parse();
         bool eat(Keyword tk);
-        bool optional(Keyword tk);
         void eat();
         Tree *program();
 
