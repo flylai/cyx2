@@ -216,10 +216,6 @@ void COMPILER::IRGenerator::visitAssignExpr(COMPILER::AssignExpr *ptr)
     auto *assign  = new IRAssign;
     assign->block = cur_basic_block;
     //
-    ptr->lhs->visit(this);
-    auto *dest = consumeVariable(false);
-    assign->setDest(dest);
-    //
     check_var_exist = true;
     ptr->rhs->visit(this);
     check_var_exist = false;
@@ -236,6 +232,11 @@ void COMPILER::IRGenerator::visitAssignExpr(COMPILER::AssignExpr *ptr)
         auto *src = consumeVariable();
         assign->setSrc(src);
     }
+    //
+    ptr->lhs->visit(this);
+    auto *dest = consumeVariable(false);
+    assign->setDest(dest);
+
     cur_basic_block->addInst(assign);
 }
 
@@ -290,7 +291,10 @@ void COMPILER::IRGenerator::visitFuncCallExpr(COMPILER::FuncCallExpr *ptr)
 
     for (auto *arg : ptr->args)
     {
+        check_var_exist = true;
         arg->visit(this);
+        check_var_exist = false;
+
         if (cur_value.hasValue())
         {
             auto *constant  = new IRConstant;
