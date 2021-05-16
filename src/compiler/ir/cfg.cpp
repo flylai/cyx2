@@ -156,6 +156,44 @@ void COMPILER::CFG::simplifyCFG()
                 it = func->blocks.erase(it);
                 delete block;
             }
+            else if (it != func->blocks.begin() && block->pres.empty())
+            {
+                // remove this block, it isn't the entry block and it has succ blocks
+                // remove all instructions
+                for (auto inst : block->insts)
+                {
+                    if (auto *tmp = as<IRAssign, IR::Tag::ASSIGN>(inst); tmp != nullptr)
+                    {
+                        COMPILER::forceRemoveVar(tmp->dest());
+                        auto *binary = as<IRBinary, IR::Tag::BINARY>(tmp->src());
+                        if (binary != nullptr)
+                        {
+                            // maybe lhs and rhs are not var but IRConstant.
+                            if (!forceRemoveVar(as<IRVar, IR::Tag::VAR>(binary->lhs))) delete binary->lhs;
+                            if (!forceRemoveVar(as<IRVar, IR::Tag::VAR>(binary->rhs))) delete binary->rhs;
+                            delete binary;
+                        }
+                        delete tmp;
+                    }
+                    else if (auto *tmp = as<IRBranch, IR::Tag::BRANCH>(inst); tmp != nullptr)
+                    {
+                        forceRemoveVar(tmp->cond);
+                        delete tmp;
+                    }
+                    else
+                    {
+                        delete inst;
+                    }
+                }
+                // remove succs edges
+                for (auto succ : block->succs)
+                {
+                    succ->pres.erase(block);
+                }
+                // remove it from block list
+                it = func->blocks.erase(it);
+                delete block;
+            }
             else
             {
                 it++;
