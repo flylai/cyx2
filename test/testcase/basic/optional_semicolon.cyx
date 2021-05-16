@@ -1,0 +1,16 @@
+def main() {
+    a = 0;
+    a = 0
+    a++
+    a++;
+    for (i = 0; i < 3; i++) {
+        a--;
+    }
+    println(a++);
+    f(666)
+}
+
+def f(d) {
+    d++;
+    println(d)
+}

@@ -6,7 +6,7 @@
 #include <string>
 
 #if (defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64))
-    #define popen _popen
+#define popen _popen
     #define pclose _pclose
     #define CYX_WINDOWS
 #endif
@@ -174,6 +174,15 @@ TEST(Basic, func_overload)
 {
     CYXTest test;
     const std::string file = "basic/func_overload";
+    EXPECT_EQ(test.execute(file, ""), test.readfile(file));
+    EXPECT_EQ(test.execute(file, "-remove-unused-code"), test.readfile(file));
+    EXPECT_EQ(test.executeBytecode(file), test.readfile(file));
+}
+
+TEST(Basic, optional_semicolon)
+{
+    CYXTest test;
+    const std::string file = "basic/optional_semicolon";
     EXPECT_EQ(test.execute(file, ""), test.readfile(file));
     EXPECT_EQ(test.execute(file, "-remove-unused-code"), test.readfile(file));
     EXPECT_EQ(test.executeBytecode(file), test.readfile(file));

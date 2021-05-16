@@ -23,6 +23,16 @@ void COMPILER::Parser::eat()
     cur_token = lexer.nextToken();
 }
 
+bool COMPILER::Parser::optional(COMPILER::Keyword tk)
+{
+    if (cur_token.keyword == tk)
+    {
+        eat();
+        return true;
+    }
+    return false;
+}
+
 COMPILER::Tree *COMPILER::Parser::program()
 {
     auto *ast = new Tree();
@@ -134,7 +144,7 @@ COMPILER::Expr *COMPILER::Parser::parseBinaryExpr(COMPILER::Expr *lhs, int prior
         }
         if (priority > opcodePriority(cur_token.keyword)) return lhs;
         auto *binary_expr = cur_token.keyword == Keyword::ASSIGN ? new AssignExpr(pre_token.row, pre_token.column) :
-                                                                   new BinaryExpr(pre_token.row, pre_token.column);
+                            new BinaryExpr(pre_token.row, pre_token.column);
         eat();
         binary_expr->lhs = lhs;
         binary_expr->op  = pre_token;
@@ -241,19 +251,22 @@ COMPILER::Expr *COMPILER::Parser::parseGroupingExpr()
 
 COMPILER::Stmt *COMPILER::Parser::parseStmt()
 {
+    Stmt *retval{ nullptr };
     switch (cur_token.keyword)
     {
-        case Keyword::DEF: return parseFuncDeclStmt();
-        case Keyword::IF: return parseIfStmt();
-        case Keyword::FOR: return parseForStmt();
-        case Keyword::WHILE: return parseWhileStmt();
-        case Keyword::IMPORT: return parseImportStmt();
-        case Keyword::RETURN: return parseReturnStmt();
-        case Keyword::BREAK: return parseBreakStmt();
-        case Keyword::CONTINUE: return parseContinueStmt();
-        case Keyword::SWITCH: return parseSwitchStmt();
-        default: return parseExprStmt();
+        case Keyword::DEF: retval = parseFuncDeclStmt(); break;
+        case Keyword::IF: retval = parseIfStmt(); break;
+        case Keyword::FOR: retval = parseForStmt(); break;
+        case Keyword::WHILE: retval = parseWhileStmt(); break;
+        case Keyword::IMPORT: retval = parseImportStmt(); break;
+        case Keyword::RETURN: retval = parseReturnStmt(); break;
+        case Keyword::BREAK: retval = parseBreakStmt(); break;
+        case Keyword::CONTINUE: retval = parseContinueStmt(); break;
+        case Keyword::SWITCH: retval = parseSwitchStmt(); break;
+        default: retval = parseExprStmt();
     }
+    optional(Keyword::SEMICOLON);
+    return retval;
 }
 
 COMPILER::ExprStmt *COMPILER::Parser::parseExprStmt()
