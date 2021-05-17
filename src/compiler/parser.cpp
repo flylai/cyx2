@@ -14,7 +14,7 @@ bool COMPILER::Parser::eat(COMPILER::Keyword tk)
         eat();
         return true;
     }
-    ERROR("expected " + keyword_table[tk].identifier);
+    CERR("expected " + keyword_table[tk].identifier);
 }
 
 void COMPILER::Parser::eat()
@@ -245,7 +245,7 @@ COMPILER::Expr *COMPILER::Parser::parseGroupingExpr()
 {
     eat(Keyword::LPAREN);
     auto *retval = parseExpr();
-    if (!eat(Keyword::RPAREN)) ERROR("should not reach here");
+    if (!eat(Keyword::RPAREN)) CERR("expected `)`");
     return retval;
 }
 
@@ -435,23 +435,23 @@ COMPILER::Stmt *COMPILER::Parser::parseWhileStmt()
 
 COMPILER::Stmt *COMPILER::Parser::parseReturnStmt()
 {
-    eat(Keyword::RETURN);
     auto *return_stmt   = new ReturnStmt(cur_token.row, cur_token.column);
+    eat(Keyword::RETURN);
     return_stmt->retval = parseExprStmt();
     return return_stmt;
 }
 
 COMPILER::Stmt *COMPILER::Parser::parseBreakStmt()
 {
-    eat(Keyword::BREAK);
     auto *break_stmt = new BreakStmt(cur_token.row, cur_token.column);
+    eat(Keyword::BREAK);
     return break_stmt;
 }
 
 COMPILER::Stmt *COMPILER::Parser::parseContinueStmt()
 {
-    eat(Keyword::CONTINUE);
     auto *break_stmt = new ContinueStmt(cur_token.row, cur_token.column);
+    eat(Keyword::CONTINUE);
     return break_stmt;
 }
 
