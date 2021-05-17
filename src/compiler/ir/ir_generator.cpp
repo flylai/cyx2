@@ -4,6 +4,8 @@
     PRE->addSucc(SUCC);                                                                                                \
     SUCC->addPre(PRE)
 
+#define POS(PTR) (std::to_string((PTR)->row) + ":" + std::to_string((PTR)->column))
+
 void COMPILER::IRGenerator::visitUnaryExpr(COMPILER::UnaryExpr *ptr)
 {
     auto *assign = new IRAssign;
@@ -206,7 +208,7 @@ void COMPILER::IRGenerator::visitAssignExpr(COMPILER::AssignExpr *ptr)
 
         if (first_scan_funcs.find(ir_var->name) != first_scan_funcs.end())
         {
-            ERROR("twice defined! previous " + ir_var->name + " defined is function!!");
+            CERR("twice defined! previous `" + ir_var->name + "` defined is function!!");
         }
 
         first_scan_vars[ir_var->name] = ir_var;
@@ -255,7 +257,7 @@ void COMPILER::IRGenerator::visitIdentifierExpr(COMPILER::IdentifierExpr *ptr)
     {
         if (check_var_exist)
         {
-            ERROR("cant find definition of " + ptr->value);
+            CERR("cant find definition of `" + ptr->value + "` in " + POS(ptr));
         }
         auto *var_def = new IRVar;
         var_def->name = ptr->value;
@@ -281,7 +283,7 @@ void COMPILER::IRGenerator::visitFuncCallExpr(COMPILER::FuncCallExpr *ptr)
     {
         inst->name += "#" + std::to_string(ptr->args.size());
         if (first_scan_funcs.find(inst->name) == first_scan_funcs.end())
-            ERROR("can't find function definition of " + ptr->func_name);
+            CERR("can't find function definition of `" + ptr->func_name + "` in " + POS(ptr));
 
         inst->func = first_scan_funcs[inst->name]->ir_func;
     }
@@ -505,18 +507,18 @@ void COMPILER::IRGenerator::visitFuncDeclStmt(COMPILER::FuncDeclStmt *ptr)
 
     if (first_scan_vars.find(func->toString()) != first_scan_vars.end())
     {
-        ERROR("twice defined! previous " + func->name + " defined is variable!!");
+        CERR("twice defined! previous `" + func->name + "` defined is variable!!");
     }
     if (first_scan_funcs.find(func->toString()) != first_scan_funcs.end())
     {
-        ERROR("twice defined! previous " + func->name + " has same signature!!");
+        CERR("twice defined! previous `" + func->name + "` has same signature!!");
     }
     first_scan_funcs[func->name == ENTRY_FUNC ? func->name : func->toString()] = func;
 }
 
 void COMPILER::IRGenerator::visitBreakStmt(COMPILER::BreakStmt *ptr)
 {
-    if (loop_stack.empty()) ERROR("unexpected BreakStmt");
+    if (loop_stack.empty()) CERR("unexpected `break` in " + POS(ptr));
     auto *inst   = new IRJump;
     inst->target = loop_stack.back();
     fix_break_wait_list.push_back(inst);
@@ -526,7 +528,7 @@ void COMPILER::IRGenerator::visitBreakStmt(COMPILER::BreakStmt *ptr)
 
 void COMPILER::IRGenerator::visitContinueStmt(COMPILER::ContinueStmt *ptr)
 {
-    if (loop_stack.empty()) ERROR("unexpected ContinueStmt");
+    if (loop_stack.empty()) CERR("unexpected `continue` in " + POS(ptr));
     auto *inst   = new IRJump;
     inst->target = loop_stack.back();
     fix_continue_wait_list.push_back(inst);
@@ -936,7 +938,7 @@ void COMPILER::IRGenerator::fixBreakTarget()
                 break;
             }
             else if (candidate_block->succs.size() > 1)
-                ERROR("loop out block has two or more succs, it impossible!");
+                LOGE("loop out block has two or more succs, it impossible!");
         }
         inst->target = candidate_block;
     }
@@ -960,7 +962,7 @@ void COMPILER::IRGenerator::destroyVar(IRVar *var)
     }
     if (!var->use.empty())
     {
-        ERROR("this var is some vars' defined");
+        LOGE("this var is some vars' defined");
     }
     delete var;
 }
@@ -1049,3 +1051,4 @@ void COMPILER::IRGenerator::fixEdges()
 }
 
 #undef LINK
+#undef POS

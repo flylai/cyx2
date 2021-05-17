@@ -2,11 +2,19 @@
 #define CVM_LOG_H
 
 #include <dbg.h>
+#include <iostream>
 
 #ifdef CYX_DEBUG
-    #define logX(...) dbg(__VA_ARGS__)
+    #define LOGD(...) dbg(__VA_ARGS__)
+    #define CERR(ARG) LOGE(ARG)
 #else
-    #define logX(...) 1
+    #define LOGD(...) 1
+    #define CERR(ARG)                                                                                                  \
+        do                                                                                                             \
+        {                                                                                                              \
+            std::cerr << (ARG) << std::endl;                                                                           \
+            exit(1);                                                                                                   \
+        } while (false)
 #endif
 
 #define UNREACHABLE()                                                                                                  \
@@ -16,7 +24,7 @@
         exit(1);                                                                                                       \
     } while (false)
 
-#define ERROR(msg)                                                                                                     \
+#define LOGE(msg)                                                                                                      \
     do                                                                                                                 \
     {                                                                                                                  \
         dbg(msg);                                                                                                      \

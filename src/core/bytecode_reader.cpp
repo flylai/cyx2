@@ -48,7 +48,7 @@ void CVM::BytecodeReader::readInsts()
             case CVM::Opcode::RET: readRet(); break;
             case CVM::Opcode::JMP: readJmp(); break;
             case CVM::Opcode::JIF: readJif(); break;
-            default: logX("unknown opcode"); break;
+            default: LOGD("unknown opcode"); break;
         }
     }
 }
@@ -60,7 +60,7 @@ void CVM::BytecodeReader::readHeader()
     entry             = readInt();
     entry_end         = readInt();
     global_var_len    = readInt();
-    if (magic_number != 0xc2 && version != 0x01) ERROR("bytecode file error!");
+    if (magic_number != 0xc2 && version != 0x01) LOGE("bytecode file error!");
 }
 
 unsigned char CVM::BytecodeReader::readByte()
@@ -148,7 +148,7 @@ void CVM::BytecodeReader::readBinary()
         case CVM::Opcode::GT: tmp = new Gt; break;
         case CVM::Opcode::GE: tmp = new Ge; break;
         case CVM::Opcode::LAND: tmp = new Land; break;
-        default: ERROR("WTF");
+        default: LOGE("WTF");
     }
     tmp->reg_idx1 = readByte();
     tmp->reg_idx2 = readByte();

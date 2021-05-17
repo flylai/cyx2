@@ -48,7 +48,7 @@ void COMPILER::BytecodeWriter::writeInsts()
             case CVM::Opcode::RET: writeRet(); break;
             case CVM::Opcode::JMP: writeJmp(); break;
             case CVM::Opcode::JIF: writeJif(); break;
-            default: ERROR("unsupported inst"); break;
+            default: CERR("unsupported instruction");
         }
     }
 }

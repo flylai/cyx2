@@ -14,7 +14,8 @@ bool COMPILER::Parser::eat(COMPILER::Keyword tk)
         eat();
         return true;
     }
-    CERR("expected " + keyword_table[tk].identifier);
+    CERR("expected " + keyword_table[tk].identifier + " in " + std::to_string(cur_token.row) + ":" +
+         std::to_string(cur_token.column));
 }
 
 void COMPILER::Parser::eat()
@@ -144,7 +145,7 @@ COMPILER::Expr *COMPILER::Parser::parseBinaryExpr(COMPILER::Expr *lhs, int prior
         }
         if (priority > opcodePriority(cur_token.keyword)) return lhs;
         auto *binary_expr = cur_token.keyword == Keyword::ASSIGN ? new AssignExpr(pre_token.row, pre_token.column) :
-                            new BinaryExpr(pre_token.row, pre_token.column);
+                                                                   new BinaryExpr(pre_token.row, pre_token.column);
         eat();
         binary_expr->lhs = lhs;
         binary_expr->op  = pre_token;
@@ -245,7 +246,7 @@ COMPILER::Expr *COMPILER::Parser::parseGroupingExpr()
 {
     eat(Keyword::LPAREN);
     auto *retval = parseExpr();
-    if (!eat(Keyword::RPAREN)) CERR("expected `)`");
+    eat(Keyword::RPAREN);
     return retval;
 }
 
@@ -435,7 +436,7 @@ COMPILER::Stmt *COMPILER::Parser::parseWhileStmt()
 
 COMPILER::Stmt *COMPILER::Parser::parseReturnStmt()
 {
-    auto *return_stmt   = new ReturnStmt(cur_token.row, cur_token.column);
+    auto *return_stmt = new ReturnStmt(cur_token.row, cur_token.column);
     eat(Keyword::RETURN);
     return_stmt->retval = parseExprStmt();
     return return_stmt;
