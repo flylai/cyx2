@@ -18,6 +18,8 @@ COMPILER::Lexer::Lexer(std::string raw_code) : raw_code(raw_code)
         { "return", Keyword::RETURN },     //
         { "import", Keyword::IMPORT },     //
     };
+    column = 0;
+    row    = 1;
 }
 
 void COMPILER::Lexer::skipBlank()
@@ -61,7 +63,7 @@ void COMPILER::Lexer::advance()
     {
         if (current_char == '\n')
         {
-            column = 0;
+            column = 1;
             row++;
         }
         else
