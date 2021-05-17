@@ -844,7 +844,16 @@ std::string COMPILER::CFG::cfgStr() const
             }
             for (auto *inst : block->insts)
             {
-                str += "|" + inst->toString();
+                auto tmp = inst->toString();
+                for (int i = 0; i < tmp.size(); i++)
+                {
+                    if (inOr(tmp[i], '<', '>'))
+                    {
+                        tmp.insert(i, "\\");
+                        i++;
+                    }
+                }
+                str += "|" + tmp;
             }
             str += "}\"]\n";
 
