@@ -30,16 +30,19 @@ void COMPILER::Lexer::skipBlank()
 
 void COMPILER::Lexer::skipSingleLineComment()
 {
-    while (current_char != '\n')
+    while (current_char != '\n' && current_char != EOF)
         advance();
 }
 
 void COMPILER::Lexer::skipMultiLineComment()
 {
-    while (current_char != '*' && peekNextChar() != '/')
+    while (true)
+    {
+        if (current_char == '*' && peekNextChar() == '/') break;
         advance();
-    advance();
-    advance();
+    }
+    advance(); // *
+    advance(); // /
 }
 
 COMPILER::Token COMPILER::Lexer::number()

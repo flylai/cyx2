@@ -1,0 +1,10 @@
+// main
+def main() { // def
+    a = 0 /*test*/ //test
+/*
+miltiline test //abc
+/***********************************
+//
+*/
+}
+/*comment*/
