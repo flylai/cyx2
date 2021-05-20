@@ -180,6 +180,8 @@ void COMPILER::ASTVisualize::visitTree(COMPILER::Tree *ptr)
 
 void COMPILER::ASTVisualize::visitFuncCallExpr(COMPILER::FuncCallExpr *ptr)
 {
+    if (ptr == nullptr) return;
+    graph += NODE(ptr) + "[label=\"FuncCallExpr#" + ptr->func_name + "\"]\n";
 }
 
 std::string COMPILER::ASTVisualize::astStr()
