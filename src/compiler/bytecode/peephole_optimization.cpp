@@ -40,7 +40,6 @@ void COMPILER::PeepholeOptimization::traversal()
                     it++;
                     continue;
                 }
-                if (window.size() >= 2) window.pop_front();
                 window.emplace_back(&block->vm_insts, it);
                 pass(window, it);
             }
@@ -55,6 +54,7 @@ void COMPILER::PeepholeOptimization::pass(
     // if removed some code, `cur_it` will do nothing at the end of this function
     // else `cur_it++`
     auto remove_code = false;
+    const auto len   = window.size();
     auto checkTarget = [this](const std::string &target_name)
     {
         // check whether the front instruction of the target block is a jmp instruction
@@ -62,7 +62,7 @@ void COMPILER::PeepholeOptimization::pass(
         if (tmp->opcode == CVM::Opcode::JMP) return static_cast<CVM::Jmp *>(tmp)->basic_block_name;
         return target_name;
     };
-    auto loadStorePass = [&window, &cur_it]()
+    auto loadStorePass = [&window, &cur_it, &len]()
     {
         // storex a %1
         // loadx %1 a
@@ -70,41 +70,42 @@ void COMPILER::PeepholeOptimization::pass(
         // storex a %1
         // storex a %1
         if (window.size() <= 1) return false;
-        auto storex  = dynamic_cast<CVM::StoreX *>(*window[0].second);
-        auto storex2 = dynamic_cast<CVM::StoreX *>(*window[1].second);
-        auto loadx   = dynamic_cast<CVM::LoadX *>(*window[1].second);
+
+        auto storex  = dynamic_cast<CVM::StoreX *>(*window[len - 2].second);
+        auto storex2 = dynamic_cast<CVM::StoreX *>(*window[len - 1].second);
+        auto loadx   = dynamic_cast<CVM::LoadX *>(*window[len - 1].second);
         if (storex == nullptr || (loadx == nullptr && storex2 == nullptr)) return false;
         if ((loadx != nullptr && storex->name == loadx->name && storex->reg_idx == loadx->reg_idx &&
              storex->index.empty() && loadx->index.empty()) ||
             (storex2 != nullptr && storex->name == storex2->name && storex->reg_idx == storex2->reg_idx &&
              storex->index.empty() && storex2->index.empty()))
         {
-            delete *window[1].second;
-            *window[1].second = nullptr;
-            if (cur_it == window[1].second)
+            delete *window[len - 1].second;
+            *window[len - 1].second = nullptr;
+            if (cur_it == window[len - 1].second)
             {
-                cur_it = window[1].first->erase(cur_it);
+                cur_it = window[len - 1].first->erase(cur_it);
             }
             window.pop_back();
             return true;
         }
         return false;
     };
-    auto jmpJmpPass = [&window, &cur_it]()
+    auto jmpJmpPass = [&window, &cur_it, &len]()
     {
         // jmp 666
         // jmp 777 (no code jump to this line) or jmp 666
         if (window.size() <= 1) return false;
-        auto jmp  = dynamic_cast<CVM::Jmp *>(*window[0].second);
-        auto jmp2 = dynamic_cast<CVM::Jmp *>(*window[1].second);
+        auto jmp  = dynamic_cast<CVM::Jmp *>(*window[len - 2].second);
+        auto jmp2 = dynamic_cast<CVM::Jmp *>(*window[len - 1].second);
         if (jmp == nullptr || jmp2 == nullptr) return false;
         if (jmp->target == jmp2->target)
         {
-            delete *window[1].second;
-            *window[1].second = nullptr;
-            if (cur_it == window[1].second)
+            delete *window[len - 1].second;
+            *window[len - 1].second = nullptr;
+            if (cur_it == window[len - 1].second)
             {
-                cur_it = window[1].first->erase(cur_it);
+                cur_it = window[len - 1].first->erase(cur_it);
             }
             window.pop_back();
             return true;
@@ -183,6 +184,7 @@ void COMPILER::PeepholeOptimization::pass(
             verifyTarget(*x.second);
         }
     };
+
     remove_code |= loadStorePass();
     remove_code |= jmpJmpPass();
     remove_code |= jifSamePass();
