@@ -184,10 +184,39 @@ void COMPILER::PeepholeOptimization::pass(
             verifyTarget(*x.second);
         }
     };
+    auto storeJifPass = [&window, &cur_it, &len]()
+    {
+        // LT %1 %2
+        // LOAD %0 t0  -> will be removed
+        // STORE t0 %0 -> will be removed
+        // JIF ... ...
+        if (len < 2) return false;
+        auto storex = dynamic_cast<CVM::StoreX *>(*window[len - 2].second);
+        auto jif    = dynamic_cast<CVM::Jif *>(*window[len - 1].second);
+        if (storex != nullptr && jif != nullptr)
+        {
+            if (storex->reg_idx != 0) return false;
+            delete *window[len - 2].second;
+            *window[len - 2].second = nullptr;
+            if (cur_it == window[len - 2].second)
+            {
+                cur_it = window[len - 2].first->erase(cur_it);
+            }
+            else
+            {
+                window[len - 2].second = window[len - 2].first->erase(window[len - 2].second);
+                cur_it++;
+            }
+            window.erase(window.end() - 2);
+            return true;
+        }
+        return false;
+    };
 
     remove_code |= loadStorePass();
     remove_code |= jmpJmpPass();
     remove_code |= jifSamePass();
+    remove_code |= storeJifPass();
     jmpToJmpPass();
     jifPass();
     changed |= remove_code;
