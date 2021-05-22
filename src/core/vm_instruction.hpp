@@ -311,8 +311,12 @@ namespace CVM
         int reg_idx2{ -1 };
     };
 
+    struct Arithmetic : Binary
+    {
+    };
+
 #define ARITHMETIC_INST(X, OP)                                                                                         \
-    struct X : Binary                                                                                                  \
+    struct X : Arithmetic                                                                                              \
     {                                                                                                                  \
         X()                                                                                                            \
         {                                                                                                              \
