@@ -396,6 +396,11 @@ void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
     @out
      ....
     */
+    if (cur_fix_break_wait_list != nullptr) fix_break_wait_list_stack.push(cur_fix_break_wait_list);
+    if (cur_fix_continue_wait_list != nullptr) fix_continue_wait_list_stack.push(cur_fix_continue_wait_list);
+    cur_fix_break_wait_list    = new std::vector<IRJump *>;
+    cur_fix_continue_wait_list = new std::vector<IRJump *>;
+    //
     auto *init_block = newBasicBlock();
     //
     loop_stack.push_back(init_block);
@@ -439,12 +444,43 @@ void COMPILER::IRGenerator::visitForStmt(COMPILER::ForStmt *ptr)
     // loop
     out_block->loop_start = init_block;
     init_block->loop_end  = out_block;
-    //
+    // fix continue, break
+
+    for (auto &inst : *cur_fix_break_wait_list)
+    {
+        inst->target = out_block;
+    }
+    // free
+    delete cur_fix_break_wait_list;
+    cur_fix_break_wait_list = nullptr;
+    if (!fix_break_wait_list_stack.empty())
+    {
+        cur_fix_break_wait_list = fix_break_wait_list_stack.top();
+        fix_break_wait_list_stack.pop();
+    }
+
+    for (auto &inst : *cur_fix_continue_wait_list)
+    {
+        inst->target = final_block;
+    }
+    delete cur_fix_continue_wait_list;
+    cur_fix_continue_wait_list = nullptr;
+    if (!fix_continue_wait_list_stack.empty())
+    {
+        cur_fix_continue_wait_list = fix_continue_wait_list_stack.top();
+        fix_continue_wait_list_stack.pop();
+    }
+
     loop_stack.pop_back();
 }
 
 void COMPILER::IRGenerator::visitWhileStmt(COMPILER::WhileStmt *ptr)
 {
+    if (cur_fix_break_wait_list != nullptr) fix_break_wait_list_stack.push(cur_fix_break_wait_list);
+    if (cur_fix_continue_wait_list != nullptr) fix_continue_wait_list_stack.push(cur_fix_continue_wait_list);
+    cur_fix_break_wait_list    = new std::vector<IRJump *>;
+    cur_fix_continue_wait_list = new std::vector<IRJump *>;
+
     auto *cond_block = newBasicBlock();
     //
     loop_stack.push_back(cond_block);
@@ -478,6 +514,24 @@ void COMPILER::IRGenerator::visitWhileStmt(COMPILER::WhileStmt *ptr)
     cond_block->loop_end  = out_block;
     out_block->loop_start = cond_block;
     //
+    for (auto &inst : *cur_fix_break_wait_list)
+    {
+        inst->target = out_block;
+    }
+    delete cur_fix_break_wait_list;
+    cur_fix_break_wait_list = nullptr;
+    if (!fix_break_wait_list_stack.empty())
+    {
+        cur_fix_break_wait_list = fix_break_wait_list_stack.top();
+        fix_break_wait_list_stack.pop();
+    }
+    delete cur_fix_continue_wait_list;
+    cur_fix_continue_wait_list = nullptr;
+    if (!fix_continue_wait_list_stack.empty())
+    {
+        cur_fix_continue_wait_list = fix_continue_wait_list_stack.top();
+        fix_continue_wait_list_stack.pop();
+    }
     loop_stack.pop_back();
 }
 
@@ -521,7 +575,7 @@ void COMPILER::IRGenerator::visitBreakStmt(COMPILER::BreakStmt *ptr)
     if (loop_stack.empty()) CERR("unexpected `break` in " + POS(ptr));
     auto *inst   = new IRJump;
     inst->target = loop_stack.back();
-    fix_break_wait_list.push_back(inst);
+    cur_fix_break_wait_list->push_back(inst);
     inst->block = cur_basic_block;
     cur_basic_block->addInst(inst);
 }
@@ -531,7 +585,7 @@ void COMPILER::IRGenerator::visitContinueStmt(COMPILER::ContinueStmt *ptr)
     if (loop_stack.empty()) CERR("unexpected `continue` in " + POS(ptr));
     auto *inst   = new IRJump;
     inst->target = loop_stack.back();
-    fix_continue_wait_list.push_back(inst);
+    cur_fix_continue_wait_list->push_back(inst);
     inst->block = cur_basic_block;
     cur_basic_block->addInst(inst);
 }
@@ -753,9 +807,6 @@ void COMPILER::IRGenerator::visitTree(COMPILER::Tree *ptr)
 
         func_pointer->block->visit(this);
         exitScope();
-        // fix continue stmt, when visit continue stmt, we cant known the out block of the loop
-        fixBreakTarget();
-        fixContinueTarget();
     }
     if (!NO_CODE_SIMPLIFY) simplifyIR();
     fixEdges();
@@ -917,38 +968,6 @@ void COMPILER::IRGenerator::removeUnusedVarDef()
                 }
             }
         }
-    }
-}
-
-void COMPILER::IRGenerator::fixBreakTarget()
-{
-    for (auto *inst : fix_break_wait_list)
-    {
-        auto *candidate_block = inst->target->loop_end;
-        // if loop out block is empty block, it will be removed at CFG.simplifyCFG(), so we need find a not empty
-        // succ block.
-        while (candidate_block->insts.empty())
-        {
-            if (candidate_block->succs.empty()) break;
-
-            candidate_block = *candidate_block->succs.begin();
-
-            if (!candidate_block->insts.empty())
-            {
-                break;
-            }
-            else if (candidate_block->succs.size() > 1)
-                LOGE("loop out block has two or more succs, it impossible!");
-        }
-        inst->target = candidate_block;
-    }
-}
-
-void COMPILER::IRGenerator::fixContinueTarget()
-{
-    for (auto *inst : fix_continue_wait_list)
-    {
-        inst->target = *inst->block->succs.begin();
     }
 }
 

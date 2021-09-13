@@ -62,15 +62,15 @@ namespace COMPILER
         BasicBlock *newBasicBlock(const std::string &name = "");
         void destroyVar(IRVar *var);
         //
-        void fixBreakTarget();
-        void fixContinueTarget();
-        //
         void fixEdges();
 
       private:
         std::vector<BasicBlock *> loop_stack;
-        std::vector<IRJump *> fix_break_wait_list;
-        std::vector<IRJump *> fix_continue_wait_list;
+
+        std::stack<std::vector<IRJump *> *> fix_break_wait_list_stack;
+        std::stack<std::vector<IRJump *> *> fix_continue_wait_list_stack;
+        std::vector<IRJump *> *cur_fix_break_wait_list{ nullptr };
+        std::vector<IRJump *> *cur_fix_continue_wait_list{ nullptr };
 
       private:
         int var_cnt{ 0 };
